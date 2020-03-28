@@ -1,0 +1,831 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.core.efz_utils &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.core.efz_utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.core.efz_utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The *nussl* External File Zoo (EFZ) is a server that houses all files that are too large to</span>
+<span class="sd">bundle with *nussl* when distributing it through ``pip`` or Github. These types of files include</span>
+<span class="sd">audio examples, benchmark files for tests, and trained neural network models.</span>
+
+<span class="sd">*nussl* has built-in utilities for accessing the EFZ through its API. Here, it is possible to</span>
+<span class="sd">see what files are available on the EFZ and download desired files. The EFZ utilities allow</span>
+<span class="sd">for such functionality.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+
+<span class="kn">from</span> <span class="nn">six.moves.urllib_parse</span> <span class="kn">import</span> <span class="n">urljoin</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.error</span> <span class="kn">import</span> <span class="n">HTTPError</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.error</span> <span class="kn">import</span> <span class="n">URLError</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.request</span> <span class="kn">import</span> <span class="n">urlopen</span><span class="p">,</span> <span class="n">Request</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.request</span> <span class="kn">import</span> <span class="n">urlretrieve</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">constants</span>
+
+
+<div class="viewcode-block" id="get_available_audio_files"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.get_available_audio_files">[docs]</a><span class="k">def</span> <span class="nf">get_available_audio_files</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of dicts containing metadata of the available audio files on the nussl External</span>
+<span class="sd">    File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    Each entry in the list is in the following format:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        {</span>
+<span class="sd">            u&#39;file_length_seconds&#39;: 5.00390022675737,</span>
+<span class="sd">            u&#39;visible&#39;: True,</span>
+<span class="sd">            u&#39;file_name&#39;: u&#39;K0140.wav&#39;,</span>
+<span class="sd">            u&#39;date_modified&#39;: u&#39;2018-06-01&#39;,</span>
+<span class="sd">            u&#39;file_hash&#39;: u&#39;f0d8d3c8d199d3790b0e42d1e5df50a6801f928d10f533149ed0babe61b5d7b5&#39;,</span>
+<span class="sd">            u&#39;file_size_bytes&#39;: 441388,</span>
+<span class="sd">            u&#39;file_description&#39;: u&#39;Acoustic piano playing middle C.&#39;,</span>
+<span class="sd">            u&#39;audio_attributes&#39;: u&#39;piano, middle C&#39;,</span>
+<span class="sd">            u&#39;file_size&#39;: u&#39;431.0KiB&#39;,</span>
+<span class="sd">            u&#39;date_added&#39;: u&#39;2018-06-01&#39;</span>
+<span class="sd">        }</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        * :func:`print_available_audio_files`, prints a list of the audio files to the console.</span>
+<span class="sd">        * :func:`download_audio_file` to download an audio file from the EFZ.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (list): A list of dicts containing metadata of the available audio files on the nussl</span>
+<span class="sd">        External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># _download_all_metadata() will throw its own errors, so no try block around it</span>
+    <span class="k">return</span> <span class="n">_download_all_metadata</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_AUDIO_METADATA_URL</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="print_available_audio_files"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.print_available_audio_files">[docs]</a><span class="k">def</span> <span class="nf">print_available_audio_files</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prints a message to the console that shows all of the available audio files that are on the</span>
+<span class="sd">    nussl External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        * :func:`get_available_audio_files` to get this same data from the EFZ server as a list.</span>
+<span class="sd">        * :func:`download_audio_file` to download an audio file from the EFZ.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import nussl</span>
+<span class="sd">        &gt;&gt;&gt; nussl.efz_utils.print_available_audio_files()</span>
+<span class="sd">        File Name                                Duration (sec)  Size       Description</span>
+<span class="sd">        dev1_female3_inst_mix.wav                10.0            1.7MiB     Instantaneous mixture of three female speakers talking in a stereo field.</span>
+<span class="sd">        dev1_female3_synthconv_130ms_5cm_mix.wav 10.0            1.7MiB     Three female speakers talking in a stereo field, with 130ms of inter-channel delay.</span>
+<span class="sd">        K0140.wav                                5.0             431.0KiB   Acoustic piano playing middle C.</span>
+<span class="sd">        K0149.wav                                5.0             430.0KiB   Acoustic piano playing the A above middle C. (A440)</span>
+
+<span class="sd">    To download one of these files insert the file name as the first parameter to</span>
+<span class="sd">    :func:`download_audio_file`, like so:</span>
+
+<span class="sd">    &gt;&gt;&gt; nussl.efz_utils.download_audio_file(&#39;K0140.wav&#39;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_metadata</span> <span class="o">=</span> <span class="n">get_available_audio_files</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;File Name&quot;</span><span class="si">:</span><span class="s1">40</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;Duration (sec)&quot;</span><span class="si">:</span><span class="s1">15</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;Size&quot;</span><span class="si">:</span><span class="s1">10</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;Description&quot;</span><span class="si">:</span><span class="s1">50</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">file_metadata</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">40</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_length_seconds&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">15</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_size&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">10</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_description&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">50</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;To download one of these files insert the file name &#39;</span>
+          <span class="s1">&#39;as the first parameter to nussl.download_audio_file(), like so: </span><span class="se">\n</span><span class="s1">&#39;</span>
+          <span class="s1">&#39; &gt;&gt;&gt; nussl.efz_utils.download_audio_file(</span><span class="se">\&#39;</span><span class="s1">K0140.wav</span><span class="se">\&#39;</span><span class="s1">)&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_available_trained_models"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.get_available_trained_models">[docs]</a><span class="k">def</span> <span class="nf">get_available_trained_models</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of dicts containing metadata of the available trained models on the nussl</span>
+<span class="sd">    External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    Each entry in the list is in the following format:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        {</span>
+<span class="sd">            u&#39;for_class&#39;: u&#39;DeepClustering&#39;,</span>
+<span class="sd">            u&#39;visible&#39;: True,</span>
+<span class="sd">            u&#39;file_name&#39;: u&#39;deep_clustering_vocals_44k_long.model&#39;,</span>
+<span class="sd">            u&#39;date_modified&#39;: u&#39;2018-06-01&#39;,</span>
+<span class="sd">            u&#39;file_hash&#39;: u&#39;e09034c2cb43a293ece0b121f113b8e4e1c5a247331c71f40cb9ca38227ccc2c&#39;,</span>
+<span class="sd">            u&#39;file_size_bytes&#39;: 94543355,</span>
+<span class="sd">            u&#39;file_description&#39;: u&#39;Deep clustering for vocal separation trained on augmented DSD100.&#39;,</span>
+<span class="sd">            u&#39;file_size&#39;: u&#39;90.2MiB&#39;,</span>
+<span class="sd">            u&#39;date_added&#39;: u&#39;2018-06-01&#39;</span>
+<span class="sd">        }</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Most of the entries in the dictionary are self-explanatory, but note the ``for_class``</span>
+<span class="sd">        entry. The ``for_class`` entry specifies which `nussl` separation class the given model will</span>
+<span class="sd">        work with. Usually, `nussl` separation classes that require a model will default so</span>
+<span class="sd">        retrieving a model on the EFZ server (if not already found on the user&#39;s machine), but</span>
+<span class="sd">        sometimes it is desirable to use a model other than the default one provided. In this case,</span>
+<span class="sd">        the ``for_class`` entry lets the user know which class it is valid for use with.</span>
+<span class="sd">        Additionally, trying to load a model into a class that it is not explicitly labeled for that</span>
+<span class="sd">        class will raise an exception. Just don&#39;t do it, ok?</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        * :func:`print_available_trained_models`, prints a list of the trained models to</span>
+<span class="sd">            the console.</span>
+<span class="sd">        * :func:`download_trained_model` to download a trained model from the EFZ.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (list): A list of dicts containing metadata of the available trained models on the nussl</span>
+<span class="sd">        External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_download_all_metadata</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_MODEL_METADATA_URL</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="print_available_trained_models"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.print_available_trained_models">[docs]</a><span class="k">def</span> <span class="nf">print_available_trained_models</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prints a message to the console that shows all of the available trained models that are on the</span>
+<span class="sd">    nussl External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Most of the entries in the dictionary are self-explanatory, but note the ``for_class``</span>
+<span class="sd">        entry. The ``for_class`` entry specifies which `nussl` separation class the given model will</span>
+<span class="sd">        work with. Usually, `nussl` separation classes that require a model will default so</span>
+<span class="sd">        retrieving a model on the EFZ server (if not already found on the user&#39;s machine), but</span>
+<span class="sd">        sometimes it is desirable to use a model other than the default one provided. In this case,</span>
+<span class="sd">        the ``for_class`` entry lets the user know which class it is valid for use with.</span>
+<span class="sd">        Additionally, trying to load a model into a class that it is not explicitly labeled for that</span>
+<span class="sd">        class will raise an exception. Just don&#39;t do it, ok?</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        * :func:`get_available_trained_models` to get this same data from the EFZ server as a list.</span>
+<span class="sd">        * :func:`download_trained_model` to download a trained model from the EFZ.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import nussl</span>
+<span class="sd">        &gt;&gt;&gt; nussl.efz_utils.print_available_trained_models()</span>
+<span class="sd">        File Name                                For Class            Size       Description</span>
+<span class="sd">        deep_clustering_model.model              DeepClustering       48.1MiB    example Deep Clustering model</span>
+<span class="sd">        deep_clustering_vocal_44k_long.model     DeepClustering       90.2MiB    trained DC model for vocal extraction</span>
+
+<span class="sd">    To download one of these files insert the file name as the first parameter to download_trained_model(), like so:</span>
+
+<span class="sd">    &gt;&gt;&gt; nussl.efz_utils.download_trained_model(&#39;deep_clustering_model.h5&#39;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_metadata</span> <span class="o">=</span> <span class="n">get_available_trained_models</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;File Name&quot;</span><span class="si">:</span><span class="s1">40</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;For Class&quot;</span><span class="si">:</span><span class="s1">15</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;Size&quot;</span><span class="si">:</span><span class="s1">10</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;Description&quot;</span><span class="si">:</span><span class="s1">50</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">file_metadata</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">40</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;for_class&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">15</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_size&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">10</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_description&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">50</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;To download one of these files insert the file name &#39;</span>
+          <span class="s1">&#39;as the first parameter to nussl.download_trained_model, like so: </span><span class="se">\n</span><span class="s1">&#39;</span>
+          <span class="s1">&#39; &gt;&gt;&gt; nussl.efz_utils.download_trained_model(</span><span class="se">\&#39;</span><span class="s1">deep_clustering_model.h5</span><span class="se">\&#39;</span><span class="s1">)&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_available_benchmark_files"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.get_available_benchmark_files">[docs]</a><span class="k">def</span> <span class="nf">get_available_benchmark_files</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a list of dicts containing metadata of the available benchmark files for tests on the</span>
+<span class="sd">    nussl External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    Each entry in the list is in the following format:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        {</span>
+<span class="sd">            u&#39;for_class&#39;: u&#39;DuetUnitTests&#39;,</span>
+<span class="sd">            u&#39;visible&#39;: True, u&#39;file_name&#39;:</span>
+<span class="sd">            u&#39;benchmark_atn_bins.npy&#39;,</span>
+<span class="sd">            u&#39;date_modified&#39;: u&#39;2018-06-19&#39;,</span>
+<span class="sd">            u&#39;file_hash&#39;: u&#39;cf7fef6f4ea9af3dbde8b9880602eeaf72507b6c78f04097c5e79d34404a8a1f&#39;,</span>
+<span class="sd">            u&#39;file_size_bytes&#39;: 488,</span>
+<span class="sd">            u&#39;file_description&#39;: u&#39;Attenuation bins numpy array for DUET benchmark test.&#39;,</span>
+<span class="sd">            u&#39;file_size&#39;: u&#39;488.0B&#39;,</span>
+<span class="sd">            u&#39;date_added&#39;: u&#39;2018-06-19&#39;</span>
+<span class="sd">        }</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Most of the entries in the dictionary are self-explanatory, but note the `for_class`</span>
+<span class="sd">        entry. The `for_class` entry specifies which `nussl` benchmark class will load the</span>
+<span class="sd">        corresponding benchmark file. Make sure these match exactly when writing tests!</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        * :func:`print_available_benchmark_files`, prints a list of the benchmark files to the</span>
+<span class="sd">            console.</span>
+<span class="sd">        * :func:`download_benchmark_file` to download an benchmark file from the EFZ.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (list): A list of dicts containing metadata of the available audio files on the nussl</span>
+<span class="sd">        External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_download_all_metadata</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_BENCHMARK_METADATA_URL</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="print_available_benchmark_files"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.print_available_benchmark_files">[docs]</a><span class="k">def</span> <span class="nf">print_available_benchmark_files</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prints a message to the console that shows all of the available benchmark files that are on the</span>
+<span class="sd">    nussl External File Zoo (EFZ) server (http://nussl.ci.northwestern.edu/).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import nussl</span>
+<span class="sd">        &gt;&gt;&gt; nussl.efz_utils.print_available_benchmark_files()</span>
+<span class="sd">        File Name                                For Class            Size       Description</span>
+<span class="sd">        mix3_matlab_repet_foreground.mat         TestRepet            6.4MiB     Foreground matrix for Repet class benchmark test.</span>
+<span class="sd">        benchmark_atn_bins.npy                   DuetUnitTests        488.0B     Attenuation bins numpy array for DUET benchmark test.</span>
+<span class="sd">        benchmark_sym_atn.npy                    DuetUnitTests        3.4MiB     Symmetric attenuation histogram for the DUET benchmark test.</span>
+<span class="sd">        benchmark_wmat.npy                       DuetUnitTests        3.4MiB     Frequency matrix for the DUET benchmark test.</span>
+
+<span class="sd">    To download one of these files insert the file name as the first parameter to nussl.download_benchmark_file, like so:</span>
+
+<span class="sd">    &gt;&gt;&gt; nussl.efz_utils.download_benchmark_file(&#39;example.npy&#39;)</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        Most of the entries in the printed list are self-explanatory, but note the ``for_class``</span>
+<span class="sd">        entry. The ``for_class`` entry specifies which `nussl` benchmark class will load the</span>
+<span class="sd">        corresponding benchmark file. Make sure these match exactly when writing tests!</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        * :func:`get_available_benchmark_files`, prints a list of the benchmark files to the</span>
+<span class="sd">            console.</span>
+<span class="sd">        * :func:`download_benchmark_file` to download an benchmark file from the EFZ.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_metadata</span> <span class="o">=</span> <span class="n">get_available_benchmark_files</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;File Name&quot;</span><span class="si">:</span><span class="s1">40</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;For Class&quot;</span><span class="si">:</span><span class="s1">15</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;Size&quot;</span><span class="si">:</span><span class="s1">10</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="s2">&quot;Description&quot;</span><span class="si">:</span><span class="s1">50</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">file_metadata</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_name&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">40</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;for_class&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">15</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_size&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">10</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;file_description&quot;</span><span class="p">]</span><span class="si">:</span><span class="s1">50</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;To download one of these files insert the file name &#39;</span>
+          <span class="s1">&#39;as the first parameter to nussl.download_benchmark_file, like so: </span><span class="se">\n</span><span class="s1">&#39;</span>
+          <span class="s1">&#39; &gt;&gt;&gt; nussl.efz_utils.download_benchmark_file(</span><span class="se">\&#39;</span><span class="s1">example.npy</span><span class="se">\&#39;</span><span class="s1">)&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_download_all_metadata</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the json file that contains all of the metadata for a specific file type (read:</span>
+<span class="sd">    audio files, benchmark files, or trained models) that is on the EFZ server. This is retrieved</span>
+<span class="sd">    from one of following three URLs (which are stored in nussl.constants):</span>
+<span class="sd">    NUSSL_EFZ_AUDIO_METADATA_URL, NUSSL_EFZ_BENCHMARK_METADATA_URL, or NUSSL_EFZ_MODEL_METADATA_URL.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        url (str):  URL for the EFZ server that has metadata. One of these three:</span>
+<span class="sd">            NUSSL_EFZ_AUDIO_METADATA_URL, NUSSL_EFZ_BENCHMARK_METADATA_URL, or</span>
+<span class="sd">            NUSSL_EFZ_MODEL_METADATA_URL.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (list): List of dicts with metadata for the desired file type.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">request</span> <span class="o">=</span> <span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+    <span class="c1"># Make sure to get the newest data</span>
+    <span class="n">request</span><span class="o">.</span><span class="n">add_header</span><span class="p">(</span><span class="s1">&#39;Pragma&#39;</span><span class="p">,</span> <span class="s1">&#39;no-cache&#39;</span><span class="p">)</span>
+    <span class="n">request</span><span class="o">.</span><span class="n">add_header</span><span class="p">(</span><span class="s1">&#39;Cache-Control&#39;</span><span class="p">,</span> <span class="s1">&#39;max-age=0&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">urlopen</span><span class="p">(</span><span class="n">request</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">NoConnectivityError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t connect to internet&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_download_metadata_for_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">file_type</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the metadata entry for a specific file (:param:`file_name`) on the EFZ server.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file_name (str): File name as specified on the EFZ server.</span>
+<span class="sd">        file_type (str): &#39;Type&#39; of file, either &#39;audio&#39;, &#39;model&#39;, or &#39;benchmark&#39;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (dict) Metadata entry for the specified file, or ``None`` if it could not be located.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">metadata_urls</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;audio&#39;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_AUDIO_METADATA_URL</span><span class="p">,</span>
+        <span class="s1">&#39;benchmark&#39;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_BENCHMARK_METADATA_URL</span><span class="p">,</span>
+        <span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_MODEL_METADATA_URL</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">file_type</span> <span class="ow">in</span> <span class="n">metadata_urls</span><span class="p">:</span>
+        <span class="n">metadata_url</span> <span class="o">=</span> <span class="n">metadata_urls</span><span class="p">[</span><span class="n">file_type</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># wrong file type, return</span>
+        <span class="k">raise</span> <span class="n">MetadataError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot find metadata of type </span><span class="si">{</span><span class="n">file_type</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="n">_download_all_metadata</span><span class="p">(</span><span class="n">metadata_url</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">file_metadata</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;file_name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">file_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">file_metadata</span>
+
+    <span class="k">raise</span> <span class="n">MetadataError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">&#39;No matching metadata for file </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="sa">f</span><span class="s1">&#39; at url </span><span class="si">{</span><span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_AUDIO_METADATA_URL</span><span class="si">}</span><span class="s1">!&#39;</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="download_audio_file"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.download_audio_file">[docs]</a><span class="k">def</span> <span class="nf">download_audio_file</span><span class="p">(</span><span class="n">audio_file_name</span><span class="p">,</span> <span class="n">local_folder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the specified audio file from the `nussl` External File Zoo (EFZ) server. The</span>
+<span class="sd">    downloaded file is stored in :param:`local_folder` if a folder is provided. If a folder is</span>
+<span class="sd">    not provided, `nussl` attempts to save the downloaded file in `~/.nussl/` (expanded) or in</span>
+<span class="sd">    `tmp/.nussl`. If the requested file is already in :param:`local_folder` (or one of the two</span>
+<span class="sd">    aforementioned directories) and the calculated hash matches the precomputed hash from the EFZ</span>
+<span class="sd">    server metadata, then the file will not be downloaded.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        audio_file_name: (str) Name of the audio file to attempt to download.</span>
+<span class="sd">        local_folder: (str) Path to local folder in which to download the file.</span>
+<span class="sd">            If no folder is provided, `nussl` will store the file in `~/.nussl/` (expanded) or in</span>
+<span class="sd">            `/tmp/.nussl`.</span>
+<span class="sd">        verbose (bool): If ``True`` prints the status of the download to the console.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (String) Full path to the requested file (whether downloaded or not).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import nussl</span>
+<span class="sd">        &gt;&gt;&gt; piano_path = nussl.efz_utils.download_audio_file(&#39;K0140.wav&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; piano_signal = nussl.AudioSignal(piano_path)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_metadata</span> <span class="o">=</span> <span class="n">_download_metadata_for_file</span><span class="p">(</span><span class="n">audio_file_name</span><span class="p">,</span> <span class="s1">&#39;audio&#39;</span><span class="p">)</span>
+
+    <span class="n">file_hash</span> <span class="o">=</span> <span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;file_hash&#39;</span><span class="p">]</span>
+
+    <span class="n">file_url</span> <span class="o">=</span> <span class="n">urljoin</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_AUDIO_URL</span><span class="p">,</span> <span class="n">audio_file_name</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_download_file</span><span class="p">(</span><span class="n">audio_file_name</span><span class="p">,</span> <span class="n">file_url</span><span class="p">,</span> <span class="n">local_folder</span><span class="p">,</span> <span class="s1">&#39;audio&#39;</span><span class="p">,</span>
+                            <span class="n">file_hash</span><span class="o">=</span><span class="n">file_hash</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="download_trained_model"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.download_trained_model">[docs]</a><span class="k">def</span> <span class="nf">download_trained_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">local_folder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the specified trained model from the `nussl` External File Zoo (EFZ) server. The</span>
+<span class="sd">    downloaded file is stored in :param:`local_folder` if a folder is provided. If a folder is</span>
+<span class="sd">    not provided, `nussl` attempts to save the downloaded file in `~/.nussl/` (expanded) or in</span>
+<span class="sd">    `tmp/.nussl`. If the requested file is already in :param:`local_folder` (or one of the two</span>
+<span class="sd">    aforementioned directories) and the calculated hash matches the precomputed hash from the EFZ</span>
+<span class="sd">    server metadata, then the file will not be downloaded.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model_name: (str) Name of the trained model to attempt to download.</span>
+<span class="sd">        local_folder: (str) Path to local folder in which to download the file.</span>
+<span class="sd">            If no folder is provided, `nussl` will store the file in `~/.nussl/` (expanded) or in</span>
+<span class="sd">            `/tmp/.nussl`.</span>
+<span class="sd">        verbose (bool): If ``True`` prints the status of the download to the console.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (String) Full path to the requested file (whether downloaded or not).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import nussl</span>
+<span class="sd">        &gt;&gt;&gt; model_path = nussl.efz_utils.download_trained_model(&#39;deep_clustering_model.h5&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; signal = nussl.AudioSignal()</span>
+<span class="sd">        &gt;&gt;&gt; piano_signal = nussl.DeepClustering(signal, model_path=model_path)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_metadata</span> <span class="o">=</span> <span class="n">_download_metadata_for_file</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">)</span>
+
+    <span class="n">file_hash</span> <span class="o">=</span> <span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;file_hash&#39;</span><span class="p">]</span>
+
+    <span class="n">file_url</span> <span class="o">=</span> <span class="n">urljoin</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_MODELS_URL</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_download_file</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">file_url</span><span class="p">,</span> <span class="n">local_folder</span><span class="p">,</span> <span class="s1">&#39;models&#39;</span><span class="p">,</span>
+                            <span class="n">file_hash</span><span class="o">=</span><span class="n">file_hash</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="download_benchmark_file"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.download_benchmark_file">[docs]</a><span class="k">def</span> <span class="nf">download_benchmark_file</span><span class="p">(</span><span class="n">benchmark_name</span><span class="p">,</span> <span class="n">local_folder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the specified benchmark file from the `nussl` External File Zoo (EFZ) server. The</span>
+<span class="sd">    downloaded file is stored in :param:`local_folder` if a folder is provided. If a folder is</span>
+<span class="sd">    not provided, `nussl` attempts to save the downloaded file in `~/.nussl/` (expanded) or in</span>
+<span class="sd">    `/tmp/.nussl`. If the requested file is already in :param:`local_folder` (or one of the two</span>
+<span class="sd">    aforementioned directories) and the calculated hash matches the precomputed hash from the EFZ</span>
+<span class="sd">    server metadata, then the file will not be downloaded.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        benchmark_name: (str) Name of the trained model to attempt to download.</span>
+<span class="sd">        local_folder: (str) Path to local folder in which to download the file.</span>
+<span class="sd">            If no folder is provided, `nussl` will store the file in `~/.nussl/` (expanded) or in</span>
+<span class="sd">            `tmp/.nussl`.</span>
+<span class="sd">        verbose (bool): If ``True`` prints the status of the download to the console.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (String) Full path to the requested file (whether downloaded or not).</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; import nussl</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; stm_atn_path = nussl.efz_utils.download_benchmark_file(&#39;benchmark_sym_atn.npy&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; sym_atm = np.load(stm_atn_path)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_metadata</span> <span class="o">=</span> <span class="n">_download_metadata_for_file</span><span class="p">(</span><span class="n">benchmark_name</span><span class="p">,</span> <span class="s1">&#39;benchmark&#39;</span><span class="p">)</span>
+
+    <span class="n">file_hash</span> <span class="o">=</span> <span class="n">file_metadata</span><span class="p">[</span><span class="s1">&#39;file_hash&#39;</span><span class="p">]</span>
+
+    <span class="n">file_url</span> <span class="o">=</span> <span class="n">urljoin</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">NUSSL_EFZ_BENCHMARKS_URL</span><span class="p">,</span> <span class="n">benchmark_name</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_download_file</span><span class="p">(</span><span class="n">benchmark_name</span><span class="p">,</span> <span class="n">file_url</span><span class="p">,</span> <span class="n">local_folder</span><span class="p">,</span> <span class="s1">&#39;benchmarks&#39;</span><span class="p">,</span>
+                            <span class="n">file_hash</span><span class="o">=</span><span class="n">file_hash</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<span class="k">def</span> <span class="nf">_download_file</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">local_folder</span><span class="p">,</span> <span class="n">cache_subdir</span><span class="p">,</span>
+                   <span class="n">file_hash</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Downloads the specified file from the</span>
+
+<span class="sd">    Heavily inspired by and lovingly adapted from keras&#39; `get_file` function:</span>
+<span class="sd">    https://github.com/fchollet/keras/blob/afbd5d34a3bdbb0916d558f96af197af1e92ce70/keras/utils/data_utils.py#L109</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file_name: (String) name of the file located on the server</span>
+<span class="sd">        url: (String) url of the file</span>
+<span class="sd">        local_folder: (String) alternate folder in which to download the file</span>
+<span class="sd">        cache_subdir: (String) subdirectory of folder in which to download flie</span>
+<span class="sd">        file_hash: (String) expected hash of downloaded file</span>
+<span class="sd">        cache_dir:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (String) local path to downloaded file</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">local_folder</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">]:</span>
+        <span class="c1"># local folder provided, let&#39;s create it if it doesn&#39;t exist and use it as datadir</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">local_folder</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">local_folder</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cache_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">,</span> <span class="s1">&#39;.nussl&#39;</span><span class="p">))</span>
+        <span class="n">datadir_base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">datadir_base</span><span class="p">,</span> <span class="n">cache_subdir</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+
+    <span class="n">download</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">file_hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># compare the provided hash with the hash of the file currently at file_path</span>
+            <span class="n">current_hash</span> <span class="o">=</span> <span class="n">_hash_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+            <span class="c1"># if the hashes are equal, we already have the file we need, so don&#39;t download</span>
+            <span class="k">if</span> <span class="n">file_hash</span> <span class="o">!=</span> <span class="n">current_hash</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Hash for </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s1"> does not match known hash. &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39; Downloading </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1"> from servers...&#39;</span>
+                    <span class="p">)</span>
+                <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Matching file found at </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s1">, skipping download.&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">download</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Saving file at </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="se">\n</span><span class="s1">Downloading </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1"> from </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_dl_progress</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">total_size</span><span class="p">):</span>
+            <span class="n">percent</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">count</span> <span class="o">*</span> <span class="n">block_size</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">/</span> <span class="n">total_size</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">percent</span> <span class="o">&lt;=</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\r</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s1">...</span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s1">%&#39;</span><span class="p">)</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">reporthook</span> <span class="o">=</span> <span class="n">_dl_progress</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">file_path</span><span class="p">,</span> <span class="n">reporthook</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">()</span>  <span class="c1"># print a new line after the progress is done.</span>
+
+            <span class="k">except</span> <span class="n">HTTPError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FailedDownloadError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;URL fetch failure on </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">code</span><span class="si">}</span><span class="s1"> -- </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">msg</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">URLError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">FailedDownloadError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;URL fetch failure on </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">errno</span><span class="si">}</span><span class="s1"> -- </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">Exception</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="c1"># check hash of received file to see if it matches the provided hash</span>
+        <span class="k">if</span> <span class="n">file_hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">download_hash</span> <span class="o">=</span> <span class="n">_hash_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">file_hash</span> <span class="o">!=</span> <span class="n">download_hash</span><span class="p">:</span>
+                <span class="c1"># the downloaded file is not what it should be. Get rid of it.</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">MismatchedHashError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;Deleted downloaded file (</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s1">) because of a hash mismatch.&#39;</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">file_path</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">file_path</span>
+
+
+<span class="k">def</span> <span class="nf">_hash_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the hash of every child file in the given directory using python&#39;s built-in SHA256</span>
+<span class="sd">    function (using `os.walk()`, which also searches subdirectories recursively). If :param:`ext`</span>
+<span class="sd">    is specified, this will only look at files with extension provided.</span>
+
+<span class="sd">    This function is used to verify the integrity of data sets for use with nussl. Pretty much</span>
+<span class="sd">    just makes sure that when we loop through/look at a directory, we understand the structure</span>
+<span class="sd">    because the organization of the data set directories for different data sets are all unique</span>
+<span class="sd">    and thus need to be hard coded by each generator function (below). If we get a hash mismatch</span>
+<span class="sd">    we can throw an error easily.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        directory (str): Directory within which file hashes get calculated. Searches recursively.</span>
+<span class="sd">        ext (str): If provided, this function will only calculate the hash on files with the given</span>
+<span class="sd">            extension.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (str): String containing only hexadecimal digits of the has of the</span>
+<span class="sd">            contents of the given directory.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hash_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">sub_dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ext</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hash_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">_hash_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span>
+                              <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="p">))])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hash_list</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">_hash_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span>
+                              <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+                              <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">ext</span><span class="p">])</span>
+
+    <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">hash_val</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">hash_list</span><span class="p">):</span>  <span class="c1"># Sort this list so we&#39;re platform agnostic</span>
+        <span class="n">hasher</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">hash_val</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">hasher</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_hash_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">65535</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        file_path: System path to the file to be hashed</span>
+<span class="sd">        chunk_size: size of chunks</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        file_hash: the SHA256 hashed string in hex</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hasher</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fpath_file</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">fpath_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">),</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="n">hasher</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">hasher</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+
+<span class="c1">########################################</span>
+<span class="c1">#             Error Classes</span>
+<span class="c1">########################################</span>
+
+
+<div class="viewcode-block" id="NoConnectivityError"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.NoConnectivityError">[docs]</a><span class="k">class</span> <span class="nc">NoConnectivityError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exception class for lack of internet connection.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="FailedDownloadError"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.FailedDownloadError">[docs]</a><span class="k">class</span> <span class="nc">FailedDownloadError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exception class for failed file downloads.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MismatchedHashError"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.MismatchedHashError">[docs]</a><span class="k">class</span> <span class="nc">MismatchedHashError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exception class for when a computed hash function does match a pre-computed hash.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MetadataError"><a class="viewcode-back" href="../../../core.html#nussl.core.efz_utils.MetadataError">[docs]</a><span class="k">class</span> <span class="nc">MetadataError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exception class for errors with metadata.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

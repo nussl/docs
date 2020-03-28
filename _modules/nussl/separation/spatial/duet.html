@@ -1,0 +1,592 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.separation.spatial.duet &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.separation.spatial.duet</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.separation.spatial.duet</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span>
+<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">constants</span>
+
+
+<div class="viewcode-block" id="Duet"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.spatial.Duet">[docs]</a><span class="k">class</span> <span class="nc">Duet</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The DUET algorithm was originally proposed by S.Rickard and F.Dietrich for DOA </span>
+<span class="sd">    estimation and further developed for BSS and demixing by A. Jourjine, S.Rickard, </span>
+<span class="sd">    and O. Yilmaz. </span>
+<span class="sd">    </span>
+<span class="sd">    DUET extracts sources using the symmetric attenuation and relative delay between </span>
+<span class="sd">    two channels. The symmetric attenuation is calculated from the ratio of the two </span>
+<span class="sd">    channels&#39; stft amplitudes, and the delay is the arrival delay between the two </span>
+<span class="sd">    sensors used to record the audio signal. These two values are clustered as peaks on </span>
+<span class="sd">    a histogram to determine where each source occurs. This implementation of DUET </span>
+<span class="sd">    creates and returns Mask objects after the run() function, which can then be </span>
+<span class="sd">    applied to the original audio signal to extract each individual source.</span>
+
+<span class="sd">    References:</span>
+
+<span class="sd">    [1] Rickard, Scott. &quot;The DUET blind source separation algorithm.&quot; </span>
+<span class="sd">        Blind Speech Separation. Springer Netherlands, 2007. 217-241.</span>
+
+<span class="sd">    [2] Yilmaz, Ozgur, and Scott Rickard. &quot;Blind separation of speech mixtures </span>
+<span class="sd">        via time-frequency masking.&quot; </span>
+<span class="sd">        Signal Processing, IEEE transactions on 52.7 (2004): 1830-1847.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_audio_signal (np.array): a 2-row Numpy matrix containing samples of the</span>
+<span class="sd">          two-channel mixture.</span>
+
+<span class="sd">        num_sources (int): Number of sources to find.</span>
+
+<span class="sd">        attenuation_min (int): Minimum distance in utils.find_peak_indices, change if </span>
+<span class="sd">          not enough peaks are identified.</span>
+
+<span class="sd">        attenuation_max (int): Used for creating a histogram without outliers.</span>
+
+<span class="sd">        num_attenuation_bins (int): Number of bins for attenuation. </span>
+
+<span class="sd">        delay_min (int): Lower bound on delay, used as minimum distance in </span>
+<span class="sd">          utils.find_peak_indices.</span>
+
+<span class="sd">        delay_max (int): Upper bound on delay, used for creating a histogram without </span>
+<span class="sd">          outliers.</span>
+
+<span class="sd">        num_delay_bins (int): Number of bins for delay. </span>
+
+<span class="sd">        peak_threshold (float): Value in [0, 1] for peak picking. </span>
+
+<span class="sd">        attenuation_min_distance (int): Minimum distance between peaks wrt attenuation.</span>
+
+<span class="sd">        delay_min_distance (int): Minimum distance between peaks wrt delay.</span>
+
+<span class="sd">        p (int): Weight the histogram with the symmetric attenuation estimator.</span>
+
+<span class="sd">        q (int): Weight the histogram with the delay estimato</span>
+<span class="sd">        </span>
+<span class="sd">    Notes:</span>
+
+<span class="sd">        On page 8 of his paper, Rickard recommends p=1 and q=0 as a default starting </span>
+<span class="sd">        point and p=.5, q=0 if one source is more dominant.</span>
+
+<span class="sd">    Attributes:</span>
+
+<span class="sd">        stft_ch0 (np.array): A Numpy matrix containing the stft data of channel 0.</span>
+
+<span class="sd">        stft_ch1 (np.array): A Numpy matrix containing the stft data of channel 1.</span>
+
+<span class="sd">        frequency_matrix (np.array): A Numpy matrix containing the frequencies of </span>
+<span class="sd">          analysis.</span>
+
+<span class="sd">        symmetric_atn (np.array): A Numpy matrix containing the symmetric attenuation </span>
+<span class="sd">          between the two channels.</span>
+
+<span class="sd">        delay (np.array): A Numpy matrix containing the delay between the two channels.</span>
+
+<span class="sd">        num_time_bins (np.array): The number of time bins for the frequency matrix and </span>
+<span class="sd">          mask arrays.</span>
+
+<span class="sd">        num_frequency_bins (int): The number of frequency bins for the mask arrays.</span>
+
+<span class="sd">        attenuation_bins (int): A Numpy array containing the attenuation bins for the </span>
+<span class="sd">          histogram.</span>
+
+<span class="sd">        delay_bins (np.array): A Numpy array containing the delay bins for the histogram.</span>
+
+<span class="sd">        normalized_attenuation_delay_histogram (np.array): A normalized Numpy matrix </span>
+<span class="sd">          containing the attenuation delay histogram, which has peaks for each source.</span>
+
+<span class="sd">        attenuation_delay_histogram (np.array): A non-normalized Numpy matrix containing </span>
+<span class="sd">          the attenuation delay histogram, which has peaks for each source.</span>
+
+<span class="sd">        peak_indices (np.array): A Numpy array containing the indices of the peaks for </span>
+<span class="sd">          the histogram.</span>
+
+<span class="sd">        separated_sources (np.array): A Numpy array of arrays containing each </span>
+<span class="sd">          separated source.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">,</span>
+                 <span class="n">attenuation_min</span><span class="o">=-</span><span class="mi">3</span><span class="p">,</span> <span class="n">attenuation_max</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_attenuation_bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                 <span class="n">delay_min</span><span class="o">=-</span><span class="mi">3</span><span class="p">,</span> <span class="n">delay_max</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_delay_bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                 <span class="n">peak_threshold</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">attenuation_min_distance</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">delay_min_distance</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> 
+                 <span class="n">p</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span>
+            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_sources</span> <span class="o">=</span> <span class="n">num_sources</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_min</span> <span class="o">=</span> <span class="n">attenuation_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_max</span> <span class="o">=</span> <span class="n">attenuation_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_attenuation_bins</span> <span class="o">=</span> <span class="n">num_attenuation_bins</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay_min</span> <span class="o">=</span> <span class="n">delay_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay_max</span> <span class="o">=</span> <span class="n">delay_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_delay_bins</span> <span class="o">=</span> <span class="n">num_delay_bins</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_threshold</span> <span class="o">=</span> <span class="n">peak_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_min_distance</span> <span class="o">=</span> <span class="n">attenuation_min_distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay_min_distance</span> <span class="o">=</span> <span class="n">delay_min_distance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch0</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_matrix</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symmetric_atn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_time_bins</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_frequency_bins</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_bins</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay_bins</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalized_attenuation_delay_histogram</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_delay_histogram</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_indices</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay_peak</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atn_peak</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">separated_sources</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Extracts N sources from a given stereo audio mixture (N sources captured via 2 sensors)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            computed_masks (np.array): A list of binary mask objects that can be used to extract the sources</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">            :linenos:</span>
+
+<span class="sd">            #Import input audio signal</span>
+<span class="sd">            input_file_name = &#39;../Input/dev1_female3_inst_mix.wav&#39;</span>
+<span class="sd">            signal = AudioSignal(path_to_input_file=input_file_name)</span>
+
+<span class="sd">            # Set up and run Duet</span>
+<span class="sd">            duet = Duet(signal, a_min=-3, a_max=3, a_num=50, d_min=-3, d_max=3, d_num=50, threshold=0.2,</span>
+<span class="sd">            a_min_distance=5, d_min_distance=5, num_sources=3)</span>
+<span class="sd">            duet.run()</span>
+
+<span class="sd">            # plot histogram results</span>
+<span class="sd">            duet.plot(os.path.join(&#39;..&#39;, &#39;Output&#39;, &#39;duet_2d.png&#39;))</span>
+<span class="sd">            duet.plot(os.path.join(&#39;..&#39;, &#39;Output&#39;, &#39;duet_3d.png&#39;), three_d_plot=True)</span>
+
+<span class="sd">            # Create output file for each source found</span>
+<span class="sd">            output_name_stem = os.path.join(&#39;..&#39;, &#39;Output&#39;, &#39;duet_source&#39;)</span>
+<span class="sd">            i = 1</span>
+<span class="sd">            for s in duet.make_audio_signals():</span>
+<span class="sd">                output_file_name = f&quot;{output_name_stem}{i}.wav&quot;</span>
+<span class="sd">                s.write_audio_to_file(output_file_name)</span>
+<span class="sd">                i += 1</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Calculate the stft of both channels and create the frequency matrix (the matrix containing the</span>
+        <span class="c1">#  frequencies of analysis of the Fourier transform)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_spectrogram</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
+
+        <span class="c1"># Calculate the symmetric attenuation (alpha) and delay (delta) for each</span>
+        <span class="c1"># time-freq. point and return a matrix for each</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">symmetric_atn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_atn_delay</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_matrix</span><span class="p">)</span>
+
+        <span class="c1"># Make histogram of attenuation-delay values and get the center values for the bins in this histogram</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normalized_attenuation_delay_histogram</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_bins</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_bins</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_make_histogram</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Find the location of peaks in the attenuation-delay plane</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peak_indices</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">find_peak_indices</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalized_attenuation_delay_histogram</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_sources</span><span class="p">,</span>
+            <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_threshold</span><span class="p">,</span> 
+            <span class="n">min_dist</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">attenuation_min_distance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_min_distance</span><span class="p">])</span>
+
+        <span class="c1"># compute delay_peak, attenuation peak, and attenuation/delay estimates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay_peak</span><span class="p">,</span> <span class="n">atn_delay_est</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">atn_peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_peaks</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">peak_indices</span><span class="p">)</span>
+
+        <span class="c1"># compute masks for separation</span>
+        <span class="n">computed_masks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_masks</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">computed_masks</span>
+
+    <span class="k">def</span> <span class="nf">_compute_spectrogram</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Creates the STFT matrices for channel 0 and 1, and computes the frequency matrix.</span>
+<span class="sd">        Parameter:</span>
+<span class="sd">            sample_rate (integer): sample rate</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            stft_ch0 (np.matrix): a 2D Numpy matrix containing the stft of channel 0</span>
+<span class="sd">            stft_ch1 (np.matrix): a 2D Numpy matrix containing the stft of channel 1</span>
+<span class="sd">            wmat (np.matrix): a 2D Numpy matrix containing the frequencies of analysis of the Fourier transform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Compute the stft of the two channel mixtures</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
+
+        <span class="n">stft_ch0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">get_stft_channel</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">stft_ch1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">get_stft_channel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Compute the freq. matrix for later use in phase calculations</span>
+        <span class="n">n_time_bins</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">time_bins_vector</span><span class="p">)</span>
+        <span class="n">wmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mat</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">freq_vector</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_time_bins</span><span class="p">)))</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="n">sample_rate</span><span class="p">)</span>
+        <span class="n">wmat</span> <span class="o">+=</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span>
+        <span class="k">return</span> <span class="n">stft_ch0</span><span class="p">,</span> <span class="n">stft_ch1</span><span class="p">,</span> <span class="n">wmat</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_compute_atn_delay</span><span class="p">(</span><span class="n">stft_ch0</span><span class="p">,</span> <span class="n">stft_ch1</span><span class="p">,</span> <span class="n">frequency_matrix</span><span class="p">):</span>
+        <span class="c1"># Calculate the symmetric attenuation (alpha) and delay (delta) for each</span>
+        <span class="c1"># time-freq. point</span>
+        <span class="n">inter_channel_ratio</span> <span class="o">=</span> <span class="p">(</span><span class="n">stft_ch1</span> <span class="o">+</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">stft_ch0</span> <span class="o">+</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span><span class="p">)</span>
+        <span class="n">attenuation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">inter_channel_ratio</span><span class="p">)</span>  <span class="c1"># relative attenuation between the two channels</span>
+        <span class="n">symmetric_attenuation</span> <span class="o">=</span> <span class="n">attenuation</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">attenuation</span>  <span class="c1"># symmetric attenuation</span>
+        <span class="n">relative_delay</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">inter_channel_ratio</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">frequency_matrix</span><span class="p">)</span>  <span class="c1"># relative delay</span>
+        <span class="k">return</span> <span class="n">symmetric_attenuation</span><span class="p">,</span> <span class="n">relative_delay</span>
+
+    <span class="k">def</span> <span class="nf">_make_histogram</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receives the stft of the two channel mixtures and the frequency matrix to a create</span>
+<span class="sd">        a smooth and normalized histogram.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        stft_ch0 (complex np.array): a 2D Numpy matrix containing the stft of channel 0</span>
+<span class="sd">        stft_ch1 (complex np.array): a 2D Numpy matrix containing the stft of channel 1</span>
+<span class="sd">        symmetric_atn (np.array): the symmetric attenuation between two channels</span>
+<span class="sd">        delay (np.array): the time delay between 2 channels</span>
+<span class="sd">        wmat(np.array): a 2D Numpy matrix containing the frequency matrix of the signal</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            histogram (np.array): a smooth and normalized histogram</span>
+<span class="sd">            atn_bins (np.array): The range of attenuation values distributed into bins</span>
+<span class="sd">            delay_bins (np.array): The range of delay values distributed into bins</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># calculate the weighted histogram</span>
+        <span class="n">time_frequency_weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_ch0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_ch1</span><span class="p">))</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">*</span> \
+                                 <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_matrix</span><span class="p">))</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span>
+
+        <span class="c1"># only consider time-freq. points yielding estimates in bounds</span>
+        <span class="n">attenuation_premask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attenuation_min</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">symmetric_atn</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">symmetric_atn</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_max</span><span class="p">)</span>
+
+        <span class="n">delay_premask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">delay_min</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_max</span><span class="p">)</span>
+        <span class="n">attenuation_delay_premask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">attenuation_premask</span><span class="p">,</span> <span class="n">delay_premask</span><span class="p">)</span>
+
+        <span class="n">nonzero_premask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">attenuation_delay_premask</span><span class="p">)</span>
+        <span class="n">symmetric_attenuation_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">symmetric_atn</span><span class="p">[</span><span class="n">nonzero_premask</span><span class="p">]</span>
+        <span class="n">delay_vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">[</span><span class="n">nonzero_premask</span><span class="p">]</span>
+        <span class="n">time_frequency_weights_vector</span> <span class="o">=</span> <span class="n">time_frequency_weights</span><span class="p">[</span><span class="n">nonzero_premask</span><span class="p">]</span>
+
+        <span class="n">bins_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">num_attenuation_bins</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_delay_bins</span><span class="p">])</span>
+        <span class="n">range_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">attenuation_min</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_max</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">delay_min</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_max</span><span class="p">]])</span>
+
+        <span class="c1"># compute the histogram</span>
+        <span class="n">histogram</span><span class="p">,</span> <span class="n">atn_bins</span><span class="p">,</span> <span class="n">delay_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span><span class="n">symmetric_attenuation_vector</span><span class="p">,</span> <span class="n">delay_vector</span><span class="p">,</span>
+                                                         <span class="n">bins</span><span class="o">=</span><span class="n">bins_array</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="n">range_array</span><span class="p">,</span>
+                                                         <span class="n">weights</span><span class="o">=</span><span class="n">time_frequency_weights_vector</span><span class="p">)</span>
+
+        <span class="c1"># Save non-normalized as an option for plotting later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_delay_histogram</span> <span class="o">=</span> <span class="n">histogram</span>
+
+        <span class="c1"># Scale histogram from 0 to 1</span>
+        <span class="n">histogram</span> <span class="o">/=</span> <span class="n">histogram</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="c1"># smooth the normalized histogram - local average 3-by-3 neighboring bins</span>
+        <span class="n">histogram</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_smooth_matrix</span><span class="p">(</span><span class="n">histogram</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">histogram</span><span class="p">,</span> <span class="n">atn_bins</span><span class="p">,</span> <span class="n">delay_bins</span>
+
+    <span class="k">def</span> <span class="nf">_convert_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_indices</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receives the attenuation and delay bins and computes the delay/attenuation</span>
+<span class="sd">        peaks based on the peak finder indices.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            delay_peak(np.array): The delay peaks determined from the histogram</span>
+<span class="sd">            atn_delay_est (np.array): The estimated symmetric attenuation and delay values</span>
+<span class="sd">            atn_peak (np.array): Attenuation converted from symmetric attenuation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">atn_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">peak_indices</span><span class="p">]</span>
+        <span class="n">delay_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">peak_indices</span><span class="p">]</span>
+
+        <span class="n">symmetric_atn_peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attenuation_bins</span><span class="p">[</span><span class="n">atn_indices</span><span class="p">]</span>
+        <span class="n">delay_peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_bins</span><span class="p">[</span><span class="n">delay_indices</span><span class="p">]</span>
+
+        <span class="n">atn_delay_est</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">symmetric_atn_peak</span><span class="p">,</span> <span class="n">delay_peak</span><span class="p">))</span>
+
+        <span class="c1"># convert symmetric_atn to atn_peak using formula from Rickard</span>
+        <span class="n">atn_peak</span> <span class="o">=</span> <span class="p">(</span><span class="n">symmetric_atn_peak</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">symmetric_atn_peak</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">4</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">delay_peak</span><span class="p">,</span> <span class="n">atn_delay_est</span><span class="p">,</span> <span class="n">atn_peak</span>
+
+    <span class="k">def</span> <span class="nf">_compute_masks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receives the attenuation and delay peaks and computes a mask to be applied to the signal for source</span>
+<span class="sd">        separation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># compute masks for separation</span>
+        <span class="n">best_so_far</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_ch0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_sources</span><span class="p">):</span>
+            <span class="n">mask_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_ch0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_matrix</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">delay_peak</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atn_peak</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">phase</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_ch1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">atn_peak</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">score</span> <span class="o">&lt;</span> <span class="n">best_so_far</span><span class="p">)</span>
+            <span class="n">mask_array</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">background_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mask_array</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">background_mask</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_xor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            <span class="n">best_so_far</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+        <span class="c1"># Compute first mask based on what the other masks left remaining</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_smooth_matrix</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">kernel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs two-dimensional convolution in order to smooth the values of matrix elements.</span>
+
+<span class="sd">        (similar to low-pass filtering)</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            matrix (np.array): a 2D Numpy matrix to be smoothed</span>
+<span class="sd">            kernel (np.array): a 2D Numpy matrix containing kernel values</span>
+<span class="sd">        Note:</span>
+<span class="sd">            if Kernel is of size 1 by 1 (scalar), a Kernel by Kernel matrix of 1/Kernel**2 will be used as the matrix</span>
+<span class="sd">            averaging kernel</span>
+<span class="sd">        Output:</span>
+<span class="sd">            smoothed_matrix (np.array): a 2D Numpy matrix containing a smoothed version of Mat (same size as Mat)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># check the dimensions of the Kernel matrix and set the values of the averaging</span>
+        <span class="c1"># matrix, kernel_matrix</span>
+        <span class="n">kernel_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">/</span> <span class="n">kernel</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">krow</span><span class="p">,</span> <span class="n">kcol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">kernel_matrix</span><span class="p">)</span>
+
+        <span class="c1"># adjust the matrix dimension for convolution</span>
+        <span class="n">copy_row</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">krow</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># number of rows to copy on top and bottom</span>
+        <span class="n">copy_col</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">kcol</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># number of columns to copy on either side</span>
+
+        <span class="c1"># TODO: This is very ugly. Make this readable.</span>
+        <span class="c1"># form the augmented matrix (rows and columns added to top, bottom, and sides)</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mat</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>  <span class="c1"># make sure Mat is a Numpy matrix</span>
+        <span class="n">augmented_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">copy_row</span><span class="p">,</span> <span class="n">copy_col</span><span class="p">)),</span>
+                     <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">copy_row</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:],</span>
+                     <span class="n">matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">copy_row</span><span class="p">,</span> <span class="n">copy_col</span><span class="p">))</span>
+                     <span class="p">]),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">matrix</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy_col</span><span class="p">)),</span>
+                     <span class="n">matrix</span><span class="p">,</span>
+                     <span class="n">matrix</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">copy_col</span><span class="p">))]),</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">copy_row</span><span class="p">,</span> <span class="n">copy_col</span><span class="p">)),</span>
+                     <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">copy_row</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="n">matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span>
+                     <span class="n">matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">copy_row</span><span class="p">,</span> <span class="n">copy_col</span><span class="p">))</span>
+                     <span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># perform two-dimensional convolution between the input matrix and the kernel</span>
+        <span class="n">smooted_matrix</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">convolve2d</span><span class="p">(</span><span class="n">augmented_matrix</span><span class="p">,</span> <span class="n">kernel_matrix</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;valid&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">smooted_matrix</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

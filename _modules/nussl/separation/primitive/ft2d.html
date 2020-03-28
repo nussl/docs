@@ -1,0 +1,451 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.separation.primitive.ft2d &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.separation.primitive.ft2d</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.separation.primitive.ft2d</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage.filters</span> <span class="kn">import</span> <span class="n">maximum_filter</span><span class="p">,</span> <span class="n">minimum_filter</span><span class="p">,</span> <span class="n">uniform_filter</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span><span class="p">,</span> <span class="n">SeparationException</span>
+<span class="kn">from</span> <span class="nn">..benchmark</span> <span class="kn">import</span> <span class="n">HighLowPassFilter</span>
+
+
+<div class="viewcode-block" id="FT2D"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.FT2D">[docs]</a><span class="k">class</span> <span class="nc">FT2D</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This separation method is based on using 2DFT image processing for source</span>
+<span class="sd">    separation [1].</span>
+
+<span class="sd">    The algorithm has five main steps:</span>
+
+<span class="sd">    1. Take the 2DFT of Magnitude STFT.</span>
+<span class="sd">    2. Identify peaks in the 2DFT (these correspond to repeating patterns).</span>
+<span class="sd">    3. Mask everything but the peaks and invert the masked 2DFT back to a magnitude STFT.</span>
+<span class="sd">    4. Take the residual peakless 2DFT and invert that to a magnitude STFT.</span>
+<span class="sd">    5. Compare the two magnitude STFTs to construct masks for the foreground and</span>
+<span class="sd">       the background.</span>
+
+<span class="sd">    The algorithm runs on each channel independently. The masks can be constructed</span>
+<span class="sd">    in two ways: either using the background (peaky) 2DFT as the reference for making </span>
+<span class="sd">    masks, or using the foreground (peakless) 2DFT as the reference for making masks.</span>
+<span class="sd">    This behavior can be toggled via `use_bg_2dft=[True, False]`. Using the background</span>
+<span class="sd">    biases the algorithm towards separating repeating patterns whereas using</span>
+<span class="sd">    the foreground biases it towards preserving micromodulation in the foreground.</span>
+
+<span class="sd">    There are two ways to identify peaks: either using the `original` method, as</span>
+<span class="sd">    laid out in the paper which identifies peaks in a binary way as being above</span>
+<span class="sd">    some threshold, or by using the `local_std` way, which was developed and investigated</span>
+<span class="sd">    in Chapter 2 in [2]. This method identifies peaks in a soft way and can thus</span>
+<span class="sd">    be used to construct soft masks. It generally performs better.</span>
+
+<span class="sd">    The main hyperparameter to consider is the `neighborhood_size`, which determines</span>
+<span class="sd">    how big of a filter to apply when looking for peaks. It is two dimensional, but</span>
+<span class="sd">    generally keeping 1D horizontal filters is the way to go.</span>
+
+<span class="sd">    References:</span>
+
+<span class="sd">        [1] Seetharaman, Prem, Fatemeh Pishdadian, and Bryan Pardo.</span>
+<span class="sd">            &quot;Music/Voice Separation Using the 2D Fourier Transform.&quot; </span>
+<span class="sd">            2017 IEEE Workshop on Applications of Signal Processing to </span>
+<span class="sd">            Audio and Acoustics (WASPAA). IEEE, 2017.</span>
+
+<span class="sd">        [2] Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition. </span>
+<span class="sd">            Diss. Northwestern University, 2019.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_audio_signal (AudioSignal): Signal to separate.</span>
+
+<span class="sd">        neighborhood_size (tuple, optional): 2-tuple of ints telling the filter size to look for</span>
+<span class="sd">          peaks in frequency and time: `(f, t)`. Defaults to (1, 25).</span>
+
+<span class="sd">        high_pass_cutoff (float, optional): Time-frequency bins below this cutoff will be</span>
+<span class="sd">          assigned to the background. Defaults to 100.0.</span>
+
+<span class="sd">        quadrants_to_keep (tuple, optional): Each quadrant of the 2DFT can be filtered out</span>
+<span class="sd">          when separating. Can be used for separating out upward spectro-temporal patterns</span>
+<span class="sd">          (via `(0, 2)` from downward ones `(1, 3)`. Defaults to (0,1,2,3).</span>
+
+<span class="sd">        filter_approach (str, optional): One of &#39;original&#39; or &#39;local_std&#39;. Which </span>
+<span class="sd">          filtering approach to apply to identify peaks. Defaults to &#39;local_std&#39;.</span>
+
+<span class="sd">        use_bg_2dft (bool, optional): Whether to use the background or foreground 2DFT</span>
+<span class="sd">          as the reference for constructing masks. Defaults to True.</span>
+
+<span class="sd">        mask_type (str, optional): Mask type. Defaults to &#39;soft&#39;.</span>
+
+<span class="sd">        mask_threshold (float, optional): Masking threshold. Defaults to 0.5.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">neighborhood_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="n">high_pass_cutoff</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
+                 <span class="n">quadrants_to_keep</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">filter_approach</span><span class="o">=</span><span class="s1">&#39;local_std&#39;</span><span class="p">,</span> <span class="n">use_bg_2dft</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span>
+            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
+            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighborhood_size</span> <span class="o">=</span> <span class="n">neighborhood_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quadrants_to_keep</span> <span class="o">=</span> <span class="n">quadrants_to_keep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_bg_2dft</span> <span class="o">=</span> <span class="n">use_bg_2dft</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span> <span class="o">=</span> <span class="n">high_pass_cutoff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_ft2d</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fg_ft2d</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">filter_approach</span> <span class="o">==</span> <span class="s1">&#39;original&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filter_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_local_maxima</span>
+        <span class="k">elif</span> <span class="n">filter_approach</span> <span class="o">==</span> <span class="s1">&#39;local_std&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filter_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_local_maxima_with_std</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">allowed_filter_approaches</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;original&#39;</span><span class="p">,</span> <span class="s1">&#39;local_std&#39;</span><span class="p">]</span>
+            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;filter approach must be one of </span><span class="si">{</span><span class="n">allowed_filter_approaches</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">high_low</span> <span class="o">=</span> <span class="n">HighLowPassFilter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span><span class="p">)</span>
+        <span class="n">high_pass_masks</span> <span class="o">=</span> <span class="n">high_low</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="n">background_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
+            <span class="n">background_mask</span><span class="p">,</span> <span class="n">foreground_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_ft2d_mask</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ft2d</span><span class="p">,</span> <span class="n">ch</span>
+            <span class="p">)</span>
+            <span class="n">background_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">background_mask</span><span class="p">)</span>
+            <span class="n">foreground_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">foreground_mask</span><span class="p">)</span>
+
+        <span class="n">background_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">foreground_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">foreground_masks</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
+                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+
+            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span>
+
+    <span class="k">def</span> <span class="nf">_preprocess_audio_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_preprocess_audio_signal</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ft2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">)],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">filter_quadrants</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">quadrants_to_keep</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filters the quadrants of the incoming 2DFT, deleting the ones not in </span>
+<span class="sd">        `quadrants_to_keep`. Those are zero&#39;d out. This can be used to separate</span>
+<span class="sd">        upward moving from downward moving spectro-temporal patterns.</span>
+<span class="sd">        </span>
+<span class="sd">        .. code-block:: none</span>
+<span class="sd">        </span>
+<span class="sd">            1: shape[0] // 2:, :shape[1] // 2</span>
+<span class="sd">            2: :shape[0] // 2, :shape[1] // 2</span>
+<span class="sd">            3: :shape[0] // 2, shape[1] // 2:</span>
+<span class="sd">            4: shape[0] // 2:, shape[1] // 2:</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            data ([type]): [description]</span>
+<span class="sd">            quadrants_to_keep ([type]): [description]</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            [type]: [description]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">for</span> <span class="n">quadrant</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">quadrant</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">quadrants_to_keep</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">quadrant</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:,</span> <span class="p">:</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">quadrant</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">data</span><span class="p">[:</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">quadrant</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">data</span><span class="p">[:</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">elif</span> <span class="n">quadrant</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:,</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">compute_ft2d_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ft2d</span><span class="p">,</span> <span class="n">ch</span><span class="p">):</span>
+        <span class="n">bg_ft2d</span><span class="p">,</span> <span class="n">fg_ft2d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_func</span><span class="p">(</span><span class="n">ft2d</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">ch</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bg_ft2d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_quadrants</span><span class="p">(</span><span class="n">bg_ft2d</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadrants_to_keep</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fg_ft2d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_quadrants</span><span class="p">(</span><span class="n">fg_ft2d</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadrants_to_keep</span><span class="p">)</span>
+
+        <span class="n">_stft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">)[:,</span> <span class="p">:,</span> <span class="n">ch</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-7</span>
+        <span class="n">_stft</span> <span class="o">=</span> <span class="n">_stft</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_bg_2dft</span><span class="p">:</span>
+            <span class="n">ft2d_used</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bg_ft2d</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ft2d_used</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fg_ft2d</span>
+
+        <span class="n">est_stft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft2</span><span class="p">(</span><span class="n">ft2d_used</span><span class="p">)),</span> <span class="n">_stft</span><span class="p">)</span>
+        <span class="n">est_mask</span> <span class="o">=</span> <span class="n">est_stft</span> <span class="o">/</span> <span class="n">_stft</span>
+        <span class="n">est_mask</span> <span class="o">/=</span> <span class="p">(</span><span class="n">est_mask</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_bg_2dft</span><span class="p">:</span>
+            <span class="n">bg_mask</span> <span class="o">=</span> <span class="n">est_mask</span>
+            <span class="n">fg_mask</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">bg_mask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fg_mask</span> <span class="o">=</span> <span class="n">est_mask</span>
+            <span class="n">bg_mask</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">fg_mask</span>
+
+        <span class="k">return</span> <span class="n">bg_mask</span><span class="p">,</span> <span class="n">fg_mask</span>
+
+    <span class="k">def</span> <span class="nf">filter_local_maxima_with_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ft2d</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">ft2d</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">/=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">)</span>
+
+        <span class="n">data_max</span> <span class="o">=</span> <span class="n">maximum_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborhood_size</span><span class="p">)</span>
+        <span class="n">data_mean</span> <span class="o">=</span> <span class="n">uniform_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborhood_size</span><span class="p">)</span>
+        <span class="n">data_mean_sq</span> <span class="o">=</span> <span class="n">uniform_filter</span><span class="p">(</span><span class="n">data</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborhood_size</span><span class="p">)</span>
+        <span class="n">data_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">data_mean_sq</span> <span class="o">-</span> <span class="n">data_mean</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-7</span>
+
+        <span class="n">maxima</span> <span class="o">=</span> <span class="p">((</span><span class="n">data_max</span> <span class="o">-</span> <span class="n">data_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">data_std</span><span class="p">)</span>
+        <span class="n">fraction_of_local_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">==</span> <span class="n">data_max</span><span class="p">)</span>
+        <span class="n">maxima</span> <span class="o">*=</span> <span class="n">fraction_of_local_max</span>
+        <span class="n">maxima</span> <span class="o">=</span> <span class="n">maxima</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">maxima</span> <span class="o">/=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">maxima</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">)</span>
+
+        <span class="n">maxima</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">maxima</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">maxima</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">maxima</span><span class="p">))</span>
+        <span class="n">maxima</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifftshift</span><span class="p">(</span><span class="n">maxima</span><span class="p">)</span>
+
+        <span class="n">background_ft2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">maxima</span><span class="p">,</span> <span class="n">ft2d</span><span class="p">)</span>
+        <span class="n">foreground_ft2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">maxima</span><span class="p">,</span> <span class="n">ft2d</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">background_ft2d</span><span class="p">,</span> <span class="n">foreground_ft2d</span>
+
+    <span class="k">def</span> <span class="nf">filter_local_maxima</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ft2d</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">ft2d</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">/=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">)</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">data_max</span> <span class="o">=</span> <span class="n">maximum_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborhood_size</span><span class="p">)</span>
+        <span class="n">maxima</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span> <span class="o">==</span> <span class="n">data_max</span><span class="p">)</span>
+        <span class="n">data_min</span> <span class="o">=</span> <span class="n">minimum_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighborhood_size</span><span class="p">)</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="p">((</span><span class="n">data_max</span> <span class="o">-</span> <span class="n">data_min</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="n">maxima</span><span class="p">[</span><span class="n">diff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">maxima</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">maxima</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">maxima</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">flipud</span><span class="p">(</span><span class="n">maxima</span><span class="p">))</span>
+        <span class="n">maxima</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifftshift</span><span class="p">(</span><span class="n">maxima</span><span class="p">)</span>
+
+        <span class="n">background_ft2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">maxima</span><span class="p">,</span> <span class="n">ft2d</span><span class="p">)</span>
+        <span class="n">foreground_ft2d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">maxima</span><span class="p">,</span> <span class="n">ft2d</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">background_ft2d</span><span class="p">,</span> <span class="n">foreground_ft2d</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

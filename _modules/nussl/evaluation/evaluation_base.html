@@ -1,0 +1,511 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.evaluation.evaluation_base &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.evaluation.evaluation_base</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.evaluation.evaluation_base</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">combinations</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
+<span class="kn">from</span> <span class="nn">..core</span> <span class="kn">import</span> <span class="n">utils</span>
+
+
+<span class="k">def</span> <span class="nf">aggregate_score_files</span><span class="p">(</span><span class="n">json_files</span><span class="p">,</span> <span class="n">aggregator</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a list of json files output by an Evaluation method in nussl</span>
+<span class="sd">    and aggregates all the metrics into a Pandas dataframe. Sample</span>
+<span class="sd">    output:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">                                SDR        SIR        SAR</span>
+<span class="sd">        drums  oracle0.json   9.086025  15.025801  10.362709</span>
+<span class="sd">               random0.json  -6.539877  -6.087538   3.508338</span>
+<span class="sd">               oracle1.json   9.591432  14.335700  11.365882</span>
+<span class="sd">               random1.json  -1.358840  -0.993666   9.577297</span>
+<span class="sd">        bass   oracle0.json   7.936720  12.843092   9.631929</span>
+<span class="sd">               random0.json  -4.190299  -3.730649   5.802003</span>
+<span class="sd">               oracle1.json   8.581090  12.513445  10.831370</span>
+<span class="sd">               random1.json   0.365171   0.697621  11.693103</span>
+<span class="sd">        other  oracle0.json   2.024207   6.133359   4.158805</span>
+<span class="sd">               random0.json  -9.857085  -9.481909   0.965199</span>
+<span class="sd">               oracle1.json   3.961383   6.861785   7.085745</span>
+<span class="sd">               random1.json  -4.042277  -3.707997   7.260934</span>
+<span class="sd">        vocals oracle0.json  12.169686  16.650161  14.085037</span>
+<span class="sd">               random0.json  -2.440166  -1.884026   6.760966</span>
+<span class="sd">               oracle1.json  12.409913  16.248470  14.725983</span>
+<span class="sd">               random1.json   1.609577   1.958037  12.738970</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        json_files (list): List of JSON files that will be parsed for metrics.</span>
+<span class="sd">        aggregator ([type], optional): How to aggregate results within a single</span>
+<span class="sd">          track. Defaults to np.median.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: Pandas dataframe containing the aggregated metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">json_file</span> <span class="ow">in</span> <span class="n">json_files</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">json_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">json_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">json_file</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;combination&#39;</span><span class="p">,</span> <span class="s1">&#39;permutation&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>
+                    <span class="n">metrics</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">if</span> <span class="n">json_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+                    <span class="n">metrics</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">json_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+                    <span class="n">_data</span> <span class="o">=</span> <span class="n">aggregator</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+                    <span class="n">metrics</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">json_key</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_data</span>
+    
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">({</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">T</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;file&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+
+<div class="viewcode-block" id="EvaluationBase"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.EvaluationBase">[docs]</a><span class="k">class</span> <span class="nc">EvaluationBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for all Evaluation classes for source separation algorithms in nussl. </span>
+<span class="sd">    Contains common functions for all evaluation techniques. This class should not be </span>
+<span class="sd">    instantiated directly.</span>
+<span class="sd">    </span>
+<span class="sd">    Both ``true_sources_list`` and ``estimated_sources_list`` get validated </span>
+<span class="sd">    using the private method :func:`_verify_input_list`. If your evaluation </span>
+<span class="sd">    needs to verify that input is set correctly (recommended) overwrite that method </span>
+<span class="sd">    to add checking.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        true_sources_list (list): List of objects that contain one ground truth source per object.</span>
+<span class="sd">            In some instances (such as the :class:`BSSEval` objects) this list is filled with</span>
+<span class="sd">            :class:`AudioSignals` but in other cases it is populated with</span>
+<span class="sd">            :class:`MaskBase` -derived objects (i.e., either a :class:`BinaryMask` or</span>
+<span class="sd">            :class:`SoftMask` object).</span>
+<span class="sd">        estimated_sources_list (list): List of objects that contain source estimations from a source</span>
+<span class="sd">            separation algorithm. List should be populated with the same type of objects and in the</span>
+<span class="sd">            same order as :param:`true_sources_list`.</span>
+<span class="sd">        source_labels (list): List of strings that are labels for each source to be used as keys for</span>
+<span class="sd">            the scores. Default value is `None` and in that case labels use the file_name attribute.</span>
+<span class="sd">            If that is also `None`, then the source labels are `Source 0`, `Source 1`, etc.</span>
+<span class="sd">        compute_permutation (bool): Whether or not to evaluate in a permutation-invariant </span>
+<span class="sd">            fashion, where the estimates are permuted to match the true sources. Only the </span>
+<span class="sd">            best permutation according to ``best_permutation_key`` is returned to the </span>
+<span class="sd">            scores dict. Defaults to False.</span>
+<span class="sd">        best_permutation_key (str): Which metric to use to decide which permutation of </span>
+<span class="sd">            the sources was best.</span>
+<span class="sd">        **kwargs (dict): Any additional keyword arguments are passed on to ``evaluate_helper``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_sources_list</span><span class="p">,</span> <span class="n">estimated_sources_list</span><span class="p">,</span> <span class="n">source_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                 <span class="n">compute_permutation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">best_permutation_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_input_list</span><span class="p">(</span><span class="n">true_sources_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimated_sources_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_input_list</span><span class="p">(</span><span class="n">estimated_sources_list</span><span class="p">)</span>
+
+        <span class="n">_source_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">AudioSignal</span><span class="p">)</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">path_to_input_file</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">path_to_input_file</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;source_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">_source_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">source_labels</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">source_labels</span><span class="p">):</span>
+                <span class="n">_source_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_labels</span> <span class="o">=</span> <span class="n">_source_labels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eval_args</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evaluation_object_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scores</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_permutation</span> <span class="o">=</span> <span class="n">compute_permutation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">best_permutation_key</span> <span class="o">=</span> <span class="n">best_permutation_key</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_verify_input_list</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Base method for verifying a list of input objects for an :class:`EvaluationBase`-derived</span>
+<span class="sd">        object. Override this method when creating new :class:`EvaluationBased`-derived class.</span>
+<span class="sd">        </span>
+<span class="sd">        By default calls :func:`nussl.utils.verify_audio_signal_list_strict`, which verifies that</span>
+<span class="sd">        all objects in the input list are :class:`audio_signal.AudioSignal` objects with the same</span>
+<span class="sd">        length, sample rate and have identical number of channels.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            audio_signal_list (list): List of objects that contain one signal per object. In some</span>
+<span class="sd">                instances (such as the :class:`BSSEval`) this list is filled with</span>
+<span class="sd">                :ref:`AudioSignals` but in other cases it is populated with :class:`MaskBase`</span>
+<span class="sd">                -derived objects (i.e., either a :class:`BinaryMask` or :class:`SoftMask`</span>
+<span class="sd">                object). In the latter case, this method is overridden with a specific function </span>
+<span class="sd">                in :class:`evaluation.precision_recall_fscore.PrecisionRecallFScore`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A verified list of objects that are ready for running the evaluation method.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">verify_audio_signal_list_strict</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EvaluationBase.preprocess"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.EvaluationBase.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes the objects contained in `true_sources_list` and `estimated_sources_list`</span>
+<span class="sd">        and processes them into numpy arrays that have shape </span>
+<span class="sd">        (..., n_channels, n_sources).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            references, estimates in that order as np.ndarrays.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Make sure to return the preprocessed data in the order </span>
+<span class="sd">            (references, estimates)!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Must implement preprocess in subclass!&#39;</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="EvaluationBase.get_candidates"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.EvaluationBase.get_candidates">[docs]</a>    <span class="k">def</span> <span class="nf">get_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This gets all the possible candidates for evaluation. If `compute_permutation`</span>
+<span class="sd">        is False, then the estimates and the references are assumed to be in the same</span>
+<span class="sd">        order. The first N estimates will be compared to the first N references, where</span>
+<span class="sd">        N is min(len(estimates), len(references)).</span>
+
+<span class="sd">        If `compute_permutation` is True, and `len(estimates) == len(references)`, then</span>
+<span class="sd">        every possible ordering of the estimates will be tried to match to the references.</span>
+<span class="sd">        So if there are 3 references and 3 estimates, a total of 3! = 6 candidates will</span>
+<span class="sd">        be generated.</span>
+
+<span class="sd">        If `compute_permutation` is True and `len(estimates) &gt; len(references)`, then</span>
+<span class="sd">        every combination of size `len(references)` estimates will be tried as well</span>
+<span class="sd">        as their permutations. If there are 2 references and 4 estimates, then </span>
+<span class="sd">        (4 choose 2) = 6 combos will be tried. For each of those pairs of 2, there will</span>
+<span class="sd">        be 2! = 2 permutations. So a total of 12 candidates will be generated.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Two lists of combinations and permutations that should be tried. Each element</span>
+<span class="sd">            of the list contains the indices that are used to find the sources that</span>
+<span class="sd">            are compared to each other.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_sources</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span><span class="p">)</span>
+        <span class="n">num_estimates</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimated_sources_list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_permutation</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_estimates</span><span class="p">))],</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_estimates</span><span class="p">))]</span>
+
+        <span class="n">combos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_estimates</span><span class="p">),</span> <span class="n">num_sources</span><span class="p">))</span>
+        <span class="n">orderings</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">permutations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_sources</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">combos</span><span class="p">,</span> <span class="n">orderings</span></div>
+
+<div class="viewcode-block" id="EvaluationBase.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.EvaluationBase.evaluate_helper">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate_helper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function should be implemented by each class that inherits this</span>
+<span class="sd">        class. The function should take in a numpy array containing the references and </span>
+<span class="sd">        one for the estimates and compute evaluation measures between the two arrays. </span>
+<span class="sd">        The results should be stored in a list of dictionaries. For example, a </span>
+<span class="sd">        BSSEval evaluator may return a dictionary as follows, for a single estimate:</span>
+
+<span class="sd">        .. code-block:: none</span>
+
+<span class="sd">                           #or windows or both</span>
+<span class="sd">            [   {          #ch0  ch1   # results for first estimate</span>
+<span class="sd">                    &quot;SDR&quot;: [5.6, 5.2], # metric</span>
+<span class="sd">                    &quot;SIR&quot;: [9.2, 8.9], # metric</span>
+<span class="sd">                    &quot;SAR&quot;: [4.1, 4.3]  # metric</span>
+<span class="sd">                }, </span>
+<span class="sd">                ...                    # more results for other estimates</span>
+<span class="sd">            ]</span>
+
+<span class="sd">        Each metric should be a key in the dictionary pointing to a value which is a</span>
+<span class="sd">        list. The list will contain the metrics for however the algorithm was implemented </span>
+<span class="sd">        (e.g. there might be two value, one for each channel in a stereo mix, or there</span>
+<span class="sd">        might be a sequence, one for each window that was evaluated.)</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            references (np.ndarray): References kept in a numpy array. Should have shape</span>
+<span class="sd">                (..., n_channels, n_sources).</span>
+<span class="sd">            estimates (np.ndarray): Estimates kept in whatever format you want. Should have</span>
+<span class="sd">                shape (..., n_channels, n_sources).</span>
+<span class="sd">            kwargs (dict): Keyword arguments with any additional arguments to be used in </span>
+<span class="sd">                the function (e.g. window_size, hop_length).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of dictionary containing the measures corresponding to each estimate</span>
+<span class="sd">            and reference.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Must implement evaluate_helper in a subclass!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EvaluationBase.evaluate"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.EvaluationBase.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function encapsulates the main functionality of all evaluation classes.</span>
+<span class="sd">        It performs the following steps, some of which must be implemented in subclasses</span>
+<span class="sd">        of EvaluationBase.</span>
+
+<span class="sd">            1. Preprocesses the data somehow into numpy arrays that get passed into your</span>
+<span class="sd">               evaluation function.</span>
+<span class="sd">            2. Gets all possible candidates that will be evaluated in your evaluation function.</span>
+<span class="sd">            3. For each candidate, runs the evaluation function (must be implemented in subclass).</span>
+<span class="sd">            4. Finds the results from the best candidate.</span>
+<span class="sd">            5. Returns a dictionary containing those results.</span>
+
+<span class="sd">        Steps 1 and 3 must be implemented by the subclass while the others are implemented</span>
+<span class="sd">        by EvaluationBase.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary containing the scores for each source for the best candidate.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess</span><span class="p">()</span>
+        <span class="n">combos</span><span class="p">,</span> <span class="n">orderings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_candidates</span><span class="p">()</span>
+        
+        <span class="n">best_permutation_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">best_permutation_key</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">combo</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">combos</span><span class="p">):</span>
+            <span class="n">_estimates</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">combo</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">o</span><span class="p">,</span> <span class="n">order</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">orderings</span><span class="p">):</span>
+                <span class="n">_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_helper</span><span class="p">(</span>
+                    <span class="n">references</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">order</span><span class="p">],</span> <span class="n">_estimates</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">eval_args</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">best_permutation_key</span> <span class="ow">or</span> <span class="n">best_permutation_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">best_permutation_key</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">_score</span> <span class="ow">in</span> <span class="n">_scores</span><span class="p">:</span>
+                    <span class="n">_metrics</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_score</span><span class="p">[</span><span class="n">best_permutation_key</span><span class="p">])</span>
+
+                <span class="n">metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">_metrics</span><span class="p">))</span>
+                <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">combo</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">_scores</span><span class="p">))</span>
+            
+        <span class="n">best_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="n">combo</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">best_idx</span><span class="p">]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;combination&#39;</span><span class="p">:</span> <span class="n">combo</span><span class="p">,</span>
+            <span class="s1">&#39;permutation&#39;</span><span class="p">:</span> <span class="n">order</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+            <span class="n">results</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_labels</span><span class="p">[</span><span class="n">o</span><span class="p">]]</span> <span class="o">=</span> <span class="n">score</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scores</span> <span class="o">=</span> <span class="n">results</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">scores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A dictionary that stores all scores from the evaluation method. Gets populated when</span>
+<span class="sd">        :func:`evaluate` gets run.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scores</span></div>
+
+
+<span class="k">class</span> <span class="nc">AudioSignalListMismatchError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Error class for when true_sources_list and estimated_sources_list are different</span>
+<span class="sd">    lengths.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

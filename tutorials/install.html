@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Installation &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Introduction to AudioSignals" href="audio_signal.html" />
+    <link rel="prev" title="Getting Started" href="../getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../getting_started.html">Getting Started</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pip-install">pip install</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-tests">Running the tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-from-source-and-downloading">Installing from source and downloading</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#matplotlib-issues">Matplotlib issues</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#contact">Contact</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="audio_signal.html">Introduction to AudioSignals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="masking_audio_signals.html">Separation via Time-Frequency Masking</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../getting_started.html">Getting Started</a> &raquo;</li>
+        
+      <li>Installation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/tutorials/install.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="installation">
+<span id="installation-instructions"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>There are many ways to install <em>nussl</em>. The easiest way is to use the Python Package Index (PyPI),
+which is used through the command line with
+<a class="reference external" href="https://en.wikipedia.org/wiki/Pip_(package_manager)">pip</a>. pip comes pre-installed with most
+python distributions and will automatically install <em>nussl’s</em> required dependencies.</p>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p><em>nussl</em> is compatible with only <strong>Python 3</strong>.</p>
+<p>The requirements are listed in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> and should be installed automatically
+with <cite>pip</cite>. There is one additional optional requirement that is only needed if you
+want to use <code class="docutils literal notranslate"><span class="pre">nussl.separation.primitive.Melodia</span></code>: <code class="docutils literal notranslate"><span class="pre">vamp</span></code>.</p>
+<p>If you want to use Melodia, then you will also need to follow the instructions
+<a class="reference external" href="https://github.com/justinsalamon/melodia_python_tutorial/blob/master/melodia_python_tutorial.ipynb">here</a>.</p>
+<p>If you are installing from source then you will need to install the requirements manually.</p>
+<p>Finally, there are extra requirements you will need to run the recipes. Those are in
+<code class="docutils literal notranslate"><span class="pre">extra_requirements.txt</span></code>.</p>
+<p>To make use of <a class="reference external" href="https://github.com/justinsalamon/scaper">Scaper</a>, you will also need
+to install <code class="docutils literal notranslate"><span class="pre">sox</span></code> and <code class="docutils literal notranslate"><span class="pre">ffmpeg</span></code>. You’ll also need <code class="docutils literal notranslate"><span class="pre">ffmpeg</span></code> to make use of some of the
+functionality in <code class="docutils literal notranslate"><span class="pre">nussl.play_utils</span></code>.</p>
+</div>
+<div class="section" id="pip-install">
+<span id="anaconda-env"></span><h2>pip install<a class="headerlink" href="#pip-install" title="Permalink to this headline">¶</a></h2>
+<p>Installing <em>nussl</em> is easy using pip and the Python Package Index. This will install all required dependencies alongside
+the <em>nussl</em> installation. Use the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">nussl</span>
+</pre></div>
+</div>
+<p>to install.</p>
+</div>
+<div class="section" id="running-the-tests">
+<h2>Running the tests<a class="headerlink" href="#running-the-tests" title="Permalink to this headline">¶</a></h2>
+<p>To run the tests, clone the repository, then <cite>cd</cite> into the directory and do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">extra_requirements</span>
+<span class="c1"># install vamp and melodia as above</span>
+<span class="n">pytest</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="installing-from-source-and-downloading">
+<h2>Installing from source and downloading<a class="headerlink" href="#installing-from-source-and-downloading" title="Permalink to this headline">¶</a></h2>
+<p>Alternatively, you may download the source code from <a class="reference external" href="https://github.com/interactiveaudiolab/nussl">github</a>
+and install with the following command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">nussl</span>
+</pre></div>
+</div>
+<p>It is also possible to download from github and copy the <em>nussl</em> folder into your working directory and
+directly import the modules in your python code.</p>
+</div>
+<div class="section" id="troubleshooting">
+<span id="id1"></span><h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="matplotlib-issues">
+<h3>Matplotlib issues<a class="headerlink" href="#matplotlib-issues" title="Permalink to this headline">¶</a></h3>
+<p>If you get this issue:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">1</span>, in <span class="n">&lt;module&gt;</span>
+  File <span class="nb">&quot;//anaconda/lib/python2.7/site-packages/matplotlib-1.3.1-py2.7-macosx-10.5-x86_64.egg/matplotlib/pyplot.py&quot;</span>, line <span class="m">98</span>, in <span class="n">&lt;module&gt;</span>
+    <span class="n">_backend_mod</span><span class="p">,</span> <span class="n">new_figure_manager</span><span class="p">,</span> <span class="n">draw_if_interactive</span><span class="p">,</span> <span class="n">_show</span> <span class="o">=</span> <span class="n">pylab_setup</span><span class="p">()</span>
+  File <span class="nb">&quot;//anaconda/lib/python2.7/site-packages/matplotlib-1.3.1-py2.7-macosx-10.5-x86_64.egg/matplotlib/backends/__init__.py&quot;</span>, line <span class="m">28</span>, in <span class="n">pylab_setup</span>
+    <span class="nb">globals</span><span class="p">(),</span><span class="nb">locals</span><span class="p">(),[</span><span class="n">backend_name</span><span class="p">],</span><span class="mi">0</span><span class="p">)</span>
+  File <span class="nb">&quot;//anaconda/lib/python2.7/site-packages/matplotlib-1.3.1-py2.7-macosx-10.5-x86_64.egg/matplotlib/backends/backend_macosx.py&quot;</span>, line <span class="m">21</span>, in <span class="n">&lt;module&gt;</span>
+    <span class="kn">from</span> <span class="nn">matplotlib.backends</span> <span class="kn">import</span> <span class="n">_macosx</span>
+<span class="gr">**RuntimeError**</span>: <span class="n">Python is not installed as a framework. The Mac OS X backend will not be able to function correctly if Python is not installed as a framework. See the Python documentation for more information on installing Python as a framework on Mac OS X. Please either reinstall Python as a framework, or try one of the other backends.</span>
+</pre></div>
+</div>
+<p>Then there is an issue with your <a class="reference external" href="http://matplotlib.org/1.3.0/faq/usage_faq.html#what-is-a-backend">matplotlib backend renderer</a>.
+This is an easy fix. There is a <a class="reference external" href="http://stackoverflow.com/q/21784641/5768001">stack overflow post here</a> about it.</p>
+<p>The solution is to create a matplotlib config file here: <code class="docutils literal notranslate"><span class="pre">~/.matplotlib/matplotlibrc</span></code> and add this line to it:
+<code class="docutils literal notranslate"><span class="pre">backend:</span> <span class="pre">TkAgg</span></code>.</p>
+<p>You might get some warnings now when you <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">nussl</span></code> but this is fine. You can also switch to another backend.
+To see what backends are available, run this code:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">get_supported_filetypes</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="contact">
+<h3>Contact<a class="headerlink" href="#contact" title="Permalink to this headline">¶</a></h3>
+<p>Please get in contact or open a <a class="reference external" href="https://github.com/interactiveaudiolab/nussl/issues">github issue</a> if you encounter any installation issues.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="audio_signal.html" class="btn btn-neutral float-right" title="Introduction to AudioSignals" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../getting_started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.core.mixing &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.core.mixing</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.core.mixing</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Small collection of utilities for altering and remixing</span>
+<span class="sd">AudioSignal objects. </span>
+
+<span class="sd">TODO: add pitch_shift, time_stretch, dynamic_range_compression, and </span>
+<span class="sd">apply_impulse_response</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
+
+
+<div class="viewcode-block" id="pan_audio_signal"><a class="viewcode-back" href="../../../core.html#nussl.core.mixing.pan_audio_signal">[docs]</a><span class="k">def</span> <span class="nf">pan_audio_signal</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">,</span> <span class="n">angle_in_degrees</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pans an audio signal left or right by the desired number of degrees. This</span>
+<span class="sd">    returns a copy of the input audio signal.</span>
+
+<span class="sd">    Use negative numbers to pan left, positive to pan right. Angles outside of the</span>
+<span class="sd">    range [-45, 45] raise an error.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signal (AudioSignal): Audio signal to be panned.</span>
+<span class="sd">        angle_in_degrees (float): Angle in degrees to pan by, between -45 and 45.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: Angles outside of the range [-45, 45] raise an error.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        AudioSignal: Audio signal panned by `angle_in_degrees`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">angle_in_degrees</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">45</span> <span class="ow">or</span> <span class="n">angle_in_degrees</span> <span class="o">&gt;</span> <span class="mi">45</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Angle must be between -45 and 45! -45 means &quot;</span>
+            <span class="s2">&quot;all the way to the left, 45 means all the way &quot;</span>
+            <span class="s2">&quot;to the right, and 0 is center.&quot;</span><span class="p">)</span>
+    <span class="n">panned_signal</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">)</span>
+    <span class="n">panned_signal</span><span class="o">.</span><span class="n">to_mono</span><span class="p">()</span>
+
+    <span class="n">panned_signal</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
+        <span class="n">panned_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">panned_signal</span><span class="o">.</span><span class="n">audio_data</span>
+    <span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">angle_in_degrees</span><span class="p">)</span>
+    <span class="n">left_scale</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)))</span>
+    <span class="n">right_scale</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)))</span>
+    
+    <span class="n">panned_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">left_scale</span>
+    <span class="n">panned_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="n">right_scale</span>
+
+    <span class="k">return</span> <span class="n">panned_signal</span></div>
+
+
+<div class="viewcode-block" id="delay_audio_signal"><a class="viewcode-back" href="../../../core.html#nussl.core.mixing.delay_audio_signal">[docs]</a><span class="k">def</span> <span class="nf">delay_audio_signal</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">,</span> <span class="n">delays_in_samples</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delays an audio signal by the desired number of samples per channel. This</span>
+<span class="sd">    returns a copy of the input audio signal.</span>
+
+<span class="sd">    Delay must be positive. The end of the audio signal is truncated for that</span>
+<span class="sd">    channel so that the length remains the same as the original.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signal (AudioSignal): Audio signal to be panned.</span>
+<span class="sd">        delays_in_samples (list of int): List of delays to apply to each channel.</span>
+<span class="sd">          Should have the same length as number of channels in the AudioSignal.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If length of `delays_in_samples`does not match number of channels</span>
+<span class="sd">          in the audio signal. Or if any items in `delays_in_samples` are float type. Or</span>
+<span class="sd">          if any delays are negative.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        AudioSignal: Audio signal with each channel delayed by the specified number</span>
+<span class="sd">          samples in `delays_in_samples`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">delays_in_samples</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All items in delay_in_samples must be integers.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">delays_in_samples</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All items in delay_in_samples must be non-negative.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">delays_in_samples</span><span class="p">)</span> <span class="o">!=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Number of items in delays_in_samples must match number of &quot;</span>
+            <span class="s2">&quot;channels in audio_signal.&quot;</span><span class="p">)</span>
+            
+    <span class="n">delayed_signal</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">delay</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">delays_in_samples</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">delay</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">_audio_data</span> <span class="o">=</span> <span class="n">delayed_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">original_length</span> <span class="o">=</span> <span class="n">_audio_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">_audio_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">_audio_data</span><span class="p">,</span> <span class="p">(</span><span class="n">delay</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">_audio_data</span> <span class="o">=</span> <span class="n">_audio_data</span><span class="p">[:</span><span class="n">original_length</span><span class="p">]</span>
+
+            <span class="n">delayed_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">_audio_data</span>
+    
+    <span class="k">return</span> <span class="n">delayed_signal</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

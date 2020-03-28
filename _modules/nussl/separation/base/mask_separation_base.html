@@ -1,0 +1,436 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.separation.base.mask_separation_base &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.separation.base.mask_separation_base</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.separation.base.mask_separation_base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Base class for separation algorithms that make masks. Most algorithms in </span>
+<span class="sd">nussl are derived from MaskSeparationBase. </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">masks</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">SeparationBase</span>
+<span class="kn">from</span> <span class="nn">.separation_base</span> <span class="kn">import</span> <span class="n">SeparationException</span>
+
+
+<div class="viewcode-block" id="MaskSeparationBase"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.MaskSeparationBase">[docs]</a><span class="k">class</span> <span class="nc">MaskSeparationBase</span><span class="p">(</span><span class="n">SeparationBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for separation algorithms that create a mask (binary or soft) to do </span>
+<span class="sd">    their separation. Most algorithms in nussl are derived from </span>
+<span class="sd">    :class:`MaskSeparationBase`.</span>
+<span class="sd">    </span>
+<span class="sd">    Although this class will do nothing if you instantiate and run it by itself,</span>
+<span class="sd">    algorithms that are derived from this class are expected to return a list of </span>
+<span class="sd">    :class:`separation.masks.mask_base.MaskBase` -derived objects  </span>
+<span class="sd">    (i.e., either a :class:`separation.masks.binary_mask.BinaryMask` or </span>
+<span class="sd">    :class:`separation.masks.soft_mask.SoftMask` object) by their :func:`run()` </span>
+<span class="sd">    method. Being a subclass of :class:`MaskSeparationBase` is an implicit contract </span>
+<span class="sd">    assuring this.  Returning a :class:`separation.masks.mask_base.MaskBase`-derived </span>
+<span class="sd">    object standardizes algorithm return types for </span>
+<span class="sd">    :class:`evaluation.evaluation_base.EvaluationBase`-derived objects. </span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        input_audio_signal: (:class:`audio_signal.AudioSignal`) An </span>
+<span class="sd">          :class:`audio_signal.AudioSignal` object containing the mixture to be </span>
+<span class="sd">          separated.</span>
+<span class="sd">        mask_type: (str, BinaryMask, or SoftMask) Indicates whether to make </span>
+<span class="sd">          binary or soft masks. See :attr:`mask_type` property for details.</span>
+<span class="sd">        mask_threshold: (float) Value between [0.0, 1.0] to convert a soft mask </span>
+<span class="sd">          to a binary mask. See :attr:`mask_threshold` property for details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">MASKS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;binary&#39;</span><span class="p">:</span> <span class="n">masks</span><span class="o">.</span><span class="n">BinaryMask</span><span class="p">,</span>
+        <span class="s1">&#39;soft&#39;</span><span class="p">:</span> <span class="n">masks</span><span class="o">.</span><span class="n">SoftMask</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">=</span> <span class="n">mask_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_threshold</span> <span class="o">=</span> <span class="n">mask_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mask_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;        </span>
+<span class="sd">        This property indicates what type of mask the derived algorithm will create </span>
+<span class="sd">        and be returned by :func:`run()`. Options are either &#39;soft&#39; or &#39;binary&#39;. </span>
+<span class="sd">        :attr:`mask_type` is usually set when initializing a </span>
+<span class="sd">        :class:`MaskSeparationBase`-derived class and defaults to &#39;soft..</span>
+<span class="sd">        </span>
+<span class="sd">        This property, though stored as a string, can be set in two ways when </span>
+<span class="sd">        initializing:</span>
+<span class="sd">        </span>
+<span class="sd">        * First, it is possible to set this property with a string. Only ``&#39;soft&#39;`` </span>
+<span class="sd">          and ``&#39;binary&#39;`` are accepted (case insensitive), every other value will </span>
+<span class="sd">          raise an error. When initializing with a string, two helper </span>
+<span class="sd">          attributes are provided: :attr:`BINARY_MASK` and :attr:`SOFT_MASK`.</span>
+<span class="sd">        </span>
+<span class="sd">          It is **HIGHLY** encouraged to use these, as the API may change and code </span>
+<span class="sd">          that uses bare strings (e.g. ``mask_type = &#39;soft&#39;`` or </span>
+<span class="sd">          ``mask_type = &#39;binary&#39;``) for assignment might not be future-proof. </span>
+<span class="sd">          :attr:`BINARY_MASK`` and :attr:`SOFT_MASK` are safe aliases in case these </span>
+<span class="sd">          underlying types change.</span>
+<span class="sd">        </span>
+<span class="sd">        * The second way to set this property is by using a class prototype of </span>
+<span class="sd">          either the :class:`separation.masks.binary_mask.BinaryMask` or </span>
+<span class="sd">          :class:`separation.masks.soft_mask.SoftMask` class prototype. This is </span>
+<span class="sd">          probably the most stable way to set this, and it&#39;s fairly succinct. </span>
+<span class="sd">          For example, ``mask_type = nussl.BinaryMask`` or </span>
+<span class="sd">          ``mask_type = nussl.SoftMask`` are both perfectly valid.</span>
+<span class="sd">        </span>
+<span class="sd">        Though uncommon, this can be set outside of :func:`__init__()` </span>
+<span class="sd">        </span>
+<span class="sd">        Examples of both methods are shown below.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            mask_type (str): Either ``&#39;soft&#39;`` or ``&#39;binary&#39;``. </span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError if set invalidly.</span>
+<span class="sd">            </span>
+<span class="sd">        Example:</span>
+<span class="sd">            </span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">            :linenos:</span>
+<span class="sd">    </span>
+<span class="sd">            import nussl</span>
+<span class="sd">            mixture_signal = nussl.AudioSignal()</span>
+<span class="sd">                </span>
+<span class="sd">            # Two options for determining mask upon init...</span>
+<span class="sd">             </span>
+<span class="sd">            # Option 1: Init with a string (BINARY_MASK is a string &#39;constant&#39;)</span>
+<span class="sd">            repet_sim = nussl.RepetSim(mixture_signal, mask_type=nussl.MaskSeparationBase.BINARY_MASK)</span>
+<span class="sd">             </span>
+<span class="sd">            # Option 2: Init with a class type</span>
+<span class="sd">            ola = nussl.OverlapAdd(mixture_signal, mask_type=nussl.SoftMask)</span>
+<span class="sd">             </span>
+<span class="sd">            # It&#39;s also possible to change these values after init by changing the `mask_type` property...</span>
+<span class="sd">            repet_sim.mask_type = nussl.MaskSeparationBase.SOFT_MASK  # using a string</span>
+<span class="sd">            ola.mask_type = nussl.BinaryMask  # or using a class type</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_type</span>
+
+    <span class="nd">@mask_type</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">mask_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid mask type! Got </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2"> but valid masks are:&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; [</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span><span class="si">}</span><span class="s2">]!&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">error</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_mask_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">error</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">masks</span><span class="o">.</span><span class="n">BinaryMask</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mask_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">masks</span><span class="o">.</span><span class="n">SoftMask</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mask_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;soft&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">error</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mask_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;        </span>
+<span class="sd">        Threshold of determining True/False if :attr:`mask_type` is </span>
+<span class="sd">        :attr:`BINARY_MASK`. Some algorithms will first make a soft mask and then </span>
+<span class="sd">        convert that to a binary mask using this threshold parameter. All </span>
+<span class="sd">        values of the soft mask are between ``[0.0, 1.0]`` and as such </span>
+<span class="sd">        :func:`mask_threshold` is expected to be a float between </span>
+<span class="sd">        ``[0.0, 1.0]``.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            mask_threshold (float): Value between ``[0.0, 1.0]`` that indicates </span>
+<span class="sd">              the True/False cutoff when converting a soft mask to binary mask.</span>
+<span class="sd">                                </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError if not a float or if set outside ``[0.0, 1.0]``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_threshold</span>
+
+    <span class="nd">@mask_threshold</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">mask_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Mask threshold must be a float between [0.0, 1.0]!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mask_threshold</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="MaskSeparationBase.zeros_mask"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.MaskSeparationBase.zeros_mask">[docs]</a>    <span class="k">def</span> <span class="nf">zeros_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new zeros mask with this object&#39;s type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            shape (tuple): tuple with shape of mask</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A subclass of `MaskBase` containing 0s.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MaskSeparationBase.ones_mask"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.MaskSeparationBase.ones_mask">[docs]</a>    <span class="k">def</span> <span class="nf">ones_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a new ones mask with this object&#39;s type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            shape (tuple): tuple with shape of mask</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A subclass of `MaskBase` containing 1s.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_preprocess_audio_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Masking based separation algorithm always need an STFT to work with. </span>
+<span class="sd">        So here, the STFT of the AudioSignal object belonging to this separation</span>
+<span class="sd">        algorithm is taken. It also resets the `self.result_masks` object to</span>
+<span class="sd">        an empty list - new audio signal means new masks.</span>
+
+<span class="sd">        This gets called when the `self.audio_signal` is set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="MaskSeparationBase.run"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.MaskSeparationBase.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Runs mask-based separation algorithm. Base class: Do not call directly!</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: Cannot call base class!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Cannot call base class!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MaskSeparationBase.make_audio_signals"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.MaskSeparationBase.make_audio_signals">[docs]</a>    <span class="k">def</span> <span class="nf">make_audio_signals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Makes :class:`audio_signal.AudioSignal` objects after mask-based</span>
+<span class="sd">        separation algorithm is run. This looks in ``self.result_masks``</span>
+<span class="sd">        which must be filled by ``run`` in the algorithm that</span>
+<span class="sd">        subclasses this. It applies each mask to the mixture audio </span>
+<span class="sd">        signal and returns a list of the estimates, which are each</span>
+<span class="sd">        AudioSignal objects.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of AudioSignal objects corresponding to the </span>
+<span class="sd">              separated estimates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
+                <span class="s2">&quot;self.result_masks is empty! Did you call self.run()?&quot;</span><span class="p">)</span>
+        
+        <span class="n">estimates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">mask</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="si">}</span><span class="s2"> but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;in self.result_masks!&quot;</span>
+                <span class="p">)</span>
+            <span class="n">estimate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">apply_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">estimate</span><span class="o">.</span><span class="n">istft</span><span class="p">()</span>
+            <span class="n">estimates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">estimate</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">estimates</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,593 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.datasets.hooks &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.datasets.hooks</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.datasets.hooks</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">While *nussl* does not come with any data sets, it does have the capability to interface with</span>
+<span class="sd">many common source separation data sets used within the MIR and speech separation communities.</span>
+<span class="sd">These data set &quot;hooks&quot; subclass BaseDataset and by default return AudioSignal objects in</span>
+<span class="sd">labeled dictionaries for ease of use. Transforms can be applied to these datasets for use</span>
+<span class="sd">in machine learning pipelines.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">musdb</span>
+<span class="kn">import</span> <span class="nn">jams</span>
+
+<span class="kn">from</span> <span class="nn">..core</span> <span class="kn">import</span> <span class="n">constants</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.base_dataset</span> <span class="kn">import</span> <span class="n">BaseDataset</span><span class="p">,</span> <span class="n">DataSetException</span>
+
+
+<div class="viewcode-block" id="MUSDB18"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.MUSDB18">[docs]</a><span class="k">class</span> <span class="nc">MUSDB18</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hook for MUSDB18. Uses the musdb.DB object to access the</span>
+<span class="sd">    dataset. If ``download=True``, then the 7s snippets of each track</span>
+<span class="sd">    are downloaded to ``self.folder``. If no folder is given, then</span>
+<span class="sd">    the tracks are downloaded to ~/.nussl/musdb18. </span>
+<span class="sd">    </span>
+<span class="sd">    Getting an item from this dataset with no transforms returns the </span>
+<span class="sd">    following dictionary:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        {</span>
+<span class="sd">            &#39;mix&#39;: [AudioSignal object containing mix audio],</span>
+<span class="sd">            &#39;source&#39;: {</span>
+<span class="sd">                &#39;bass&#39;: [AudioSignal object containing vocals],</span>
+<span class="sd">                &#39;drums&#39;: [AudioSignal object containing drums],</span>
+<span class="sd">                &#39;other&#39;: [AudioSignal object containing other],</span>
+<span class="sd">                &#39;vocals&#39;: [AudioSignal object containing vocals],</span>
+<span class="sd">            }</span>
+<span class="sd">            &#39;metadata&#39;: {</span>
+<span class="sd">                &#39;labels&#39;: [&#39;bass&#39;, &#39;drums&#39;, &#39;other&#39;, &#39;vocals&#39;]</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        folder (str, optional): Location that should be processed to produce the </span>
+<span class="sd">            list of files. Defaults to None.</span>
+<span class="sd">        is_wav (bool, optional):  Expect subfolder with wav files for each source </span>
+<span class="sd">            instead of stems, defaults to False.</span>
+<span class="sd">        download (bool, optional): Download sample version of MUSDB18 which </span>
+<span class="sd">            includes 7s excerpts. Defaults to False.</span>
+<span class="sd">        subsets (list, optional): Select a musdb subset train or test. </span>
+<span class="sd">            Defaults to [&#39;train&#39;, &#39;test&#39;] (all tracks).</span>
+<span class="sd">        split (str, optional): When subset train is loaded, split selects the </span>
+<span class="sd">            train/validation split. split=’train’ loads the training split, </span>
+<span class="sd">            `split=’valid’ loads the validation split. split=None applies no </span>
+<span class="sd">            splitting. Defaults to None.</span>
+<span class="sd">        **kwargs: Any additional arguments that are passed up to BaseDataset </span>
+<span class="sd">            (see ``nussl.datasets.BaseDataset``).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">DATASET_HASHES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;musdb&quot;</span><span class="p">:</span> <span class="s2">&quot;56777516ad56fe6a8590badf877e6be013ff932c010e0fbdb0aba03ef878d4cd&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">folder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_wav</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">subsets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">subsets</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;train&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">subsets</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">subsets</span>
+        <span class="k">if</span> <span class="n">folder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">constants</span><span class="o">.</span><span class="n">DEFAULT_DOWNLOAD_DIRECTORY</span><span class="p">,</span> <span class="s1">&#39;musdb18&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">musdb</span> <span class="o">=</span> <span class="n">musdb</span><span class="o">.</span><span class="n">DB</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">folder</span><span class="p">,</span> <span class="n">is_wav</span><span class="o">=</span><span class="n">is_wav</span><span class="p">,</span> <span class="n">download</span><span class="o">=</span><span class="n">download</span><span class="p">,</span> 
+                              <span class="n">subsets</span><span class="o">=</span><span class="n">subsets</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">split</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MUSDB18.get_items"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.MUSDB18.get_items">[docs]</a>    <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">musdb</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">items</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MUSDB18.process_item"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.MUSDB18.process_item">[docs]</a>    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">track</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">musdb</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+        <span class="n">mix</span><span class="p">,</span> <span class="n">sources</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">musdb_track_to_audio_signals</span><span class="p">(</span><span class="n">track</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_audio_signal</span><span class="p">(</span><span class="n">mix</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setup_audio_signal</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;mix&#39;</span><span class="p">:</span> <span class="n">mix</span><span class="p">,</span>
+            <span class="s1">&#39;sources&#39;</span><span class="p">:</span> <span class="n">sources</span><span class="p">,</span>
+            <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;bass&#39;</span><span class="p">,</span> <span class="s1">&#39;drums&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">,</span> <span class="s1">&#39;vocals&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">output</span></div></div>
+
+
+<div class="viewcode-block" id="MixSourceFolder"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.MixSourceFolder">[docs]</a><span class="k">class</span> <span class="nc">MixSourceFolder</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This dataset expects your data to be formatted in the following way:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        data/</span>
+<span class="sd">            mix/</span>
+<span class="sd">                [file0].wav</span>
+<span class="sd">                [file1].wav</span>
+<span class="sd">                [file2].wav</span>
+<span class="sd">                ...</span>
+<span class="sd">            [label0]/</span>
+<span class="sd">                [file0].wav</span>
+<span class="sd">                [file1].wav</span>
+<span class="sd">                [file2].wav</span>
+<span class="sd">                ...</span>
+<span class="sd">            [label1]/</span>
+<span class="sd">                [file0].wav</span>
+<span class="sd">                [file1].wav</span>
+<span class="sd">                [file2].wav</span>
+<span class="sd">                ...</span>
+<span class="sd">            [label2]/</span>
+<span class="sd">                [file0].wav</span>
+<span class="sd">                [file1].wav</span>
+<span class="sd">                [file2].wav</span>
+<span class="sd">                ...</span>
+<span class="sd">            ...</span>
+
+<span class="sd">    Note that the the filenames match between the mix folder and each source folder.</span>
+<span class="sd">    The source folder names can be whatever you want. Given a file in the </span>
+<span class="sd">    ``self.mix_folder`` folder, this dataset will look up the corresponding files </span>
+<span class="sd">    with the same name in the source folders. These are the source audio files. </span>
+<span class="sd">    The sum of the sources should equal the mixture. Each source will be labeled </span>
+<span class="sd">    according to the folder name it comes from.</span>
+
+<span class="sd">    Getting an item from this dataset with no transforms returns the </span>
+<span class="sd">    following dictionary:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        {</span>
+<span class="sd">            &#39;mix&#39;: [AudioSignal object containing mix audio],</span>
+<span class="sd">            &#39;source&#39;: {</span>
+<span class="sd">                &#39;[label0]&#39;: [AudioSignal object containing label0 audio],</span>
+<span class="sd">                &#39;[label1]&#39;: [AudioSignal object containing label1 audio],</span>
+<span class="sd">                &#39;[label2]&#39;: [AudioSignal object containing label2 audio],</span>
+<span class="sd">                &#39;[label3]&#39;: [AudioSignal object containing label3 audio],</span>
+<span class="sd">                ...</span>
+<span class="sd">            }</span>
+<span class="sd">            &#39;metadata&#39;: {</span>
+<span class="sd">                &#39;labels&#39;: [&#39;label0&#39;, &#39;label1&#39;, &#39;label2&#39;, &#39;label3&#39;]</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+
+
+<span class="sd">    Args:</span>
+<span class="sd">        folder (str, optional): Location that should be processed to produce the </span>
+<span class="sd">            list of files. Defaults to None.</span>
+<span class="sd">        mix_folder (str, optional): Folder to look in for mixtures. Defaults to &#39;mix&#39;.</span>
+<span class="sd">        source_folders (list, optional): List of folders to look in for sources. </span>
+<span class="sd">            Path is defined relative to folder. If None, all folders other than </span>
+<span class="sd">            mix_folder are treated as the source folders. Defaults to None.</span>
+<span class="sd">        ext (list, optional): Audio extensions to look for in mix_folder. </span>
+<span class="sd">            Defaults to [&#39;.wav&#39;, &#39;.flac&#39;, &#39;.mp3&#39;].</span>
+<span class="sd">        **kwargs: Any additional arguments that are passed up to BaseDataset </span>
+<span class="sd">            (see ``nussl.datasets.BaseDataset``).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">folder</span><span class="p">,</span> <span class="n">mix_folder</span><span class="o">=</span><span class="s1">&#39;mix&#39;</span><span class="p">,</span> <span class="n">source_folders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">ext</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mix_folder</span> <span class="o">=</span> <span class="n">mix_folder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_folders</span> <span class="o">=</span> <span class="n">source_folders</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ext</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;.wav&#39;</span><span class="p">,</span> <span class="s1">&#39;.flac&#39;</span><span class="p">,</span> <span class="s1">&#39;.mp3&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">ext</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ext</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MixSourceFolder.get_items"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.MixSourceFolder.get_items">[docs]</a>    <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_folders</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">source_folders</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span>
+                <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+                <span class="ow">and</span> <span class="n">f</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_folder</span>
+            <span class="p">])</span>
+
+        <span class="n">mix_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_folder</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span>
+            <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">mix_folder</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ext</span>
+        <span class="p">])</span>
+        <span class="k">return</span> <span class="n">items</span></div>
+
+<div class="viewcode-block" id="MixSourceFolder.process_item"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.MixSourceFolder.process_item">[docs]</a>    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">mix_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_folder</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="n">mix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_audio_file</span><span class="p">(</span><span class="n">mix_path</span><span class="p">)</span>
+        <span class="n">sources</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_folders</span><span class="p">:</span>
+            <span class="n">source_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folder</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">source_path</span><span class="p">):</span>
+                <span class="n">sources</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_audio_file</span><span class="p">(</span><span class="n">source_path</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;mix&#39;</span><span class="p">:</span> <span class="n">mix</span><span class="p">,</span>
+            <span class="s1">&#39;sources&#39;</span><span class="p">:</span> <span class="n">sources</span><span class="p">,</span>
+            <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_folders</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">output</span></div></div>
+
+
+<div class="viewcode-block" id="Scaper"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.Scaper">[docs]</a><span class="k">class</span> <span class="nc">Scaper</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Source separation datasets can be generated using Scaper, a library for</span>
+<span class="sd">    automatic soundscape generation. Datasets that are generated with Scaper</span>
+<span class="sd">    can be fed into this class easily. Scaper generates a large list of JAMS</span>
+<span class="sd">    files which specify the parameters of the soundscape. If the soundscape is</span>
+<span class="sd">    generated with `save_isolated_events=True`, then the audio corresponding</span>
+<span class="sd">    to each event in the soundscape will be saved as well.</span>
+
+<span class="sd">    Below is an example of using Scaper to generate a small dataset of 10 </span>
+<span class="sd">    mixtures with 2 sources each. The generated dataset can then be immediately</span>
+<span class="sd">    loaded into an instance of ``nussl.datasets.Scaper`` for integration into</span>
+<span class="sd">    a training or evaluation pipeline.</span>
+
+<span class="sd">    The sources are output in a dictionary that looks like this:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        data[&#39;sources] = {</span>
+<span class="sd">            &#39;{label}::{count}&#39;: AudioSignal,</span>
+<span class="sd">            &#39;{label}::{count}&#39;: AudioSignal,</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+
+<span class="sd">    For example:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        data[&#39;sources] = {</span>
+<span class="sd">            &#39;siren::0&#39;: AudioSignal,</span>
+<span class="sd">            &#39;siren::1&#39;: AudioSignal,</span>
+<span class="sd">            &#39;car_horn::0&#39;: AudioSignal,</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+
+<span class="sd">    Getting an item from this dataset with no transforms returns the </span>
+<span class="sd">    following dictionary:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        {</span>
+<span class="sd">            &#39;mix&#39;: [AudioSignal object containing mix audio],</span>
+<span class="sd">            &#39;source&#39;: {</span>
+<span class="sd">                &#39;[label0::count]&#39;: [AudioSignal object containing label0 audio],</span>
+<span class="sd">                &#39;[label1::count]&#39;: [AudioSignal object containing label1 audio],</span>
+<span class="sd">                &#39;[label2::count]&#39;: [AudioSignal object containing label2 audio],</span>
+<span class="sd">                &#39;[label3::count]&#39;: [AudioSignal object containing label3 audio],</span>
+<span class="sd">                ...</span>
+<span class="sd">            }</span>
+<span class="sd">            &#39;metadata&#39;: {</span>
+<span class="sd">                &#39;jams&#39;: [the content of the jams file used to generate the soundscape]</span>
+<span class="sd">                &#39;labels&#39;: [&#39;label0&#39;, &#39;label1&#39;, &#39;label2&#39;, &#39;label3&#39;]</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+
+
+<span class="sd">    Example of generating a Scaper dataset and then loading it with nussl:</span>
+
+<span class="sd">    &gt;&gt;&gt; n_sources = 2</span>
+<span class="sd">    &gt;&gt;&gt; n_mixtures = 10</span>
+<span class="sd">    &gt;&gt;&gt; duration = 3</span>
+<span class="sd">    &gt;&gt;&gt; ref_db = -40</span>
+<span class="sd">    &gt;&gt;&gt; fg_path = &#39;/path/to/foreground/&#39;</span>
+<span class="sd">    &gt;&gt;&gt; output_dir = &#39;/output/path&#39;</span>
+<span class="sd">    &gt;&gt;&gt; for i in range(n_mixtures):</span>
+<span class="sd">    &gt;&gt;&gt;     sc = scaper.Scaper(</span>
+<span class="sd">    &gt;&gt;&gt;         duration, fg_path, fg_path, random_state=i)</span>
+<span class="sd">    &gt;&gt;&gt;     sc.ref_db = ref_db</span>
+<span class="sd">    &gt;&gt;&gt;     sc.sr = 16000</span>
+<span class="sd">    &gt;&gt;&gt;     for j in range(n_sources):</span>
+<span class="sd">    &gt;&gt;&gt;         sc.add_event(</span>
+<span class="sd">    &gt;&gt;&gt;             label=(&#39;choose&#39;, []),</span>
+<span class="sd">    &gt;&gt;&gt;             source_file=(&#39;choose&#39;, []),</span>
+<span class="sd">    &gt;&gt;&gt;             source_time=(&#39;const&#39;, 0),</span>
+<span class="sd">    &gt;&gt;&gt;             event_time=(&#39;const&#39;, 0),</span>
+<span class="sd">    &gt;&gt;&gt;             event_duration=(&#39;const&#39;, duration),</span>
+<span class="sd">    &gt;&gt;&gt;             snr=(&#39;const&#39;, 0),</span>
+<span class="sd">    &gt;&gt;&gt;             pitch_shift=None,</span>
+<span class="sd">    &gt;&gt;&gt;             time_stretch=None</span>
+<span class="sd">    &gt;&gt;&gt;         )</span>
+<span class="sd">    &gt;&gt;&gt;     audio_path = os.path.join(output_dir, f&#39;{i}.wav&#39;)</span>
+<span class="sd">    &gt;&gt;&gt;     jams_path = os.path.join(output_dir, f&#39;{i}.jams&#39;)</span>
+<span class="sd">    &gt;&gt;&gt;     sc.generate(audio_path, jams_path, save_isolated_events=True)</span>
+<span class="sd">    &gt;&gt;&gt; dataset = nussl.datasets.Scaper(output_dir)</span>
+<span class="sd">    &gt;&gt;&gt; dataset[0] # contains mix, sources, and metadata corresponding to 0.jams.</span>
+<span class="sd">        </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        DataSetException: if Scaper dataset wasn&#39;t saved with isolated event audio.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Scaper.get_items"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.Scaper.get_items">[docs]</a>    <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span>
+            <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;.jams&#39;</span><span class="p">]</span>
+        <span class="p">])</span>
+        <span class="k">return</span> <span class="n">items</span></div>
+
+<div class="viewcode-block" id="Scaper.process_item"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.Scaper.process_item">[docs]</a>    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="n">jam</span> <span class="o">=</span> <span class="n">jams</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folder</span><span class="p">,</span> <span class="n">item</span><span class="p">))</span>
+        <span class="n">ann</span> <span class="o">=</span> <span class="n">jam</span><span class="o">.</span><span class="n">annotations</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">namespace</span><span class="o">=</span><span class="s1">&#39;scaper&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mix_path</span> <span class="o">=</span> <span class="n">ann</span><span class="o">.</span><span class="n">sandbox</span><span class="o">.</span><span class="n">scaper</span><span class="p">[</span><span class="s1">&#39;soundscape_audio_path&#39;</span><span class="p">]</span>
+        <span class="n">source_paths</span> <span class="o">=</span> <span class="n">ann</span><span class="o">.</span><span class="n">sandbox</span><span class="o">.</span><span class="n">scaper</span><span class="p">[</span><span class="s1">&#39;isolated_events_audio_path&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">source_paths</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span>
+                <span class="s2">&quot;No paths to isolated events found! Did you generate &quot;</span>
+                <span class="s2">&quot;the soundscape with save_isolated_events=True?&quot;</span><span class="p">)</span>
+
+        <span class="n">mix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_audio_file</span><span class="p">(</span><span class="n">mix_path</span><span class="p">)</span>
+        <span class="n">sources</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">event_spec</span><span class="p">,</span> <span class="n">event_audio_path</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="n">source_paths</span><span class="p">):</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">event_spec</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span>
+            <span class="n">label_count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">k</span><span class="p">:</span>
+                    <span class="n">label_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">::</span><span class="si">{</span><span class="n">label_count</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">sources</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_audio_file</span><span class="p">(</span><span class="n">event_audio_path</span><span class="p">)</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;mix&#39;</span><span class="p">:</span> <span class="n">mix</span><span class="p">,</span>
+            <span class="s1">&#39;sources&#39;</span><span class="p">:</span> <span class="n">sources</span><span class="p">,</span>
+            <span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;scaper&#39;</span><span class="p">:</span> <span class="n">jam</span><span class="p">,</span>
+                <span class="s1">&#39;labels&#39;</span><span class="p">:</span> <span class="n">ann</span><span class="o">.</span><span class="n">sandbox</span><span class="o">.</span><span class="n">scaper</span><span class="p">[</span><span class="s1">&#39;fg_labels&#39;</span><span class="p">],</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">output</span></div></div>
+
+
+<div class="viewcode-block" id="WHAM"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.WHAM">[docs]</a><span class="k">class</span> <span class="nc">WHAM</span><span class="p">(</span><span class="n">MixSourceFolder</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hook for the WHAM dataset. Essentially subclasses MixSourceFolder but with presets</span>
+<span class="sd">    that are helpful for WHAM, which as the following directory structure:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        [wav8k, wav16k]/</span>
+<span class="sd">          [min, max]/</span>
+<span class="sd">            [tr, cv, tt]/</span>
+<span class="sd">                mix_both/</span>
+<span class="sd">                mix_clean/</span>
+<span class="sd">                mix_single/</span>
+<span class="sd">                noise/</span>
+<span class="sd">                s1/</span>
+<span class="sd">                s2/</span>
+<span class="sd">        wham_noise/</span>
+<span class="sd">          tr/</span>
+<span class="sd">          cv/</span>
+<span class="sd">          tt/</span>
+<span class="sd">          metadata/</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        MixSourceFolder ([type]): [description]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MIX_TO_SOURCE_MAP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;mix_clean&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;s1&#39;</span><span class="p">,</span> <span class="s1">&#39;s2&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;mix_both&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;s1&#39;</span><span class="p">,</span> <span class="s1">&#39;s2&#39;</span><span class="p">,</span> <span class="s1">&#39;noise&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;mix_single&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;s1&#39;</span><span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="n">DATASET_HASHES</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;wav8k&quot;</span><span class="p">:</span> <span class="s2">&quot;acd49e0dae066e16040c983d71cc5a8adb903abff6e5cbb92b3785a1997b7547&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;wav16k&quot;</span><span class="p">:</span> <span class="s2">&quot;5691d6a35382f2408a99594f21d820b58371b5ea061841db37d548c0b8d6ec7f&quot;</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">mix_folder</span><span class="o">=</span><span class="s1">&#39;mix_clean&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="s1">&#39;tr&#39;</span><span class="p">,</span> 
+                 <span class="n">sample_rate</span><span class="o">=</span><span class="mi">8000</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">mix_folder</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">MIX_TO_SOURCE_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mix_folder</span><span class="si">}</span><span class="s2"> must be in </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MIX_TO_SOURCE_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sample_rate</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">8000</span><span class="p">,</span> <span class="mi">16000</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sample_rate</span><span class="si">}</span><span class="s2"> not available for WHAM (only 8000 and 16000 Hz allowed)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;min&#39;</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2"> not available, only &#39;min&#39; or &#39;max&#39; allowed.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">split</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;tr&#39;</span><span class="p">,</span> <span class="s1">&#39;cv&#39;</span><span class="p">,</span> <span class="s1">&#39;tt&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> not available, must be one of &#39;tr&#39; (train), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;&#39;cv&#39; (validation), and &#39;tt&#39; (test)&quot;</span><span class="p">)</span>
+
+        <span class="n">wav_folder</span> <span class="o">=</span> <span class="s1">&#39;wav8k&#39;</span> <span class="k">if</span> <span class="n">sample_rate</span> <span class="o">==</span> <span class="mi">8000</span> <span class="k">else</span> <span class="s1">&#39;wav16k&#39;</span>
+        <span class="n">folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">wav_folder</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">split</span><span class="p">)</span>
+        <span class="n">source_folders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MIX_TO_SOURCE_MAP</span><span class="p">[</span><span class="n">mix_folder</span><span class="p">]</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="n">mix_folder</span><span class="o">=</span><span class="n">mix_folder</span><span class="p">,</span> <span class="n">source_folders</span><span class="o">=</span><span class="n">source_folders</span><span class="p">,</span>
+                         <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">strict_sample_rate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,606 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.separation.primitive.melodia &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.separation.primitive.melodia</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.separation.primitive.melodia</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage.filters</span> <span class="kn">import</span> <span class="n">convolve</span>
+<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">maximum_filter</span><span class="p">,</span> <span class="n">gaussian_filter</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span><span class="p">,</span> <span class="n">SeparationException</span>
+<span class="kn">from</span> <span class="nn">..benchmark</span> <span class="kn">import</span> <span class="n">HighLowPassFilter</span>
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
+<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">vamp_imported</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.signal</span>
+
+<span class="k">if</span> <span class="n">vamp_imported</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">vamp</span>
+
+<span class="c1"># function for generating the vocal chord impulse response</span>
+<span class="k">def</span> <span class="nf">rosenmodel</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This model for generating singing vowel sounds from sine tones comes</span>
+<span class="sd">    from:</span>
+
+<span class="sd">    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf</span>
+
+<span class="sd">    The above will be referred to throughout these docstrings as THE DOCUMENT.</span>
+
+<span class="sd">    Original author: Fatemeh Pishdadian</span>
+
+<span class="sd">    The arguments to the fucntions throughout this text follow the </span>
+<span class="sd">    signatures laid out in THE DOCUMENT.</span>
+
+<span class="sd">    This is used in Melodia to generate the melody signal to produce a </span>
+<span class="sd">    mask.</span>
+
+<span class="sd">    Equation 2 in THE DOCUMENT.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">N1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">t1</span> <span class="o">*</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">N2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">t2</span> <span class="o">*</span> <span class="n">fs</span><span class="p">)</span>
+
+    <span class="n">samp_vec1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N1</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">samp_vec2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N1</span><span class="p">,</span><span class="n">N1</span><span class="o">+</span><span class="n">N2</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">ir_func1</span> <span class="o">=</span>  <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">samp_vec1</span><span class="p">)</span><span class="o">/</span><span class="n">N1</span><span class="p">))</span>
+    <span class="n">ir_func2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">samp_vec2</span> <span class="o">-</span> <span class="n">N1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N2</span><span class="p">))</span>
+
+    <span class="n">vchord_filt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ir_func1</span><span class="p">,</span><span class="n">ir_func2</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">vchord_filt</span>
+
+
+<span class="c1"># function for computing the denominator coeffs of the vocal cavity filter transfer function</span>
+<span class="k">def</span> <span class="nf">oral_cavity_filt</span><span class="p">(</span><span class="n">pole_amps</span><span class="p">,</span> <span class="n">pole_freqs</span><span class="p">,</span><span class="n">fs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This model for generating singing vowel sounds from sine tones comes</span>
+<span class="sd">    from:</span>
+
+<span class="sd">    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf</span>
+
+<span class="sd">    The above will be referred to throughout these docstrings as THE DOCUMENT.</span>
+
+<span class="sd">    Original author: Fatemeh Pishdadian</span>
+
+<span class="sd">    The arguments to the fucntions throughout this text follow the </span>
+<span class="sd">    signatures laid out in THE DOCUMENT.</span>
+
+<span class="sd">    This is used in Melodia to generate the melody signal to produce a </span>
+<span class="sd">    mask.</span>
+
+<span class="sd">    Solves &quot;Q. Write a function to synthesize filter H(z)&quot; in </span>
+<span class="sd">    THE DOCUMENT</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_pole_pair</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pole_amps</span><span class="p">)</span>
+    <span class="n">poles</span> <span class="o">=</span> <span class="n">pole_amps</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">pole_freqs</span> <span class="o">/</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">poles_conj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">poles</span><span class="p">)</span>
+
+    <span class="n">denom_coeffs</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_pole_pair</span><span class="p">):</span>
+        <span class="n">pole_temp</span> <span class="o">=</span> <span class="n">poles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">pole_conj_temp</span> <span class="o">=</span> <span class="n">poles_conj</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">pole_pair_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="n">pole_temp</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="n">pole_conj_temp</span><span class="p">]))</span>
+
+        <span class="n">denom_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">denom_coeffs</span><span class="p">,</span> <span class="n">pole_pair_coeffs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">denom_coeffs</span>
+
+<span class="k">def</span> <span class="nf">_apply_vowel_filter</span><span class="p">(</span><span class="n">impulse_train</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t1</span><span class="o">=</span><span class="mf">0.0075</span><span class="p">,</span> <span class="n">t2</span><span class="o">=.</span><span class="mi">013</span><span class="p">,</span>
+                     <span class="n">pole_amps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pole_freqs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This model for generating singing vowel sounds from sine tones comes</span>
+<span class="sd">    from:</span>
+
+<span class="sd">    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf</span>
+
+<span class="sd">    The above will be referred to throughout these docstrings as THE DOCUMENT.</span>
+
+<span class="sd">    Original author: Fatemeh Pishdadian</span>
+
+<span class="sd">    The arguments to the fucntions throughout this text follow the </span>
+<span class="sd">    signatures laid out in THE DOCUMENT.</span>
+
+<span class="sd">    This is used in Melodia to generate the melody signal to produce a </span>
+<span class="sd">    mask.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        impulse_train (np.ndarray): Numpy array with data to be filtered</span>
+<span class="sd">        fs (int): Sample rate of audio.</span>
+<span class="sd">        t1 (float, optional): N1 in Equation 2 in THE DOCUMENT. Defaults to 0.0075.</span>
+<span class="sd">        t2 (float, optional): N2 in Equation 2 in THE DOCUMENT. Defaults to .013.</span>
+<span class="sd">        pole_amps (np.ndarray, optional): Pole amplitudes, see Figures 2-4 in THE DOCUMENT. </span>
+<span class="sd">          Defaults to None, which maps to E vowel.</span>
+<span class="sd">        pole_freqs (np.ndarray, optional): Pole frequencies, see Figures 2-4 in THE DOCUMENT. </span>
+<span class="sd">          Defaults to None, which maps to E vowel</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Filtered impulse train that should sound sort of like the desired </span>
+<span class="sd">          vowel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pole_amps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pole_amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.99</span><span class="p">,</span><span class="mf">0.98</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.9</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">pole_freqs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pole_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">800</span><span class="p">,</span><span class="mi">1200</span><span class="p">,</span><span class="mi">2800</span><span class="p">,</span><span class="mi">3600</span><span class="p">])</span>
+        
+    <span class="n">vchord_filt</span> <span class="o">=</span> <span class="n">rosenmodel</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">vchord_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">impulse_train</span><span class="p">,</span> <span class="n">vchord_filt</span><span class="p">)</span>
+        
+    <span class="n">denom_coeffs</span> <span class="o">=</span> <span class="n">oral_cavity_filt</span><span class="p">(</span><span class="n">pole_amps</span><span class="p">,</span> <span class="n">pole_freqs</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">oral_out</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span> <span class="n">denom_coeffs</span><span class="p">,</span> <span class="n">vchord_out</span><span class="p">)</span>
+    <span class="n">lip_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span> <span class="n">oral_out</span><span class="p">))</span>
+    
+    <span class="n">lip_out</span> <span class="o">=</span> <span class="n">lip_out</span><span class="p">[:</span><span class="n">impulse_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">lip_out</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Melodia"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.Melodia">[docs]</a><span class="k">class</span> <span class="nc">Melodia</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements melody extraction using Melodia [1].</span>
+
+<span class="sd">    This needs Melodia installed as a vamp plugin, as well as having vampy for </span>
+<span class="sd">    Python installed. Install Melodia via: https://www.upf.edu/web/mtg/melodia.</span>
+<span class="sd">    Note that Melodia can be used only for NON-COMMERCIAL use.</span>
+
+<span class="sd">    References:</span>
+
+<span class="sd">    [1] J. Salamon and E. Gómez, &quot;Melody Extraction from Polyphonic Music Signals using </span>
+<span class="sd">        Pitch Contour Characteristics&quot;, IEEE Transactions on Audio, Speech and </span>
+<span class="sd">        Language Processing, 20(6):1759-1770, Aug. 2012.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_audio_signal (AudioSignal object): The AudioSignal object that has the</span>
+<span class="sd">          audio data that Melodia will be run on.</span>
+
+<span class="sd">        high_pass_cutoff (optional, float): value (in Hz) for the high pass cutoff </span>
+<span class="sd">          filter.</span>
+<span class="sd">        </span>
+<span class="sd">        minimum_frequency (optional, float): minimum frequency in Hertz (default 55.0)</span>
+
+<span class="sd">        maximum_frequency (optional, float): maximum frequency in Hertz (default 1760.0)</span>
+
+<span class="sd">        voicing_tolerance (optional, float): Greater values will result in more pitch contours </span>
+<span class="sd">          included in the final melody. Smaller values will result in less pitch </span>
+<span class="sd">          contours included in the final melody (default 0.2).</span>
+
+<span class="sd">        minimum_peak_salience (optional, float): a hack to avoid silence turning into junk </span>
+<span class="sd">          contours when analyzing monophonic recordings (e.g. solo voice with </span>
+<span class="sd">          no accompaniment). Generally you want to leave this untouched (default 0.0).</span>
+
+<span class="sd">        num_overtones (optional, int): Number of overtones to use when creating </span>
+<span class="sd">          melody mask.</span>
+
+<span class="sd">        apply_vowel_filter (optional, bool): Whether or not to apply a vowel filter</span>
+<span class="sd">          on the resynthesized melody signal when masking.</span>
+
+<span class="sd">        smooth_length (optional, int): Number of frames to smooth discontinuities in the</span>
+<span class="sd">          mask.</span>
+
+<span class="sd">        add_lower_octave (optional, fool): Use octave below fundamental frequency as well</span>
+<span class="sd">          to take care of octave errors in pitch tracking, since we only care about</span>
+<span class="sd">          the mask. Defaults to False.</span>
+<span class="sd">        </span>
+<span class="sd">        mask_type (optional, str): Type of mask to use.</span>
+
+<span class="sd">        mask_threshold (optional, float): Threshold for mask to convert to binary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">high_pass_cutoff</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">minimum_frequency</span><span class="o">=</span><span class="mf">55.0</span><span class="p">,</span>
+                 <span class="n">maximum_frequency</span><span class="o">=</span><span class="mf">1760.0</span><span class="p">,</span> <span class="n">voicing_tolerance</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">minimum_peak_salience</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">compression</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">num_overtones</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">apply_vowel_filter</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> 
+                 <span class="n">add_lower_octave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+        <span class="c1"># lazy load vamp to check if it exists</span>
+        <span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">vamp_imported</span>
+
+        <span class="n">melodia_installed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">vamp_imported</span><span class="p">:</span>
+            <span class="n">melodia_installed</span> <span class="o">=</span> <span class="s1">&#39;mtg-melodia:melodia&#39;</span> <span class="ow">in</span> <span class="n">vamp</span><span class="o">.</span><span class="n">list_plugins</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">vamp_imported</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">melodia_installed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_vamp_melodia_error</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span>
+            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
+            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span> <span class="o">=</span> <span class="n">high_pass_cutoff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minimum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maximum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voicing_tolerance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">voicing_tolerance</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">minimum_peak_salience</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minimum_peak_salience</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">compression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_vowel_filter</span> <span class="o">=</span> <span class="n">apply_vowel_filter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_lower_octave</span> <span class="o">=</span> <span class="n">add_lower_octave</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">melody</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_overtones</span> <span class="o">=</span> <span class="n">num_overtones</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smooth_length</span> <span class="o">=</span> <span class="n">smooth_length</span>
+
+    <span class="k">def</span> <span class="nf">_raise_vamp_melodia_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">**~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~**&#39;</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">*          Are Vamp and Melodia installed correctly?          *&#39;</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">* Check https://bit.ly/2DXbrAk for installation instructions! *&#39;</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">**~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~**&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">extract_melody</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extracts melody from the audio using the melodia vamp plugin. Uses arguments kept </span>
+<span class="sd">        in self:</span>
+<span class="sd">        </span>
+<span class="sd">        - `self.minimum_frequency` (default: 55 Hz)</span>
+<span class="sd">        - `self.maximum_frequency` (default: 1760 Hz)</span>
+<span class="sd">        - `self.voicing_tolerance` (default: 0.2)</span>
+<span class="sd">        - `self.minimum_peak_salience` (default: 0.0)</span>
+
+<span class="sd">        This function sets two class members used in other parts:</span>
+
+<span class="sd">        - `self.melody`: (numpy array) contains the melody in Hz for every timestep </span>
+<span class="sd">          (0 indicates no voice).</span>
+<span class="sd">        - `self.timestamps`: (numpy array) contains the timestamps for each melody note</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;minfqr&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_frequency</span><span class="p">,</span>
+            <span class="s1">&#39;maxfqr&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum_frequency</span><span class="p">,</span>
+            <span class="s1">&#39;voicing&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">voicing_tolerance</span><span class="p">,</span>
+            <span class="s1">&#39;minpeaksalience&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_peak_salience</span>
+        <span class="p">}</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">vamp</span><span class="o">.</span><span class="n">collect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
+                            <span class="s2">&quot;mtg-melodia:melodia&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">melody</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">]</span>
+        <span class="n">hop</span> <span class="o">=</span> <span class="mf">128.</span> <span class="o">/</span> <span class="mf">44100.</span>  <span class="c1"># hard coded hop in Melodia vamp plugin, converting it to frames.</span>
+        <span class="n">timestamps</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">hop</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">melody</span><span class="p">))</span> <span class="o">*</span> <span class="n">hop</span>
+        <span class="n">melody</span><span class="p">[</span><span class="n">melody</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">melody</span> <span class="o">=</span> <span class="n">melody</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="n">timestamps</span>
+
+    <span class="k">def</span> <span class="nf">create_melody_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_overtones</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adapted from Melosynth by Justin Salamon: https://github.com/justinsalamon/melosynth. </span>
+<span class="sd">        To mask the mixture, we need to identify time-frequency bins that belong to the </span>
+<span class="sd">        melody. Melodia outputs only the fundamental frequency of the melodic line. </span>
+<span class="sd">        To construct the mask we take the fundamental frequency and add all the </span>
+<span class="sd">        overtones of it (up to num_overtones) to the mask. The melody is faded in and </span>
+<span class="sd">        out at onsets and offsets to make the separation sound more natural </span>
+<span class="sd">        (hard-coded by transition_length).</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">            num_overtones (int): Number of overtones to expand out to build the mask.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">estimated_hop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">))</span>
+            <span class="n">previous_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">estimated_hop</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">previous_time</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">melody</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">melody</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">melody_signal</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">transition_length</span> <span class="o">=</span> <span class="o">.</span><span class="mi">001</span>  <span class="c1"># duration for fade in/out and frequency interpretation</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_overtones</span><span class="p">)</span>
+        <span class="n">previous_frequency</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">previous_time</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">overtone_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_overtones</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">time</span><span class="p">,</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">melody</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_lower_octave</span><span class="p">:</span>
+                <span class="n">frequency</span> <span class="o">=</span> <span class="n">frequency</span> <span class="o">/</span> <span class="mi">2</span> 
+            <span class="c1"># taking care of octave errors since we only care about masking</span>
+            <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">time</span> <span class="o">-</span> <span class="n">previous_time</span><span class="p">)</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">num_samples</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">num_transition_samples</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                    <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">transition_length</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">),</span> <span class="n">num_samples</span><span class="p">))</span>
+                <span class="n">frequency_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">*</span> <span class="n">previous_frequency</span>
+
+                <span class="k">if</span> <span class="n">previous_frequency</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">frequency_series</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_transition_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> \
+                                        <span class="p">(</span><span class="n">frequency</span> <span class="o">-</span> <span class="n">previous_frequency</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">frequency</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">frequency_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">*</span> <span class="n">frequency</span>
+
+                <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">overtone</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_overtones</span><span class="p">):</span>
+                    <span class="n">overtone_num</span> <span class="o">=</span> <span class="n">overtone</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">phasors</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">overtone_num</span> <span class="o">*</span> <span class="n">frequency_series</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span>
+                    <span class="n">phases</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[</span><span class="n">overtone</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">phasors</span><span class="p">)</span>
+                    <span class="n">samples</span> <span class="o">+=</span> <span class="n">overtone_weights</span><span class="p">[</span><span class="n">overtone</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phases</span><span class="p">))</span>
+                    <span class="n">phase</span><span class="p">[</span><span class="n">overtone</span><span class="p">]</span> <span class="o">=</span> <span class="n">phases</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">previous_frequency</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">samples</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_transition_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">previous_frequency</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">samples</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_transition_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">previous_frequency</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">samples</span> <span class="o">*=</span> <span class="mi">0</span>
+
+                <span class="n">melody_signal</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+            <span class="n">previous_frequency</span> <span class="o">=</span> <span class="n">frequency</span>
+            <span class="n">previous_time</span> <span class="o">=</span> <span class="n">time</span>
+
+        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_vowel_filter</span><span class="p">:</span>
+            <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">_apply_vowel_filter</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+
+        <span class="n">melody_signal</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">),</span> <span class="mf">1e-7</span><span class="p">))</span>
+        <span class="n">melody_signal</span> <span class="o">=</span> <span class="p">[</span><span class="n">melody_signal</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">)]</span>
+        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">)</span>
+        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">melody_signal</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">signal_length</span><span class="p">]</span>
+        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">AudioSignal</span><span class="p">(</span>
+            <span class="n">audio_data_array</span><span class="o">=</span><span class="n">melody_signal</span><span class="p">,</span>
+            <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span>
+            <span class="n">stft_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span> <span class="o">=</span> <span class="n">melody_signal</span>
+        <span class="k">return</span> <span class="n">melody_signal</span>
+
+    <span class="k">def</span> <span class="nf">create_harmonic_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">melody_signal</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a harmonic mask from the melody signal. The mask is smoothed to reduce </span>
+<span class="sd">        the effects of discontinuities in the melody synthesizer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">melody_signal</span><span class="o">.</span><span class="n">stft</span><span class="p">())</span>
+
+        <span class="c1"># Need to threshold the melody stft since the synthesized</span>
+        <span class="c1"># F0 sequence overtones are at different weights.</span>
+        <span class="n">stft</span> <span class="o">=</span> <span class="n">stft</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span>
+        <span class="n">stft</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">stft</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="mf">1e-7</span><span class="p">)</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="c1"># Smoothing the mask row-wise using a low-pass filter to</span>
+        <span class="c1"># get rid of discontuinities in the mask.</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth_length</span><span class="p">),</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth_length</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
+            <span class="n">mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">stft</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">],</span> <span class="n">kernel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mask</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">high_low</span> <span class="o">=</span> <span class="n">HighLowPassFilter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span><span class="p">)</span>
+        <span class="n">high_pass_masks</span> <span class="o">=</span> <span class="n">high_low</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="c1"># separate the mixture foreground melody by masking</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">extract_melody</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_melody_signal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_overtones</span><span class="p">)</span>
+
+        <span class="n">foreground_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_harmonic_mask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span><span class="p">)</span>
+        <span class="n">foreground_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;soft&#39;</span><span class="p">](</span><span class="n">foreground_mask</span><span class="p">)</span>
+
+        <span class="n">foreground_mask</span> <span class="o">=</span> <span class="n">foreground_mask</span>
+        <span class="n">background_mask</span> <span class="o">=</span> <span class="n">foreground_mask</span><span class="o">.</span><span class="n">invert_mask</span><span class="p">()</span>
+
+        <span class="n">_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">background_mask</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="n">foreground_mask</span><span class="o">.</span><span class="n">mask</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
+                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+
+            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

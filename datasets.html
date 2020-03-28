@@ -1,0 +1,1183 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Datasets &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Evaluation" href="evaluation.html" />
+    <link rel="prev" title="Core" href="core.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/examples.html">Examples</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Datasets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#base-class">Base class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#musdb18">MUSDB18</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#wham">WHAM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scaper">Scaper</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mixsourcefolder">MixSourceFolder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-nussl.datasets.transforms">Data transforms</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ml.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="separation.html">Separation algorithms</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="api.html">API Documentation</a> &raquo;</li>
+        
+      <li>Datasets</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/datasets.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<span class="target" id="module-nussl.datasets"></span><div class="section" id="datasets">
+<h1>Datasets<a class="headerlink" href="#datasets" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="base-class">
+<h2>Base class<a class="headerlink" href="#base-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.datasets.BaseDataset">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.</code><code class="sig-name descname">BaseDataset</code><span class="sig-paren">(</span><em class="sig-param">folder</em>, <em class="sig-param">transform=None</em>, <em class="sig-param">sample_rate=None</em>, <em class="sig-param">stft_params=None</em>, <em class="sig-param">num_channels=None</em>, <em class="sig-param">strict_sample_rate=True</em>, <em class="sig-param">cache_populated=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/base_dataset.html#BaseDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.BaseDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>The BaseDataset class is the starting point for all dataset hooks
+in nussl. To subclass BaseDataset, you only have to implement two
+functions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">get_items</span></code>: a function that is passed the folder and generates a
+list of items that will be processed by the next function. The
+number of items in the list will dictate len(dataset). Must return
+a list.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">process_item</span></code>: this function processes a single item in the list
+generated by get_items. Must return a dictionary.</p></li>
+</ul>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.BaseDataset.get_items" title="nussl.datasets.BaseDataset.get_items"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_items</span></code></a>(folder)</p></td>
+<td><p>This function must be implemented by whatever class inherits BaseDataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.BaseDataset.process_item" title="nussl.datasets.BaseDataset.process_item"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_item</span></code></a>(item)</p></td>
+<td><p>Each file returned by get_items is processed by this function.</p></td>
+</tr>
+</tbody>
+</table>
+<p>After process_item is called, a set of Transforms can be applied to the
+output of process_item. If no transforms are defined (<code class="docutils literal notranslate"><span class="pre">self.transforms</span> <span class="pre">=</span> <span class="pre">None</span></code>),
+then the output of process_item is returned by self[i]. For implemented
+Transforms, see nussl.datasets.transforms. For example,
+PhaseSpectrumApproximation will add three new keys to the output dictionary
+of process_item:</p>
+<ul class="simple">
+<li><p>mix_magnitude: the magnitude spectrogram of the mixture</p></li>
+<li><p>source_magnitudes: the magnitude spectrogram of each source</p></li>
+<li><p>ideal_binary_mask: the ideal binary mask for each source</p></li>
+</ul>
+<p>The transforms are applied in sequence using transforms.Compose.
+Not all sequences of transforms will be valid (e.g. if you pop a key in
+one transform but a later transform operates on that key, you will get
+an error).</p>
+<p>For examples of subclassing, see <code class="docutils literal notranslate"><span class="pre">nussl.datasets.hooks</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>folder</strong> (<em>str</em>) – location that should be processed to produce the list of files</p></li>
+<li><p><strong>transform</strong> (<em>transforms.* object</em><em>, </em><em>optional</em>) – A transforms to apply to the output of
+<code class="docutils literal notranslate"><span class="pre">self.process_item</span></code>. If using transforms.Compose, each transform will be
+applied in sequence. Defaults to None.</p></li>
+<li><p><strong>sample_rate</strong> (<em>int</em><em>, </em><em>optional</em>) – Sample rate to use for each audio files. If
+audio file sample rate doesn’t match, it will be resampled on the fly.
+If None, uses the default sample rate. Defaults to None.</p></li>
+<li><p><strong>stft_params</strong> (<em>STFTParams</em><em>, </em><em>optional</em>) – STFTParams object defining window_length,
+hop_length, and window_type that will be set for each AudioSignal object.
+Defaults to None (32ms window length, 8ms hop, ‘hann’ window).</p></li>
+<li><p><strong>num_channels</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of channels to make each AudioSignal
+object conform to. If an audio signal in your dataset has fewer channels
+than <code class="docutils literal notranslate"><span class="pre">num_channels</span></code>, a warning is raised, as the behavior in this case
+is undefined. Defaults to None.</p></li>
+<li><p><strong>strict_sample_rate</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to raise an error if</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>DataSetException</strong> – Exceptions are raised if the output of the implemented
+    functions by the subclass don’t match the specification.</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.datasets.BaseDataset.get_items">
+<code class="sig-name descname">get_items</code><span class="sig-paren">(</span><em class="sig-param">folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/base_dataset.html#BaseDataset.get_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.BaseDataset.get_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function must be implemented by whatever class inherits BaseDataset.
+It should return a list of items in the given folder, each of which is
+processed by process_items in some way to produce mixes, sources, class
+labels, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>folder</strong> (<em>str</em>) – location that should be processed to produce the list of files.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of items that should be processed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.datasets.BaseDataset.process_item">
+<code class="sig-name descname">process_item</code><span class="sig-paren">(</span><em class="sig-param">item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/base_dataset.html#BaseDataset.process_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.BaseDataset.process_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each file returned by get_items is processed by this function. For example,
+if each file is a json file containing the paths to the mixture and sources,
+then this function should parse the json file and load the mixture and sources
+and return them.</p>
+<p>Exact behavior of this functionality is determined by implementation by subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>item</strong> (<em>object</em>) – the item that will be processed by this function. Input depends
+on implementation of <code class="docutils literal notranslate"><span class="pre">self.get_items</span></code>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>This should return a dictionary that gets processed by the transforms.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="musdb18">
+<h2>MUSDB18<a class="headerlink" href="#musdb18" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.datasets.MUSDB18">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.</code><code class="sig-name descname">MUSDB18</code><span class="sig-paren">(</span><em class="sig-param">folder=None</em>, <em class="sig-param">is_wav=False</em>, <em class="sig-param">download=False</em>, <em class="sig-param">subsets=None</em>, <em class="sig-param">split=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#MUSDB18"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.MUSDB18" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook for MUSDB18. Uses the musdb.DB object to access the
+dataset. If <code class="docutils literal notranslate"><span class="pre">download=True</span></code>, then the 7s snippets of each track
+are downloaded to <code class="docutils literal notranslate"><span class="pre">self.folder</span></code>. If no folder is given, then
+the tracks are downloaded to ~/.nussl/musdb18.</p>
+<p>Getting an item from this dataset with no transforms returns the
+following dictionary:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>{
+    &#39;mix&#39;: [AudioSignal object containing mix audio],
+    &#39;source&#39;: {
+        &#39;bass&#39;: [AudioSignal object containing vocals],
+        &#39;drums&#39;: [AudioSignal object containing drums],
+        &#39;other&#39;: [AudioSignal object containing other],
+        &#39;vocals&#39;: [AudioSignal object containing vocals],
+    }
+    &#39;metadata&#39;: {
+        &#39;labels&#39;: [&#39;bass&#39;, &#39;drums&#39;, &#39;other&#39;, &#39;vocals&#39;]
+    }
+}
+</pre></div>
+</div>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.MUSDB18.get_items" title="nussl.datasets.MUSDB18.get_items"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_items</span></code></a>(folder)</p></td>
+<td><p>This function must be implemented by whatever class inherits BaseDataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.MUSDB18.process_item" title="nussl.datasets.MUSDB18.process_item"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_item</span></code></a>(item)</p></td>
+<td><p>Each file returned by get_items is processed by this function.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>folder</strong> (<em>str</em><em>, </em><em>optional</em>) – Location that should be processed to produce the
+list of files. Defaults to None.</p></li>
+<li><p><strong>is_wav</strong> (<em>bool</em><em>, </em><em>optional</em>) – Expect subfolder with wav files for each source
+instead of stems, defaults to False.</p></li>
+<li><p><strong>download</strong> (<em>bool</em><em>, </em><em>optional</em>) – Download sample version of MUSDB18 which
+includes 7s excerpts. Defaults to False.</p></li>
+<li><p><strong>subsets</strong> (<em>list</em><em>, </em><em>optional</em>) – Select a musdb subset train or test.
+Defaults to [‘train’, ‘test’] (all tracks).</p></li>
+<li><p><strong>split</strong> (<em>str</em><em>, </em><em>optional</em>) – When subset train is loaded, split selects the
+train/validation split. split=’train’ loads the training split,
+<a href="#id1"><span class="problematic" id="id2">`</span></a>split=’valid’ loads the validation split. split=None applies no
+splitting. Defaults to None.</p></li>
+<li><p><strong>**kwargs</strong> – Any additional arguments that are passed up to BaseDataset
+(see <code class="docutils literal notranslate"><span class="pre">nussl.datasets.BaseDataset</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.datasets.MUSDB18.get_items">
+<code class="sig-name descname">get_items</code><span class="sig-paren">(</span><em class="sig-param">folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#MUSDB18.get_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.MUSDB18.get_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function must be implemented by whatever class inherits BaseDataset.
+It should return a list of items in the given folder, each of which is
+processed by process_items in some way to produce mixes, sources, class
+labels, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>folder</strong> (<em>str</em>) – location that should be processed to produce the list of files.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of items that should be processed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.datasets.MUSDB18.process_item">
+<code class="sig-name descname">process_item</code><span class="sig-paren">(</span><em class="sig-param">item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#MUSDB18.process_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.MUSDB18.process_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each file returned by get_items is processed by this function. For example,
+if each file is a json file containing the paths to the mixture and sources,
+then this function should parse the json file and load the mixture and sources
+and return them.</p>
+<p>Exact behavior of this functionality is determined by implementation by subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>item</strong> (<em>object</em>) – the item that will be processed by this function. Input depends
+on implementation of <code class="docutils literal notranslate"><span class="pre">self.get_items</span></code>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>This should return a dictionary that gets processed by the transforms.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="wham">
+<h2>WHAM<a class="headerlink" href="#wham" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.datasets.WHAM">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.</code><code class="sig-name descname">WHAM</code><span class="sig-paren">(</span><em class="sig-param">root</em>, <em class="sig-param">mix_folder='mix_clean'</em>, <em class="sig-param">mode='min'</em>, <em class="sig-param">split='tr'</em>, <em class="sig-param">sample_rate=8000</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#WHAM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.WHAM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook for the WHAM dataset. Essentially subclasses MixSourceFolder but with presets
+that are helpful for WHAM, which as the following directory structure:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[wav8k, wav16k]/
+  [min, max]/
+    [tr, cv, tt]/
+        mix_both/
+        mix_clean/
+        mix_single/
+        noise/
+        s1/
+        s2/
+wham_noise/
+  tr/
+  cv/
+  tt/
+  metadata/
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>MixSourceFolder</strong> (<em>[</em><em>type</em><em>]</em>) – [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="scaper">
+<h2>Scaper<a class="headerlink" href="#scaper" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.datasets.Scaper">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.</code><code class="sig-name descname">Scaper</code><span class="sig-paren">(</span><em class="sig-param">folder</em>, <em class="sig-param">transform=None</em>, <em class="sig-param">sample_rate=None</em>, <em class="sig-param">stft_params=None</em>, <em class="sig-param">num_channels=None</em>, <em class="sig-param">strict_sample_rate=True</em>, <em class="sig-param">cache_populated=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#Scaper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.Scaper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Source separation datasets can be generated using Scaper, a library for
+automatic soundscape generation. Datasets that are generated with Scaper
+can be fed into this class easily. Scaper generates a large list of JAMS
+files which specify the parameters of the soundscape. If the soundscape is
+generated with <cite>save_isolated_events=True</cite>, then the audio corresponding
+to each event in the soundscape will be saved as well.</p>
+<p>Below is an example of using Scaper to generate a small dataset of 10
+mixtures with 2 sources each. The generated dataset can then be immediately
+loaded into an instance of <code class="docutils literal notranslate"><span class="pre">nussl.datasets.Scaper</span></code> for integration into
+a training or evaluation pipeline.</p>
+<p>The sources are output in a dictionary that looks like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>data[&#39;sources] = {
+    &#39;{label}::{count}&#39;: AudioSignal,
+    &#39;{label}::{count}&#39;: AudioSignal,
+    ...
+}
+</pre></div>
+</div>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.Scaper.get_items" title="nussl.datasets.Scaper.get_items"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_items</span></code></a>(folder)</p></td>
+<td><p>This function must be implemented by whatever class inherits BaseDataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.Scaper.process_item" title="nussl.datasets.Scaper.process_item"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_item</span></code></a>(item)</p></td>
+<td><p>Each file returned by get_items is processed by this function.</p></td>
+</tr>
+</tbody>
+</table>
+<p>For example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>data[&#39;sources] = {
+    &#39;siren::0&#39;: AudioSignal,
+    &#39;siren::1&#39;: AudioSignal,
+    &#39;car_horn::0&#39;: AudioSignal,
+    ...
+}
+</pre></div>
+</div>
+<p>Getting an item from this dataset with no transforms returns the
+following dictionary:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>{
+    &#39;mix&#39;: [AudioSignal object containing mix audio],
+    &#39;source&#39;: {
+        &#39;[label0::count]&#39;: [AudioSignal object containing label0 audio],
+        &#39;[label1::count]&#39;: [AudioSignal object containing label1 audio],
+        &#39;[label2::count]&#39;: [AudioSignal object containing label2 audio],
+        &#39;[label3::count]&#39;: [AudioSignal object containing label3 audio],
+        ...
+    }
+    &#39;metadata&#39;: {
+        &#39;jams&#39;: [the content of the jams file used to generate the soundscape]
+        &#39;labels&#39;: [&#39;label0&#39;, &#39;label1&#39;, &#39;label2&#39;, &#39;label3&#39;]
+    }
+}
+</pre></div>
+</div>
+<p>Example of generating a Scaper dataset and then loading it with nussl:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">n_sources</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">n_mixtures</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">duration</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ref_db</span> <span class="o">=</span> <span class="o">-</span><span class="mi">40</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fg_path</span> <span class="o">=</span> <span class="s1">&#39;/path/to/foreground/&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output_dir</span> <span class="o">=</span> <span class="s1">&#39;/output/path&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_mixtures</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">sc</span> <span class="o">=</span> <span class="n">scaper</span><span class="o">.</span><span class="n">Scaper</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">duration</span><span class="p">,</span> <span class="n">fg_path</span><span class="p">,</span> <span class="n">fg_path</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">sc</span><span class="o">.</span><span class="n">ref_db</span> <span class="o">=</span> <span class="n">ref_db</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">sc</span><span class="o">.</span><span class="n">sr</span> <span class="o">=</span> <span class="mi">16000</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_sources</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="n">sc</span><span class="o">.</span><span class="n">add_event</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">label</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;choose&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">source_file</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;choose&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">source_time</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">event_time</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">event_duration</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="n">duration</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">snr</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">pitch_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">time_stretch</span><span class="o">=</span><span class="kc">None</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">audio_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.wav&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">jams_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.jams&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">sc</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">audio_path</span><span class="p">,</span> <span class="n">jams_path</span><span class="p">,</span> <span class="n">save_isolated_events</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">Scaper</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># contains mix, sources, and metadata corresponding to 0.jams.</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>DataSetException</strong> – if Scaper dataset wasn’t saved with isolated event audio.</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.datasets.Scaper.get_items">
+<code class="sig-name descname">get_items</code><span class="sig-paren">(</span><em class="sig-param">folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#Scaper.get_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.Scaper.get_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function must be implemented by whatever class inherits BaseDataset.
+It should return a list of items in the given folder, each of which is
+processed by process_items in some way to produce mixes, sources, class
+labels, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>folder</strong> (<em>str</em>) – location that should be processed to produce the list of files.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of items that should be processed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.datasets.Scaper.process_item">
+<code class="sig-name descname">process_item</code><span class="sig-paren">(</span><em class="sig-param">item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#Scaper.process_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.Scaper.process_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each file returned by get_items is processed by this function. For example,
+if each file is a json file containing the paths to the mixture and sources,
+then this function should parse the json file and load the mixture and sources
+and return them.</p>
+<p>Exact behavior of this functionality is determined by implementation by subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>item</strong> (<em>object</em>) – the item that will be processed by this function. Input depends
+on implementation of <code class="docutils literal notranslate"><span class="pre">self.get_items</span></code>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>This should return a dictionary that gets processed by the transforms.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mixsourcefolder">
+<h2>MixSourceFolder<a class="headerlink" href="#mixsourcefolder" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.datasets.MixSourceFolder">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.</code><code class="sig-name descname">MixSourceFolder</code><span class="sig-paren">(</span><em class="sig-param">folder</em>, <em class="sig-param">mix_folder='mix'</em>, <em class="sig-param">source_folders=None</em>, <em class="sig-param">sample_rate=None</em>, <em class="sig-param">ext=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#MixSourceFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.MixSourceFolder" title="Permalink to this definition">¶</a></dt>
+<dd><p>This dataset expects your data to be formatted in the following way:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>data/
+    mix/
+        [file0].wav
+        [file1].wav
+        [file2].wav
+        ...
+    [label0]/
+        [file0].wav
+        [file1].wav
+        [file2].wav
+        ...
+    [label1]/
+        [file0].wav
+        [file1].wav
+        [file2].wav
+        ...
+    [label2]/
+        [file0].wav
+        [file1].wav
+        [file2].wav
+        ...
+    ...
+</pre></div>
+</div>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.MixSourceFolder.get_items" title="nussl.datasets.MixSourceFolder.get_items"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_items</span></code></a>(folder)</p></td>
+<td><p>This function must be implemented by whatever class inherits BaseDataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.MixSourceFolder.process_item" title="nussl.datasets.MixSourceFolder.process_item"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_item</span></code></a>(item)</p></td>
+<td><p>Each file returned by get_items is processed by this function.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Note that the the filenames match between the mix folder and each source folder.
+The source folder names can be whatever you want. Given a file in the
+<code class="docutils literal notranslate"><span class="pre">self.mix_folder</span></code> folder, this dataset will look up the corresponding files
+with the same name in the source folders. These are the source audio files.
+The sum of the sources should equal the mixture. Each source will be labeled
+according to the folder name it comes from.</p>
+<p>Getting an item from this dataset with no transforms returns the
+following dictionary:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>{
+    &#39;mix&#39;: [AudioSignal object containing mix audio],
+    &#39;source&#39;: {
+        &#39;[label0]&#39;: [AudioSignal object containing label0 audio],
+        &#39;[label1]&#39;: [AudioSignal object containing label1 audio],
+        &#39;[label2]&#39;: [AudioSignal object containing label2 audio],
+        &#39;[label3]&#39;: [AudioSignal object containing label3 audio],
+        ...
+    }
+    &#39;metadata&#39;: {
+        &#39;labels&#39;: [&#39;label0&#39;, &#39;label1&#39;, &#39;label2&#39;, &#39;label3&#39;]
+    }
+}
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>folder</strong> (<em>str</em><em>, </em><em>optional</em>) – Location that should be processed to produce the
+list of files. Defaults to None.</p></li>
+<li><p><strong>mix_folder</strong> (<em>str</em><em>, </em><em>optional</em>) – Folder to look in for mixtures. Defaults to ‘mix’.</p></li>
+<li><p><strong>source_folders</strong> (<em>list</em><em>, </em><em>optional</em>) – List of folders to look in for sources.
+Path is defined relative to folder. If None, all folders other than
+mix_folder are treated as the source folders. Defaults to None.</p></li>
+<li><p><strong>ext</strong> (<em>list</em><em>, </em><em>optional</em>) – Audio extensions to look for in mix_folder.
+Defaults to [‘.wav’, ‘.flac’, ‘.mp3’].</p></li>
+<li><p><strong>**kwargs</strong> – Any additional arguments that are passed up to BaseDataset
+(see <code class="docutils literal notranslate"><span class="pre">nussl.datasets.BaseDataset</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.datasets.MixSourceFolder.get_items">
+<code class="sig-name descname">get_items</code><span class="sig-paren">(</span><em class="sig-param">folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#MixSourceFolder.get_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.MixSourceFolder.get_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function must be implemented by whatever class inherits BaseDataset.
+It should return a list of items in the given folder, each of which is
+processed by process_items in some way to produce mixes, sources, class
+labels, etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>folder</strong> (<em>str</em>) – location that should be processed to produce the list of files.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of items that should be processed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.datasets.MixSourceFolder.process_item">
+<code class="sig-name descname">process_item</code><span class="sig-paren">(</span><em class="sig-param">item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/hooks.html#MixSourceFolder.process_item"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.MixSourceFolder.process_item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Each file returned by get_items is processed by this function. For example,
+if each file is a json file containing the paths to the mixture and sources,
+then this function should parse the json file and load the mixture and sources
+and return them.</p>
+<p>Exact behavior of this functionality is determined by implementation by subclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>item</strong> (<em>object</em>) – the item that will be processed by this function. Input depends
+on implementation of <code class="docutils literal notranslate"><span class="pre">self.get_items</span></code>.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>This should return a dictionary that gets processed by the transforms.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-nussl.datasets.transforms">
+<span id="data-transforms"></span><h2>Data transforms<a class="headerlink" href="#module-nussl.datasets.transforms" title="Permalink to this headline">¶</a></h2>
+<p><strong>Classes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.Cache" title="nussl.datasets.transforms.Cache"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cache</span></code></a>(location[, cache_size, overwrite])</p></td>
+<td><p>The Cache transform can be placed within a Compose transform.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.Compose" title="nussl.datasets.transforms.Compose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compose</span></code></a>(transforms)</p></td>
+<td><p>Composes several transforms together.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.GetExcerpt" title="nussl.datasets.transforms.GetExcerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GetExcerpt</span></code></a>(excerpt_length[, time_dim, tf_keys])</p></td>
+<td><p>Takes in a dictionary containing Torch tensors or numpy arrays and extracts an excerpt from each tensor corresponding to a spectral representation of a specified length in frames.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.IndexSources" title="nussl.datasets.transforms.IndexSources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IndexSources</span></code></a>(target_key, index)</p></td>
+<td><p>Takes in a dictionary containing Torch tensors or numpy arrays and extracts the indexed sources from the set key (usually either <cite>source_magnitudes</cite> or <cite>ideal_binary_mask</cite>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.LabelsToOneHot" title="nussl.datasets.transforms.LabelsToOneHot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LabelsToOneHot</span></code></a>([source_key])</p></td>
+<td><p>Takes a data dictionary with sources and their keys and converts the keys to a one-hot numpy array using the list in data[‘metadata’][‘labels’] to figure out which index goes where.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.MagnitudeSpectrumApproximation" title="nussl.datasets.transforms.MagnitudeSpectrumApproximation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MagnitudeSpectrumApproximation</span></code></a>([mix_key, …])</p></td>
+<td><p>Takes a dictionary and looks for two special keys, defined by the arguments <code class="docutils literal notranslate"><span class="pre">mix_key</span></code> and <code class="docutils literal notranslate"><span class="pre">source_key</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.MagnitudeWeights" title="nussl.datasets.transforms.MagnitudeWeights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MagnitudeWeights</span></code></a>([mix_key, mix_magnitude_key])</p></td>
+<td><p>Applying time-frequency weights to the deep clustering objective results in a huge performance boost.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation" title="nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhaseSensitiveSpectrumApproximation</span></code></a>([…])</p></td>
+<td><p>Takes a dictionary and looks for two special keys, defined by the arguments <code class="docutils literal notranslate"><span class="pre">mix_key</span></code> and <code class="docutils literal notranslate"><span class="pre">source_key</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.SumSources" title="nussl.datasets.transforms.SumSources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SumSources</span></code></a>(groupings[, group_names, source_key])</p></td>
+<td><p>Sums sources together.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.ToSeparationModel" title="nussl.datasets.transforms.ToSeparationModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToSeparationModel</span></code></a>([swap_tf_dims])</p></td>
+<td><p>Takes in a dictionary containing objects and removes any objects that cannot be passed to SeparationModel (e.g.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exceptions</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.TransformException" title="nussl.datasets.transforms.TransformException"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransformException</span></code></a></p></td>
+<td><p>Exception class for errors when working with transforms in nussl.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="nussl.datasets.transforms.Cache">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">Cache</code><span class="sig-paren">(</span><em class="sig-param">location</em>, <em class="sig-param">cache_size=1</em>, <em class="sig-param">overwrite=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#Cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.Cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Cache transform can be placed within a Compose transform. The data
+dictionary coming into this transform will be saved to the specified
+location using <code class="docutils literal notranslate"><span class="pre">zarr</span></code>. Then instead of computing all of the transforms
+before the cache, one can simply read from the cache. The transforms after
+this will then be applied to the data dictionary that is read from the
+cache. A typical pipeline might look like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">Scaper</span><span class="p">(</span><span class="s1">&#39;path/to/scaper/folder&#39;</span><span class="p">)</span>
+<span class="n">tfm</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">PhaseSensitiveApproximation</span><span class="p">(),</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">ToSeparationModel</span><span class="p">(),</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">Cache</span><span class="p">(</span><span class="s1">&#39;~/.nussl/cache/tag&#39;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">GetExcerpt</span><span class="p">()</span>
+<span class="p">])</span>
+<span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># first time will write to cache then apply GetExcerpt</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">cache_populated</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># switches to reading from cache</span>
+<span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># second time will read from cache then apply GetExcerpt</span>
+<span class="n">dataset</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># will error out as it wasn&#39;t written to the cache!</span>
+
+<span class="n">dataset</span><span class="o">.</span><span class="n">cache_populated</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)):</span>
+    <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="c1"># every item will get written to cache</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">cache_populated</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">dataset</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># now it exists</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">Scaper</span><span class="p">(</span><span class="s1">&#39;path/to/scaper/folder&#39;</span><span class="p">)</span> <span class="c1"># next time around</span>
+<span class="n">tfm</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">PhaseSensitiveApproximation</span><span class="p">(),</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">ToSeparationModel</span><span class="p">(),</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">Cache</span><span class="p">(</span><span class="s1">&#39;~/.nussl/cache/tag&#39;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+    <span class="n">transforms</span><span class="o">.</span><span class="n">GetExcerpt</span><span class="p">()</span>
+<span class="p">])</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">cache_populated</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># will read from cache, which still exists from last time</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>object</strong> (<em>[</em><em>type</em><em>]</em>) – [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.Compose">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">Compose</code><span class="sig-paren">(</span><em class="sig-param">transforms</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#Compose"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.Compose" title="Permalink to this definition">¶</a></dt>
+<dd><p>Composes several transforms together. Inspired by torchvision implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>transforms</strong> (list of <code class="docutils literal notranslate"><span class="pre">Transform</span></code> objects) – list of transforms to compose.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">([</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">transforms</span><span class="o">.</span><span class="n">MagnitudeSpectrumApproximation</span><span class="p">(),</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">transforms</span><span class="o">.</span><span class="n">ToSeparationModel</span><span class="p">(),</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.GetExcerpt">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">GetExcerpt</code><span class="sig-paren">(</span><em class="sig-param">excerpt_length</em>, <em class="sig-param">time_dim=0</em>, <em class="sig-param">tf_keys=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#GetExcerpt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.GetExcerpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in a dictionary containing Torch tensors or numpy arrays and extracts an
+excerpt from each tensor corresponding to a spectral representation of a specified
+length in frames. Can be used to get L-length spectrograms from mixture and source
+spectrograms. If the data is shorter than the specified length, it
+is padded to the specified length. If it is longer, a random offset between
+<code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">data_length</span> <span class="pre">-</span> <span class="pre">specified_length)</span></code> is chosen. This function assumes that
+it is being passed data AFTER ToSeparationModel. Thus the time dimension is
+on axis=1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>excerpt_length</strong> (<em>int</em>) – Specified length of transformed data in frames.</p></li>
+<li><p><strong>time_dim</strong> (<em>int</em>) – Which dimension time is on (excerpts are taken along this axis).
+Defaults to 0.</p></li>
+<li><p><strong>time_frequency_keys</strong> (<em>list</em>) – Which keys to look at it in the data dictionary to
+take excerpts from.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.IndexSources">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">IndexSources</code><span class="sig-paren">(</span><em class="sig-param">target_key</em>, <em class="sig-param">index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#IndexSources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.IndexSources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in a dictionary containing Torch tensors or numpy arrays and extracts the
+indexed sources from the set key (usually either <cite>source_magnitudes</cite> or
+<cite>ideal_binary_mask</cite>). Can be used to train single-source separation models
+(e.g. mix goes in, vocals come out).</p>
+<p>You need to know which slice of the source magnitudes or ideal binary mask arrays
+to extract. The order of the sources in the source magnitudes array will be in
+alphabetical order according to their source labels.</p>
+<p>For example, if source magnitudes has shape <cite>(257, 400, 1, 4)</cite>, and the data is
+from MUSDB, then the four possible source labels are bass, drums, other, and vocals.
+The data in source magnitudes is in alphabetical order, so:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># source_magnitudes is an array returned by either MagnitudeSpectrumApproximation</span>
+<span class="c1"># or PhaseSensitiveSpectrumApproximation</span>
+<span class="n">source_magnitudes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="c1"># bass spectrogram</span>
+<span class="n">source_magnitudes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="c1"># drums spectrogram</span>
+<span class="n">source_magnitudes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="c1"># other spectrogram</span>
+<span class="n">source_magnitudes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="c1"># vocals spectrogram</span>
+
+<span class="c1"># ideal_binary_mask is an array returned by either MagnitudeSpectrumApproximation</span>
+<span class="c1"># or PhaseSensitiveSpectrumApproximation</span>
+<span class="n">ideal_binary_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="c1"># bass ibm mask</span>
+<span class="n">ideal_binary_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="c1"># drums ibm mask</span>
+<span class="n">ideal_binary_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="c1"># other ibm mask</span>
+<span class="n">ideal_binary_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="c1"># vocals ibm mask</span>
+</pre></div>
+</div>
+<p>You can apply this transform to either the <cite>source_magnitudes</cite> or the
+<cite>ideal_binary_mask</cite> or both.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>object</strong> (<em>[</em><em>type</em><em>]</em>) – [description]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.LabelsToOneHot">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">LabelsToOneHot</code><span class="sig-paren">(</span><em class="sig-param">source_key='sources'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#LabelsToOneHot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.LabelsToOneHot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a data dictionary with sources and their keys and converts the keys to
+a one-hot numpy array using the list in data[‘metadata’][‘labels’] to figure
+out which index goes where.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.MagnitudeSpectrumApproximation">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">MagnitudeSpectrumApproximation</code><span class="sig-paren">(</span><em class="sig-param">mix_key='mix'</em>, <em class="sig-param">source_key='sources'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#MagnitudeSpectrumApproximation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.MagnitudeSpectrumApproximation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a dictionary and looks for two special keys, defined by the
+arguments <code class="docutils literal notranslate"><span class="pre">mix_key</span></code> and <code class="docutils literal notranslate"><span class="pre">source_key</span></code>. These default to <cite>mix</cite> and <cite>sources</cite>.
+These values of these keys are used to calculate the magnitude spectrum
+approximation [1]. The input dictionary is modified to have additional
+keys:</p>
+<ul class="simple">
+<li><p>mix_magnitude: The magnitude spectrogram of the mixture audio signal.</p></li>
+<li><p>source_magnitudes: The magnitude spectrograms of each source spectrogram.</p></li>
+<li><p>assignments: The ideal binary assignments for each time-frequency bin.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">data[self.source_key]</span></code> points to a dictionary containing the source names in
+the keys and the corresponding AudioSignal in the values. The keys are sorted
+in alphabetical order and then appended to the mask. <code class="docutils literal notranslate"><span class="pre">data[self.source_key]</span></code>
+then points to an OrderedDict instead, where the keys are in the same order
+as in <code class="docutils literal notranslate"><span class="pre">data['source_magnitudes']</span></code> and <code class="docutils literal notranslate"><span class="pre">data['assignments']</span></code>.</p>
+<p>This transform uses the STFTParams that are attached to the AudioSignal objects
+contained in <code class="docutils literal notranslate"><span class="pre">data[mix_key]</span></code> and <code class="docutils literal notranslate"><span class="pre">data[source_key]</span></code>.</p>
+<dl class="simple">
+<dt>[1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux.</dt><dd><p>“Phase-sensitive and recognition-boosted speech separation using
+deep recurrent neural networks.” In 2015 IEEE International Conference
+on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE,
+2015.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in data for the mixture AudioSignal.
+Defaults to ‘mix’.</p></li>
+<li><p><strong>source_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the data containing the list of
+source AudioSignals. Defaults to ‘sources’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#nussl.datasets.transforms.TransformException" title="nussl.datasets.transforms.TransformException"><strong>TransformException</strong></a> – if the expected keys are not in the dictionary, an
+    Exception is raised.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Modified version of the input dictionary.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.MagnitudeWeights">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">MagnitudeWeights</code><span class="sig-paren">(</span><em class="sig-param">mix_key='mix'</em>, <em class="sig-param">mix_magnitude_key='mix_magnitude'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#MagnitudeWeights"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.MagnitudeWeights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applying time-frequency weights to the deep clustering objective results in a
+huge performance boost. This transform looks for ‘mix_magnitude’, which is output
+by either MagnitudeSpectrumApproximation or PhaseSensitiveSpectrumApproximation
+and puts it into the weights.</p>
+<p>[1] Wang, Zhong-Qiu, Jonathan Le Roux, and John R. Hershey.
+“Alternative objective functions for deep clustering.” 2018 IEEE International
+Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2018.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mix_magnitude_key</strong> (<em>str</em>) – Which key to look for the mix_magnitude data in.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">PhaseSensitiveSpectrumApproximation</code><span class="sig-paren">(</span><em class="sig-param">mix_key='mix'</em>, <em class="sig-param">source_key='sources'</em>, <em class="sig-param">range_min=0.0</em>, <em class="sig-param">range_max=1.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#PhaseSensitiveSpectrumApproximation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a dictionary and looks for two special keys, defined by the
+arguments <code class="docutils literal notranslate"><span class="pre">mix_key</span></code> and <code class="docutils literal notranslate"><span class="pre">source_key</span></code>. These default to <cite>mix</cite> and <cite>sources</cite>.
+These values of these keys are used to calculate the phase sensitive spectrum
+approximation [1]. The input dictionary is modified to have additional
+keys:</p>
+<ul class="simple">
+<li><p>mix_magnitude: The magnitude spectrogram of the mixture audio signal.</p></li>
+<li><p>source_magnitudes: The magnitude spectrograms of each source spectrogram.</p></li>
+<li><p>assignments: The ideal binary assignments for each time-frequency bin.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">data[self.source_key]</span></code> points to a dictionary containing the source names in
+the keys and the corresponding AudioSignal in the values. The keys are sorted
+in alphabetical order and then appended to the mask. <code class="docutils literal notranslate"><span class="pre">data[self.source_key]</span></code>
+then points to an OrderedDict instead, where the keys are in the same order
+as in <code class="docutils literal notranslate"><span class="pre">data['source_magnitudes']</span></code> and <code class="docutils literal notranslate"><span class="pre">data['assignments']</span></code>.</p>
+<p>This transform uses the STFTParams that are attached to the AudioSignal objects
+contained in <code class="docutils literal notranslate"><span class="pre">data[mix_key]</span></code> and <code class="docutils literal notranslate"><span class="pre">data[source_key]</span></code>.</p>
+<dl class="simple">
+<dt>[1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux.</dt><dd><p>“Phase-sensitive and recognition-boosted speech separation using
+deep recurrent neural networks.” In 2015 IEEE International Conference
+on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE,
+2015.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in data for the mixture AudioSignal.
+Defaults to ‘mix’.</p></li>
+<li><p><strong>source_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the data containing the list of
+source AudioSignals. Defaults to ‘sources’.</p></li>
+<li><p><strong>range_min</strong> (<em>float</em><em>, </em><em>optional</em>) – The lower end to use when truncating the source
+magnitudes in the phase sensitive spectrum approximation. Defaults to 0.0 (construct
+non-negative masks). Use -np.inf for untruncated source magnitudes.</p></li>
+<li><p><strong>range_max</strong> (<em>float</em><em>, </em><em>optional</em>) – The higher end of the truncated spectrum. This gets
+multiplied by the magnitude of the mixture. Use 1.0 to truncate the source
+magnitudes to <cite>max(source_magnitudes, mix_magnitude)</cite>. Use np.inf for untruncated
+source magnitudes (best performance for an oracle mask but may be beyond what a
+neural network is capable of masking). Defaults to 1.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#nussl.datasets.transforms.TransformException" title="nussl.datasets.transforms.TransformException"><strong>TransformException</strong></a> – if the expected keys are not in the dictionary, an
+    Exception is raised.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Modified version of the input dictionary.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.SumSources">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">SumSources</code><span class="sig-paren">(</span><em class="sig-param">groupings</em>, <em class="sig-param">group_names=None</em>, <em class="sig-param">source_key='sources'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#SumSources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.SumSources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sums sources together. Looks for sources in <code class="docutils literal notranslate"><span class="pre">data[self.source_key]</span></code>. If
+a source belongs to a group, it is popped from the <code class="docutils literal notranslate"><span class="pre">data[self.source_key]</span></code> and
+summed with the other sources in the group. If there is a corresponding
+group_name in group_names, it is named that in <code class="docutils literal notranslate"><span class="pre">data[self.source_key]</span></code>. If
+group_names are not given, then the names are constructed using the keys
+in each group (e.g. <cite>drums+bass+other</cite>).</p>
+<p>If using Scaper datasets, then there may be multiple sources with the same
+label but different counts. The Scaper dataset hook organizes the source
+dictionary as follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>data[&#39;sources] = {
+    &#39;{label}::{count}&#39;: AudioSignal,
+    &#39;{label}::{count}&#39;: AudioSignal,
+    ...
+}
+</pre></div>
+</div>
+<p>SumSources sums by source label, so the <code class="docutils literal notranslate"><span class="pre">::count</span></code> will be ignored and only the
+label part will be used when grouping sources.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tfm</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">SumSources</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">groupings</span><span class="o">=</span><span class="p">[[</span><span class="s1">&#39;drums&#39;</span><span class="p">,</span> <span class="s1">&#39;bass&#39;</span><span class="p">,</span> <span class="s1">&#39;other]],</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">group_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;accompaniment],</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># data[&#39;sources&#39;] is a dict containing keys:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#   [&#39;vocals&#39;, &#39;drums&#39;, &#39;bass&#39;, &#39;other]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">tfm</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># data[&#39;sources&#39;] is now a dict containing keys:</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#   [&#39;vocals&#39;, &#39;accompaniment&#39;]</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>groupings</strong> (<em>list</em>) – a list of lists telling how to group each sources.</p></li>
+<li><p><strong>group_names</strong> (<em>list</em><em>, </em><em>optional</em>) – A list containing the names of each group, or None.
+Defaults to None.</p></li>
+<li><p><strong>source_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the data containing the list of
+source AudioSignals. Defaults to ‘sources’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference internal" href="#nussl.datasets.transforms.TransformException" title="nussl.datasets.transforms.TransformException"><strong>TransformException</strong></a> – if groupings is not a list</p></li>
+<li><p><a class="reference internal" href="#nussl.datasets.transforms.TransformException" title="nussl.datasets.transforms.TransformException"><strong>TransformException</strong></a> – if group_names is not None but
+    len(groupings) != len(group_names)</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>modified dictionary with summed sources</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.ToSeparationModel">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">ToSeparationModel</code><span class="sig-paren">(</span><em class="sig-param">swap_tf_dims=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#ToSeparationModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.ToSeparationModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in a dictionary containing objects and removes any objects that cannot
+be passed to SeparationModel (e.g. not a numpy array or torch Tensor).
+If these objects are passed to SeparationModel, then an error will occur. This
+class should be the last one in your list of transforms, if you’re using
+this dataset in a DataLoader object for training a network. If the keys
+correspond to numpy arrays, they are converted to tensors using
+<code class="docutils literal notranslate"><span class="pre">torch.from_numpy</span></code>. Finally, the dimensions corresponding to time and
+frequency are swapped for all the keys in swap_tf_dims, as this is how
+SeparationModel expects it.</p>
+<p>Example:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>data = {
+    # 2ch spectrogram for mixture
+    &#39;mix_magnitude&#39;: torch.randn(513, 400, 2),
+    # 2ch spectrogram for each source
+    &#39;source_magnitudes&#39;: torch.randn(513, 400, 2, 4)
+    &#39;mix&#39;: AudioSignal()
+}
+
+tfm = transforms.ToSeparationModel()
+data = tfm(data)
+
+data[&#39;mix_magnitude&#39;].shape # (400, 513, 2)
+data[&#39;source_magnitudes].shape # (400, 513, 2, 4)
+&#39;mix&#39; in data.keys() # False
+</pre></div>
+</div>
+<p>If this class isn’t in your transforms list for the dataset, but you are
+using it in the Trainer class, then it is added automatically as the
+last transform.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="nussl.datasets.transforms.TransformException">
+<em class="property">exception </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">TransformException</code><a class="reference internal" href="_modules/nussl/datasets/transforms.html#TransformException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.TransformException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception class for errors when working with transforms in nussl.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="evaluation.html" class="btn btn-neutral float-right" title="Evaluation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="core.html" class="btn btn-neutral float-left" title="Core" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

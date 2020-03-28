@@ -1,0 +1,797 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.core.utils &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.core.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.core.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Provides utilities for running nussl algorithms that do not belong to</span>
+<span class="sd">any specific algorithm or that are shared between algorithms.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">musdb</span>
+<span class="kn">import</span> <span class="nn">librosa</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">constants</span>
+
+<div class="viewcode-block" id="seed"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.seed">[docs]</a><span class="k">def</span> <span class="nf">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">,</span> <span class="n">set_cudnn</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Seeds all random states in nussl with the same random seed</span>
+<span class="sd">    for reproducibility. Seeds ``numpy``, ``random`` and ``torch``</span>
+<span class="sd">    random generators. </span>
+
+<span class="sd">    For full reproducibility, two further options must be set</span>
+<span class="sd">    according to the torch documentation:</span>
+
+<span class="sd">    https://pytorch.org/docs/stable/notes/randomness.html</span>
+
+<span class="sd">    To do this, ``set_cudnn`` must be True. It defaults to </span>
+<span class="sd">    False, since setting it to True results in a performance</span>
+<span class="sd">    hit.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        random_seed (int): integer corresponding to random seed to </span>
+<span class="sd">        use.</span>
+<span class="sd">        set_cudnn (bool): Whether or not to set cudnn into determinstic</span>
+<span class="sd">        mode and off of benchmark mode. Defaults to False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">set_cudnn</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">backends</span><span class="o">.</span><span class="n">cudnn</span><span class="o">.</span><span class="n">benchmark</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="find_peak_indices"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.find_peak_indices">[docs]</a><span class="k">def</span> <span class="nf">find_peak_indices</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="n">n_peaks</span><span class="p">,</span> <span class="n">min_dist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">do_min</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function will find the indices of the peaks of an input n-dimensional numpy array.</span>
+<span class="sd">    This can be configured to find max or min peak indices, distance between the peaks, and</span>
+<span class="sd">    a lower bound, at which the algorithm will stop searching for peaks (or upper bound if</span>
+<span class="sd">    searching for max). Used exactly the same as :func:`find_peak_values`.</span>
+
+<span class="sd">    This function currently only accepts 1-D and 2-D numpy arrays.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        * This function only returns the indices of peaks. If you want to find peak values,</span>
+<span class="sd">        use :func:`find_peak_values`.</span>
+
+<span class="sd">        * min_dist can be an int or a tuple of length 2.</span>
+<span class="sd">            If input_array is 1-D, min_dist must be an integer.</span>
+<span class="sd">            If input_array is 2-D, min_dist can be an integer, in which case the minimum</span>
+<span class="sd">            distance in both dimensions will be equal. min_dist can also be a tuple if</span>
+<span class="sd">            you want each dimension to have a different minimum distance between peaks.</span>
+<span class="sd">            In that case, the 0th value in the tuple represents the first dimension, and</span>
+<span class="sd">            the 1st value represents the second dimension in the numpy array.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_array: a 1- or 2- dimensional numpy array that will be inspected.</span>
+<span class="sd">        n_peaks: (int) maximum number of peaks to find</span>
+<span class="sd">        min_dist: (int) minimum distance between peaks. Default value: len(input_array) / 4</span>
+<span class="sd">        do_min: (bool) if True, finds indices at minimum value instead of maximum</span>
+<span class="sd">        threshold: (float) the value (scaled between 0.0 and 1.0)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        peak_indices: (list) list of the indices of the peak values</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">input_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot find peak indices on data greater than 2 dimensions!&#39;</span><span class="p">)</span>
+
+    <span class="n">is_1d</span> <span class="o">=</span> <span class="n">input_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">zero_dist</span> <span class="o">=</span> <span class="n">zero_dist0</span> <span class="o">=</span> <span class="n">zero_dist1</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">min_dist</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span> <span class="k">if</span> <span class="n">min_dist</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">min_dist</span>
+
+    <span class="k">if</span> <span class="n">is_1d</span><span class="p">:</span>
+        <span class="n">zero_dist</span> <span class="o">=</span> <span class="n">min_dist</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">min_dist</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+            <span class="n">zero_dist0</span> <span class="o">=</span> <span class="n">zero_dist1</span> <span class="o">=</span> <span class="n">min_dist</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">min_dist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">zero_dist0</span> <span class="o">=</span> <span class="n">zero_dist1</span> <span class="o">=</span> <span class="n">min_dist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">zero_dist0</span><span class="p">,</span> <span class="n">zero_dist1</span> <span class="o">=</span> <span class="n">min_dist</span>
+
+    <span class="c1"># scale input_array between [0.0, 1.0]</span>
+    <span class="n">input_array</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span>
+    <span class="n">input_array</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span>
+
+    <span class="c1"># flip sign if doing min</span>
+    <span class="n">input_array</span> <span class="o">=</span> <span class="o">-</span><span class="n">input_array</span> <span class="k">if</span> <span class="n">do_min</span> <span class="k">else</span> <span class="n">input_array</span>
+
+    <span class="c1"># throw out everything below threshold</span>
+    <span class="n">input_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">input_array</span><span class="p">,</span> <span class="p">(</span><span class="n">input_array</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">))</span>
+
+    <span class="c1"># check to make sure we didn&#39;t throw everything out</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">input_array</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Threshold set incorrectly. No peaks above threshold.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">input_array</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">n_peaks</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Threshold set such that there will be less peaks than n_peaks.&#39;</span><span class="p">)</span>
+
+    <span class="n">peak_indices</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_peaks</span><span class="p">):</span>
+        <span class="c1"># np.unravel_index for 2D indices e.g., index 5 in a 3x3 array should be (1, 2)</span>
+        <span class="c1"># Also, wrap in list for duck typing</span>
+        <span class="n">cur_peak_idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unravel_index</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">input_array</span><span class="o">.</span><span class="n">flatten</span><span class="p">()),</span> <span class="n">input_array</span><span class="o">.</span><span class="n">shape</span>
+        <span class="p">))</span>
+
+        <span class="c1"># zero out peak and its surroundings</span>
+        <span class="k">if</span> <span class="n">is_1d</span><span class="p">:</span>
+            <span class="n">cur_peak_idx</span> <span class="o">=</span> <span class="n">cur_peak_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">peak_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur_peak_idx</span><span class="p">)</span>
+            <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">_set_array_zero_indices</span><span class="p">(</span><span class="n">cur_peak_idx</span><span class="p">,</span> <span class="n">zero_dist</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_array</span><span class="p">))</span>
+            <span class="n">input_array</span><span class="p">[</span><span class="n">lower</span><span class="p">:</span><span class="n">upper</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">peak_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur_peak_idx</span><span class="p">)</span>
+            <span class="n">lower0</span><span class="p">,</span> <span class="n">upper0</span> <span class="o">=</span> <span class="n">_set_array_zero_indices</span><span class="p">(</span><span class="n">cur_peak_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">zero_dist0</span><span class="p">,</span>
+                                                     <span class="n">input_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">lower1</span><span class="p">,</span> <span class="n">upper1</span> <span class="o">=</span> <span class="n">_set_array_zero_indices</span><span class="p">(</span><span class="n">cur_peak_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">zero_dist1</span><span class="p">,</span>
+                                                     <span class="n">input_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">input_array</span><span class="p">[</span><span class="n">lower0</span><span class="p">:</span><span class="n">upper0</span><span class="p">,</span> <span class="n">lower1</span><span class="p">:</span><span class="n">upper1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">break</span>
+
+    <span class="k">return</span> <span class="n">peak_indices</span></div>
+
+
+<span class="k">def</span> <span class="nf">_set_array_zero_indices</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">zero_distance</span><span class="p">,</span> <span class="n">max_len</span><span class="p">):</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="n">index</span> <span class="o">-</span> <span class="n">zero_distance</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="n">zero_distance</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">lower</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">lower</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">lower</span>
+    <span class="n">upper</span> <span class="o">=</span> <span class="n">max_len</span> <span class="k">if</span> <span class="n">upper</span> <span class="o">&gt;=</span> <span class="n">max_len</span> <span class="k">else</span> <span class="n">upper</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">lower</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">upper</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="complex_randn"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.complex_randn">[docs]</a><span class="k">def</span> <span class="nf">complex_randn</span><span class="p">(</span><span class="n">shape</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a complex-valued numpy array of random values with shape :param:`shape`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        shape (tuple): Tuple of ints that will be the shape of the resultant complex numpy array.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (:obj:`np.ndarray`): a complex-valued numpy array of random values with shape `shape`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_axis</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">axis_num</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Will get index &#39;i&#39; along axis &#39;axis_num&#39; using np.take.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        array (:obj:`np.ndarray`): Array to fetch axis of.</span>
+<span class="sd">        axis_num (int): Axes to retrieve.</span>
+<span class="sd">        i (int): Index to retrieve.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The value at index :param:`i` along axis :param:`axis_num`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">axis_num</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_slice_along_dim</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a slice of data along a dim between a start and an end. Agnostic to</span>
+<span class="sd">    whether the data is a numpy array or a torch tensor.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (np.ndarray or torch.Tensor): Data to slice.</span>
+<span class="sd">        dim (int): Dimension along which to do the slicing.</span>
+<span class="sd">        start (int): Start of the slice.</span>
+<span class="sd">        end (int): End of the slice</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported for dim &gt; 4&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dim </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2"> too high for data.shape </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[:,</span> <span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_format</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Formats a class name correctly for checking function and class names.</span>
+<span class="sd">        Strips all non-alphanumeric chars and makes lowercase.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">isalnum</span><span class="p">,</span> <span class="n">string</span><span class="p">)))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="musdb_track_to_audio_signals"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.musdb_track_to_audio_signals">[docs]</a><span class="k">def</span> <span class="nf">musdb_track_to_audio_signals</span><span class="p">(</span><span class="n">track</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a musdb track to a dictionary of AudioSignal objects.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        track (musdb.audio_classes.MultiTrack): MultiTrasack object </span>
+<span class="sd">            containing stems that will each be turned into AudioSignal</span>
+<span class="sd">            objects.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (2-tuple): tuple containing the mixture AudioSignal and a dictionary of</span>
+<span class="sd">            the sources.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># lazy load to prevent circular imports</span>
+    <span class="kn">from</span> <span class="nn">.audio_signal</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
+
+    <span class="n">mixture</span> <span class="o">=</span> <span class="n">AudioSignal</span><span class="p">(</span><span class="n">audio_data_array</span><span class="o">=</span><span class="n">track</span><span class="o">.</span><span class="n">audio</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="n">track</span><span class="o">.</span><span class="n">rate</span><span class="p">)</span>
+    <span class="n">mixture</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="o">=</span> <span class="n">track</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">stems</span> <span class="o">=</span> <span class="n">track</span><span class="o">.</span><span class="n">stems</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">track</span><span class="o">.</span><span class="n">sources</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">stem_id</span><span class="p">):</span>
+        <span class="n">sources</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">AudioSignal</span><span class="p">(</span>
+            <span class="n">audio_data_array</span><span class="o">=</span><span class="n">stems</span><span class="p">[</span><span class="n">v</span><span class="o">.</span><span class="n">stem_id</span><span class="p">],</span>
+            <span class="n">sample_rate</span><span class="o">=</span><span class="n">track</span><span class="o">.</span><span class="n">rate</span>
+        <span class="p">)</span>
+        <span class="n">sources</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;musdb/</span><span class="si">{</span><span class="n">track</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">.wav&#39;</span>
+
+    <span class="k">return</span> <span class="n">mixture</span><span class="p">,</span> <span class="n">sources</span></div>
+
+
+<div class="viewcode-block" id="audio_signals_to_musdb_track"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.audio_signals_to_musdb_track">[docs]</a><span class="k">def</span> <span class="nf">audio_signals_to_musdb_track</span><span class="p">(</span><span class="n">mixture</span><span class="p">,</span> <span class="n">sources_dict</span><span class="p">,</span> <span class="n">targets_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts :class:`AudioSignal` objects to ``musdb`` :class:`Track` objects that</span>
+<span class="sd">    contain the mixture, the ground truth sources, and the targets for use with the ``mus_eval``</span>
+<span class="sd">    implementation of BSS-Eval and ``musdb``.</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        * More information on ``musdb``:  `Github&lt;https://github.com/sigsep/sigsep-mus-db&gt;`</span>
+<span class="sd">            and `documentation&lt;http://musdb.readthedocs.io/&gt;`</span>
+<span class="sd">        * More information on ``mus_eval``: `Github&lt;https://github.com/sigsep/sigsep-mus-eval&gt;`</span>
+<span class="sd">            and `documentation&lt;https://sigsep.github.io/sigsep-mus-eval/&gt;`</span>
+<span class="sd">        * :class:`BSSEvalV4` for ``nussl``&#39;s interface to BSS-Eval v4.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        .. code-block:: python</span>
+<span class="sd">            :linenos:</span>
+<span class="sd">            import nussl</span>
+<span class="sd">            signal = nussl.AudioSignal(nussl.efz_utils.download_audio_file(&#39;HistoryRepeating.wav&#39;))</span>
+
+<span class="sd">            repet = nussl.Repet(signal)</span>
+<span class="sd">            repet.run()</span>
+
+<span class="sd">            bg, fg = repet.make_audio_signals()</span>
+
+<span class="sd">            src_dict = {&#39;vocals&#39;: fg, &#39;accompaniment&#39;: bg}</span>
+<span class="sd">            target = nussl.core.constants.STEM_TARGET_DICT</span>
+<span class="sd">            track = nussl.utils.audio_signals_to_musdb_track(signal, src_dict, target)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mixture (:class:`AudioSignal`): The :class:`AudioSignal` object that contains the mixture.</span>
+<span class="sd">        sources_dict (dict): Dictionary where the keys are the labels for the sources and values</span>
+<span class="sd">            are the associated :class:`AudioSignal` objects.</span>
+<span class="sd">        targets_dict (dict): Dictionary where the keys are the labels for the sources (as above)</span>
+<span class="sd">            and the values are weights.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (:obj:`musdb.MultiTrack`) populated as specified by inputs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">verify_audio_signal_list_strict</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">sources_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">+</span> <span class="p">[</span><span class="n">mixture</span><span class="p">])</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="k">if</span> <span class="n">mixture</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">file_name</span> <span class="k">if</span> <span class="n">mixture</span><span class="o">.</span><span class="n">file_name</span> <span class="k">else</span> <span class="s2">&quot;None&quot;</span>
+    <span class="n">track</span> <span class="o">=</span> <span class="n">musdb</span><span class="o">.</span><span class="n">audio_classes</span><span class="o">.</span><span class="n">MultiTrack</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span> <span class="n">is_wav</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">track</span><span class="o">.</span><span class="n">audio</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">track</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">sample_rate</span>
+
+    <span class="n">stems</span> <span class="o">=</span> <span class="p">[</span><span class="n">track</span><span class="o">.</span><span class="n">audio</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">target_srcs</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">targets_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">sources_dict</span><span class="p">:</span>
+            <span class="n">stems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sources_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+    <span class="n">track</span><span class="o">.</span><span class="n">_stems</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stems</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">track</span></div>
+
+
+<div class="viewcode-block" id="verify_audio_signal_list_lax"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.verify_audio_signal_list_lax">[docs]</a><span class="k">def</span> <span class="nf">verify_audio_signal_list_lax</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Verifies that an input (:param:`audio_signal_list`) is a list of :ref:`AudioSignal` objects.</span>
+<span class="sd">    If not so, attempts to correct the list (if possible) and returns the corrected list.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signal_list (list): List of :ref:`AudioSignal` objects</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        audio_signal_list (list): Verified list of :ref:`AudioSignal` objects.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Lazy load to prevent a circular reference upon initialization</span>
+    <span class="kn">from</span> <span class="nn">.audio_signal</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">,</span> <span class="n">AudioSignal</span><span class="p">):</span>
+        <span class="n">audio_signal_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">audio_signal_list</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">AudioSignal</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">audio_signal_list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All input objects must be AudioSignal objects!&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">has_data</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">audio_signal_list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All AudioSignal objects in input list must have data!&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s1">&#39;audio_signal_list must be a list of or a single AudioSignal objects!&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">audio_signal_list</span></div>
+
+
+<div class="viewcode-block" id="verify_audio_signal_list_strict"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.verify_audio_signal_list_strict">[docs]</a><span class="k">def</span> <span class="nf">verify_audio_signal_list_strict</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Verifies that an input (:param:`audio_signal_list`) is a list of :ref:`AudioSignal` objects and</span>
+<span class="sd">    that they all have the same sample rate and same number of channels. If not true,</span>
+<span class="sd">    attempts to correct the list (if possible) and returns the corrected list.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signal_list (list): List of :ref:`AudioSignal` objects</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        audio_signal_list (list): Verified list of :ref:`AudioSignal` objects, that all have</span>
+<span class="sd">        the same sample rate and number of channels.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">audio_signal_list</span> <span class="o">=</span> <span class="n">verify_audio_signal_list_lax</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="n">sample_rate</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">audio_signal_list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All input AudioSignal objects must have the same sample rate!&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="n">num_channels</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">audio_signal_list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All input AudioSignal objects must have the same number of channels!&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">audio_signal_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">signal_length</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="n">signal_length</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">audio_signal_list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All input AudioSignal objects must have the same signal length!&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">audio_signal_list</span></div>
+
+
+<div class="viewcode-block" id="visualize_gradient_flow"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.visualize_gradient_flow">[docs]</a><span class="k">def</span> <span class="nf">visualize_gradient_flow</span><span class="p">(</span><span class="n">named_parameters</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Visualize the gradient flow through the named parameters of a PyTorch model. </span>
+
+<span class="sd">    Plots the gradients flowing through different layers in the net during training.</span>
+<span class="sd">    Can be used for checking for possible gradient vanishing / exploding problems.</span>
+
+<span class="sd">    Usage: Plug this function in Trainer class after loss.backwards() as </span>
+<span class="sd">    &quot;visualize_gradient_flow(self.model.named_parameters())&quot; to visualize </span>
+<span class="sd">    the gradient flow</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        named_parameters (generator): Generator object yielding name and parameters</span>
+<span class="sd">          for each layer in a PyTorch model.</span>
+<span class="sd">        n_bins (int): Number of bins to use for each histogram. Defaults to 50.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">named_parameters</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span> <span class="ow">and</span> <span class="s2">&quot;bias&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">n</span><span class="p">:</span>
+            <span class="n">_data</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+            <span class="n">lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+            <span class="n">upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="mi">90</span><span class="p">)</span>
+            <span class="n">_data</span> <span class="o">=</span> <span class="n">_data</span><span class="p">[</span><span class="n">_data</span> <span class="o">&gt;=</span> <span class="n">lower</span><span class="p">]</span>
+            <span class="n">_data</span> <span class="o">=</span> <span class="n">_data</span><span class="p">[</span><span class="n">_data</span> <span class="o">&lt;=</span> <span class="n">upper</span><span class="p">]</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;layers.&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">_data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_data</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span>
+
+    <span class="n">_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="n">_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_bins</span><span class="p">,</span> <span class="n">histtype</span><span class="o">=</span><span class="s1">&#39;step&#39;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">_names</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">.</span><span class="mi">102</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="visualize_spectrogram"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.visualize_spectrogram">[docs]</a><span class="k">def</span> <span class="nf">visualize_spectrogram</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">,</span> <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">do_mono</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">x_axis</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> 
+                          <span class="n">y_axis</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>  <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around `librosa.display.specshow` for usage with AudioSignals.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signal (AudioSignal): AudioSignal to plot</span>
+<span class="sd">        ch (int, optional): Which channel to plot. Defaults to 0.</span>
+<span class="sd">        do_mono (bool, optional): Make the AudioSignal mono. Defaults to False.</span>
+<span class="sd">        x_axis (str, optional): x_axis argument to librosa.display.specshow. Defaults to &#39;time&#39;.</span>
+<span class="sd">        y_axis (str, optional): y_axis argument to librosa.display.specshow. Defaults to &#39;linear&#39;.</span>
+<span class="sd">        kwargs: Additional keyword arguments to librosa.display.specshow.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">librosa.display</span>
+
+    <span class="k">if</span> <span class="n">do_mono</span><span class="p">:</span>
+        <span class="n">audio_signal</span> <span class="o">=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">to_mono</span><span class="p">(</span><span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="n">data</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">amplitude_to_db</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft</span><span class="p">()),</span> <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">)</span>
+    <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">specshow</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">],</span> <span class="n">x_axis</span><span class="o">=</span><span class="n">x_axis</span><span class="p">,</span> <span class="n">y_axis</span><span class="o">=</span><span class="n">y_axis</span><span class="p">,</span> 
+        <span class="n">sr</span><span class="o">=</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">hop_length</span><span class="o">=</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">hop_length</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="visualize_waveform"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.visualize_waveform">[docs]</a><span class="k">def</span> <span class="nf">visualize_waveform</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">,</span> <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">do_mono</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">x_axis</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around `librosa.display.waveplot` for usage with AudioSignals.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signal (AudioSignal): AudioSignal to plot</span>
+<span class="sd">        ch (int, optional): Which channel to plot. Defaults to 0.</span>
+<span class="sd">        do_mono (bool, optional): Make the AudioSignal mono. Defaults to False.</span>
+<span class="sd">        x_axis (str, optional): x_axis argument to librosa.display.waveplot. Defaults to &#39;time&#39;.</span>
+<span class="sd">        kwargs: Additional keyword arguments to librosa.display.waveplot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">librosa.display</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+    <span class="k">if</span> <span class="n">do_mono</span><span class="p">:</span>
+        <span class="n">audio_signal</span> <span class="o">=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">to_mono</span><span class="p">(</span><span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asfortranarray</span><span class="p">(</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[</span><span class="n">ch</span><span class="p">])</span>
+    <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">waveplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sr</span><span class="o">=</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">x_axis</span><span class="o">=</span><span class="n">x_axis</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Amplitude&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="visualize_sources_as_waveform"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.visualize_sources_as_waveform">[docs]</a><span class="k">def</span> <span class="nf">visualize_sources_as_waveform</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">,</span> <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">do_mono</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">x_axis</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> 
+                                  <span class="n">colors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alphas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Visualizes a dictionary or list of sources with overlapping waveforms with transparency.</span>
+<span class="sd">    </span>
+<span class="sd">    The labels of each source are either the key, if a dictionary, or the </span>
+<span class="sd">    path to the input audio file, if a list.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signals (list or dict): List or dictionary of audio signal objects to be</span>
+<span class="sd">          plotted.</span>
+<span class="sd">        ch (int, optional): Which channel to plot. Defaults to 0.</span>
+<span class="sd">        do_mono (bool, optional): Make each AudioSignal mono. Defaults to False.</span>
+<span class="sd">        x_axis (str, optional): x_axis argument to librosa.display.waveplot. Defaults to &#39;time&#39;.</span>
+<span class="sd">        colors (list, optional): Sequence of colors to use for each signal. </span>
+<span class="sd">          Defaults to None, which uses the default matplotlib color cycle.</span>
+<span class="sd">        alphas (list, optional): Sequence of alpha transparency to use for each signal. </span>
+<span class="sd">          Defaults to None.</span>
+<span class="sd">        kwargs: Additional keyword arguments to librosa.display.waveplot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">audio_signals</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">path_to_input_file</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">a</span> 
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="n">sorted_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">audio_signals</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">audio_signals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">rms</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+        <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">alphas</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">.</span><span class="mi">75</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">))</span> 
+        <span class="k">if</span> <span class="n">alphas</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">alphas</span>
+    <span class="p">)</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">by_key</span><span class="p">()[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> 
+        <span class="k">if</span> <span class="n">colors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">colors</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_keys</span><span class="p">):</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">audio_signals</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">)]</span>
+        <span class="n">visualize_waveform</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">ch</span><span class="o">=</span><span class="n">ch</span><span class="p">,</span> <span class="n">do_mono</span><span class="o">=</span><span class="n">do_mono</span><span class="p">,</span> <span class="n">x_axis</span><span class="o">=</span><span class="n">x_axis</span><span class="p">,</span> 
+                           <span class="n">alpha</span><span class="o">=</span><span class="n">alphas</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">)],</span>
+                           <span class="n">label</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">show_legend</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">.</span><span class="mi">102</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="visualize_sources_as_masks"><a class="viewcode-back" href="../../../core.html#nussl.core.utils.visualize_sources_as_masks">[docs]</a><span class="k">def</span> <span class="nf">visualize_sources_as_masks</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">,</span> <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">do_mono</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">x_axis</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> 
+                               <span class="n">y_axis</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">db_cutoff</span><span class="o">=-</span><span class="mi">60</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alphas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+                               <span class="n">alpha_amount</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Visualizes a dictionary or list of sources with overlapping waveforms with transparency.</span>
+<span class="sd">    </span>
+<span class="sd">    The labels of each source are either the key, if a dictionary, or the </span>
+<span class="sd">    path to the input audio file, if a list.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        audio_signals (list or dict): List or dictionary of audio signal objects to be</span>
+<span class="sd">          plotted.</span>
+<span class="sd">        ch (int, optional): Which channel to plot. Defaults to 0.</span>
+<span class="sd">        do_mono (bool, optional): Make each AudioSignal mono. Defaults to False.</span>
+<span class="sd">        x_axis (str, optional): x_axis argument to librosa.display.waveplot. Defaults to &#39;time&#39;.</span>
+<span class="sd">        colors (list, optional): Sequence of colors to use for each signal. </span>
+<span class="sd">          Defaults to None, which uses the default matplotlib color cycle.</span>
+<span class="sd">        alphas (list, optional): Sequence of alpha transparency to use for each signal. </span>
+<span class="sd">          Defaults to None.</span>
+<span class="sd">        kwargs: Additional keyword arguments to librosa.display.specshow.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">import</span> <span class="nn">matplotlib</span>
+    <span class="kn">import</span> <span class="nn">librosa.display</span>
+    <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">datasets</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">audio_signals</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">path_to_input_file</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">a</span> 
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">)</span>
+        <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">do_mono</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">audio_signals</span><span class="p">:</span>
+            <span class="n">audio_signals</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">audio_signals</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">to_mono</span><span class="p">()</span>
+
+    <span class="n">sorted_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">audio_signals</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">k</span><span class="p">:</span> <span class="n">audio_signals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">rms</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+        <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">source_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">audio_signals</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="n">mix</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">audio_signals</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;mix&#39;</span><span class="p">:</span> <span class="n">mix</span><span class="p">,</span>
+        <span class="s1">&#39;sources&#39;</span><span class="p">:</span> <span class="n">audio_signals</span>
+    <span class="p">}</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">PhaseSensitiveSpectrumApproximation</span><span class="p">()(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">by_key</span><span class="p">()[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> 
+        <span class="k">if</span> <span class="n">colors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">colors</span>
+    <span class="p">)</span>
+
+    <span class="c1"># construct each image with alpha values</span>
+    <span class="n">masks</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;source_magnitudes&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;source_magnitudes&#39;</span><span class="p">])</span> 
+            <span class="o">+</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span>
+        <span class="p">)</span>
+    <span class="n">legend_elements</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">silence_mask</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">amplitude_to_db</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">mix</span><span class="o">.</span><span class="n">stft</span><span class="p">()),</span> <span class="n">ref</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">db_cutoff</span>
+    <span class="n">masks</span> <span class="o">*=</span> <span class="n">silence_mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="n">y_coords</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">__mesh_coords</span><span class="p">(</span><span class="n">y_axis</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> 
+        <span class="n">sr</span><span class="o">=</span><span class="n">mix</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">hop_length</span><span class="o">=</span><span class="n">mix</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">hop_length</span><span class="p">)</span>
+    <span class="n">x_coords</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">__mesh_coords</span><span class="p">(</span><span class="n">x_axis</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">sr</span><span class="o">=</span><span class="n">mix</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">hop_length</span><span class="o">=</span><span class="n">mix</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">hop_length</span><span class="p">)</span>
+
+    <span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_coords</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x_coords</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">y_coords</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y_coords</span><span class="o">.</span><span class="n">max</span><span class="p">()]</span>
+
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sorted_keys</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">source_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="n">j</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)]</span>
+
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span>
+            <span class="s1">&#39;custom&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="n">color</span><span class="p">])</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">cmap</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">image</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask</span> <span class="o">**</span> <span class="n">alpha_amount</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> 
+            <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="n">extent</span><span class="p">)</span>
+
+        <span class="n">legend_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">matplotlib</span><span class="o">.</span><span class="n">patches</span><span class="o">.</span><span class="n">Patch</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">key</span><span class="p">))</span>
+
+    <span class="n">axes</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">__check_axes</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">x_coords</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">x_coords</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">y_coords</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">y_coords</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+
+    <span class="c1"># Set up axis scaling</span>
+    <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">__scale_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">)</span>
+    <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">__scale_axes</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Construct tickers and locators</span>
+    <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">__decorate_axis</span><span class="p">(</span><span class="n">axes</span><span class="o">.</span><span class="n">xaxis</span><span class="p">,</span> <span class="n">x_axis</span><span class="p">)</span>
+    <span class="n">librosa</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">__decorate_axis</span><span class="p">(</span><span class="n">axes</span><span class="o">.</span><span class="n">yaxis</span><span class="p">,</span> <span class="n">y_axis</span><span class="p">)</span>
+
+    
+    <span class="k">if</span> <span class="n">show_legend</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="o">=</span><span class="n">legend_elements</span><span class="p">,</span>  
+            <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.02</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">.</span><span class="mi">102</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

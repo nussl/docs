@@ -1,0 +1,317 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.evaluation.precision_recall_fscore &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.evaluation.precision_recall_fscore</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.evaluation.precision_recall_fscore</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sklearn</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">EvaluationBase</span>
+<span class="kn">from</span> <span class="nn">..core.masks</span> <span class="kn">import</span> <span class="n">BinaryMask</span>
+
+
+<div class="viewcode-block" id="PrecisionRecallFScore"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.PrecisionRecallFScore">[docs]</a><span class="k">class</span> <span class="nc">PrecisionRecallFScore</span><span class="p">(</span><span class="n">EvaluationBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class provides common statistical metrics for determining how well a source separation algorithm in nussl was</span>
+<span class="sd">    able to create a binary mask compared to a known binary mask. The metrics used here are </span>
+<span class="sd">    `Precision, Recall &lt;https://en.wikipedia.org/wiki/Precision_and_recall&gt;`_,</span>
+<span class="sd">    `F-Score &lt;https://en.wikipedia.org/wiki/F1_score&gt;`_ (sometimes called F-measure or F1-score), and Accuracy</span>
+<span class="sd">    (though this is not reflected in the name of the class, it is simply   ``# correct / total``).</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        * ``PrecisionRecallFScore`` can only be run using :ref:`binary_mask` objects. The constructor expects a list of </span>
+<span class="sd">        :ref:`binary_mask` objects for both the ground truth sources and the estimated sources.</span>
+<span class="sd">        * ``PrecisionRecallFScore`` does not calculate the correct permutation of the estimated and ground truth sources;</span>
+<span class="sd">        they are expected to be in the correct order when they are passed into ``PrecisionRecallFScore``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        true_sources_mask_list (list): List of :ref:`binary_mask` objects representing the ground truth sources.</span>
+<span class="sd">        estimated_sources_mask_list (list): List of :ref:`binary_mask` objects representing the estimates from a source</span>
+<span class="sd">         separation object</span>
+<span class="sd">        source_labels (list) (Optional): List of ``str`` with labels for each source. If no labels are provided, sources</span>
+<span class="sd">         will be labeled ``Source 0, Source 1, ...`` etc.        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_sources_list</span><span class="p">,</span> <span class="n">estimated_sources_list</span><span class="p">,</span> <span class="n">source_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">compute_permutation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">best_permutation_key</span><span class="o">=</span><span class="s2">&quot;F1-Score&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_input_list</span><span class="p">(</span><span class="n">true_sources_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimated_sources_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_input_list</span><span class="p">(</span><span class="n">estimated_sources_list</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">true_sources_list</span><span class="p">,</span> <span class="n">estimated_sources_list</span><span class="p">,</span>
+                         <span class="n">source_labels</span><span class="o">=</span><span class="n">source_labels</span><span class="p">,</span>
+                         <span class="n">compute_permutation</span><span class="o">=</span><span class="n">compute_permutation</span><span class="p">,</span>
+                         <span class="n">best_permutation_key</span><span class="o">=</span><span class="n">best_permutation_key</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_verify_input_list</span><span class="p">(</span><span class="n">mask_list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask_list</span><span class="p">,</span> <span class="n">BinaryMask</span><span class="p">):</span>
+            <span class="n">mask_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">mask_list</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">BinaryMask</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mask_list</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All items in mask_list must be of type nussl.BinaryMask!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">mask_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">m</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mask_list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;All masks must be the same shape!&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mask_list</span>
+
+<div class="viewcode-block" id="PrecisionRecallFScore.preprocess"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.PrecisionRecallFScore.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">n_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_channels</span>
+        <span class="n">references</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">))</span>
+             <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span><span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">))</span>
+             <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimated_sources_list</span><span class="p">],</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span></div>
+
+<div class="viewcode-block" id="PrecisionRecallFScore.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.PrecisionRecallFScore.evaluate_helper">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate_helper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines the precision, recall, f-score, and accuracy of each :ref:`binary_mask` object in </span>
+<span class="sd">        ``true_sources_mask_list`` and ``estimated_sources_mask_list``. Returns a list of results that is</span>
+<span class="sd">        formatted like so:</span>
+<span class="sd">        </span>
+<span class="sd">        .. code-block:: python</span>
+
+<span class="sd">            [              </span>
+<span class="sd">                {&#39;Accuracy&#39;: 0.83,</span>
+<span class="sd">                &#39;Precision&#39;: 0.78,</span>
+<span class="sd">                &#39;Recall&#39;: 0.81,</span>
+<span class="sd">                &#39;F1-Score&#39;: 0.77 },</span>
+
+<span class="sd">                {&#39;Accuracy&#39;: 0.22,</span>
+<span class="sd">                &#39;Precision&#39;: 0.12,</span>
+<span class="sd">                &#39;Recall&#39;: 0.15,</span>
+<span class="sd">                &#39;F1-Score&#39;: 0.19 }</span>
+<span class="sd">            ]</span>
+<span class="sd">                </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            self.scores (dict): A list of scores that contains accuracy, precision, recall, and F1-score</span>
+<span class="sd">            of between the list of :ref:`binary_mask` objects in both ``true_sources_mask_list`` </span>
+<span class="sd">            and ``estimated_sources_mask_list``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">references</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">ch_metrics</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Accuracy&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;Precision&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;Recall&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;F1-Score&#39;</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">references</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]):</span>
+                <span class="n">ch_metrics</span><span class="p">[</span><span class="s1">&#39;Accuracy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sklearn</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">accuracy_score</span><span class="p">(</span>
+                    <span class="n">references</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">estimates</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="p">))</span>
+                <span class="n">ch_metrics</span><span class="p">[</span><span class="s1">&#39;Precision&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sklearn</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">precision_score</span><span class="p">(</span>
+                    <span class="n">references</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">estimates</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="p">))</span>
+                <span class="n">ch_metrics</span><span class="p">[</span><span class="s1">&#39;Recall&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sklearn</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">recall_score</span><span class="p">(</span>
+                    <span class="n">references</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">estimates</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="p">))</span>
+                <span class="n">ch_metrics</span><span class="p">[</span><span class="s1">&#39;F1-Score&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sklearn</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">f1_score</span><span class="p">(</span>
+                    <span class="n">references</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">estimates</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="p">))</span>
+            <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ch_metrics</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">scores</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

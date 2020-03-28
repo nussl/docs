@@ -1,0 +1,491 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.datasets.base_dataset &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.datasets.base_dataset</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.datasets.base_dataset</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">Dataset</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">tfm</span>
+
+
+<div class="viewcode-block" id="BaseDataset"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.BaseDataset">[docs]</a><span class="k">class</span> <span class="nc">BaseDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The BaseDataset class is the starting point for all dataset hooks</span>
+<span class="sd">    in nussl. To subclass BaseDataset, you only have to implement two </span>
+<span class="sd">    functions:</span>
+
+<span class="sd">    - ``get_items``: a function that is passed the folder and generates a</span>
+<span class="sd">      list of items that will be processed by the next function. The</span>
+<span class="sd">      number of items in the list will dictate len(dataset). Must return</span>
+<span class="sd">      a list.</span>
+<span class="sd">    - ``process_item``: this function processes a single item in the list</span>
+<span class="sd">      generated by get_items. Must return a dictionary.</span>
+
+<span class="sd">    After process_item is called, a set of Transforms can be applied to the </span>
+<span class="sd">    output of process_item. If no transforms are defined (``self.transforms = None``),</span>
+<span class="sd">    then the output of process_item is returned by self[i]. For implemented</span>
+<span class="sd">    Transforms, see nussl.datasets.transforms. For example, </span>
+<span class="sd">    PhaseSpectrumApproximation will add three new keys to the output dictionary</span>
+<span class="sd">    of process_item:</span>
+
+<span class="sd">    - mix_magnitude: the magnitude spectrogram of the mixture</span>
+<span class="sd">    - source_magnitudes: the magnitude spectrogram of each source</span>
+<span class="sd">    - ideal_binary_mask: the ideal binary mask for each source</span>
+
+<span class="sd">    The transforms are applied in sequence using transforms.Compose. </span>
+<span class="sd">    Not all sequences of transforms will be valid (e.g. if you pop a key in</span>
+<span class="sd">    one transform but a later transform operates on that key, you will get</span>
+<span class="sd">    an error).</span>
+
+<span class="sd">    For examples of subclassing, see ``nussl.datasets.hooks``.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        folder (str): location that should be processed to produce the list of files</span>
+
+<span class="sd">        transform (transforms.* object, optional): A transforms to apply to the output of</span>
+<span class="sd">          ``self.process_item``. If using transforms.Compose, each transform will be</span>
+<span class="sd">          applied in sequence. Defaults to None.</span>
+
+<span class="sd">        sample_rate (int, optional): Sample rate to use for each audio files. If</span>
+<span class="sd">          audio file sample rate doesn&#39;t match, it will be resampled on the fly.</span>
+<span class="sd">          If None, uses the default sample rate. Defaults to None.</span>
+
+<span class="sd">        stft_params (STFTParams, optional): STFTParams object defining window_length,</span>
+<span class="sd">          hop_length, and window_type that will be set for each AudioSignal object. </span>
+<span class="sd">          Defaults to None (32ms window length, 8ms hop, &#39;hann&#39; window).</span>
+
+<span class="sd">        num_channels (int, optional): Number of channels to make each AudioSignal</span>
+<span class="sd">          object conform to. If an audio signal in your dataset has fewer channels</span>
+<span class="sd">          than ``num_channels``, a warning is raised, as the behavior in this case</span>
+<span class="sd">          is undefined. Defaults to None.</span>
+
+<span class="sd">        strict_sample_rate (bool, optional): Whether to raise an error if </span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        DataSetException: Exceptions are raised if the output of the implemented</span>
+<span class="sd">            functions by the subclass don&#39;t match the specification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">folder</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stft_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">num_channels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">strict_sample_rate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache_populated</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">folder</span> <span class="o">=</span> <span class="n">folder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_items</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_populated</span> <span class="o">=</span> <span class="n">cache_populated</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span> <span class="o">=</span> <span class="n">stft_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="n">sample_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">=</span> <span class="n">num_channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strict_sample_rate</span> <span class="o">=</span> <span class="n">strict_sample_rate</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span><span class="s2">&quot;Output of self.get_items must be a list!&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># getting one item in order to set up parameters for audio</span>
+        <span class="c1"># signals if necessary, if there are any items</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">process_item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cache_populated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache_populated</span>
+
+    <span class="nd">@cache_populated</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">cache_populated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_cache_transforms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cache_transform</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">transforms</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">transforms</span> 
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Compose</span><span class="p">)</span> 
+            <span class="k">else</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">])</span>
+
+        <span class="n">found_cache_transform</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">transforms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Cache</span><span class="p">):</span>
+                <span class="n">found_cache_transform</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">cache_transform</span> <span class="o">=</span> <span class="n">t</span>
+            <span class="k">if</span> <span class="n">found_cache_transform</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_cache_transforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found_cache_transform</span><span class="p">:</span>
+            <span class="c1"># there is no cache transform</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache_populated</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache_populated</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="n">cache_transform</span><span class="o">.</span><span class="n">cache_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">cache_transform</span><span class="o">.</span><span class="n">overwrite</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">value</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">post_cache_transforms</span> <span class="o">=</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_cache_transforms</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseDataset.get_items"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.BaseDataset.get_items">[docs]</a>    <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">folder</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function must be implemented by whatever class inherits BaseDataset.</span>
+<span class="sd">        It should return a list of items in the given folder, each of which is </span>
+<span class="sd">        processed by process_items in some way to produce mixes, sources, class</span>
+<span class="sd">        labels, etc.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            folder (str): location that should be processed to produce the list of files.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: list of items that should be processed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the length of the dataset (the number of items that will be processed).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: Length of the dataset (``len(self.items)``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Processes a single item in ``self.items`` using ``self.process_item``.</span>
+<span class="sd">        The output of ``self.process_item`` is further passed through bunch of</span>
+<span class="sd">        of transforms if they are defined in parallel. If you want to have</span>
+<span class="sd">        a set of transforms that depend on each other, then you should compose them</span>
+<span class="sd">        into a single transforms and then pass it into here. The output of each</span>
+<span class="sd">        transform is added to an output dictionary which is returned by this</span>
+<span class="sd">        function.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            i (int): Index of the dataset to return. Indexes ``self.items``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Dictionary with keys and values corresponding to the processed</span>
+<span class="sd">                item after being put through the set of transforms (if any are</span>
+<span class="sd">                defined).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_populated</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;index&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">}</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_cache_transforms</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_item</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span>
+                    <span class="s2">&quot;The output of process_item must be a dictionary!&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">tfm</span><span class="o">.</span><span class="n">TransformException</span><span class="p">(</span>
+                        <span class="s2">&quot;The output of transform must be a dictionary!&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="BaseDataset.process_item"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.BaseDataset.process_item">[docs]</a>    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Each file returned by get_items is processed by this function. For example,</span>
+<span class="sd">        if each file is a json file containing the paths to the mixture and sources, </span>
+<span class="sd">        then this function should parse the json file and load the mixture and sources</span>
+<span class="sd">        and return them.</span>
+
+<span class="sd">        Exact behavior of this functionality is determined by implementation by subclass.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item (object): the item that will be processed by this function. Input depends</span>
+<span class="sd">              on implementation of ``self.get_items``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            This should return a dictionary that gets processed by the transforms.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_load_audio_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_to_audio_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads audio file at given path. Uses AudioSignal to load the audio data</span>
+<span class="sd">        from disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path_to_audio_file: relative or absolute path to file to load</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            AudioSignal: loaded AudioSignal object of path_to_audio_file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">audio_signal</span> <span class="o">=</span> <span class="n">AudioSignal</span><span class="p">(</span><span class="n">path_to_audio_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_audio_signal</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">audio_signal</span>
+    
+    <span class="k">def</span> <span class="nf">_load_audio_from_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">audio_data</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the audio data into an AudioSignal object with the appropriate </span>
+<span class="sd">        sample rate.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            audio_data (np.ndarray): numpy array containing the samples containing</span>
+<span class="sd">              the audio data.</span>
+
+<span class="sd">            sample_rate (int): the sample rate at which to load the audio file. </span>
+<span class="sd">              If None, self.sample_rate or the sample rate of the actual file is used. </span>
+<span class="sd">              Defaults to None.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            AudioSignal: loaded AudioSignal object of audio_data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">sample_rate</span> <span class="k">if</span> <span class="n">sample_rate</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">audio_signal</span> <span class="o">=</span> <span class="n">AudioSignal</span><span class="p">(</span>
+            <span class="n">audio_data_array</span><span class="o">=</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_audio_signal</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">audio_signal</span>
+
+    <span class="k">def</span> <span class="nf">_setup_audio_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">audio_signal</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        You will want every item from a dataset to be uniform in sample rate, STFT</span>
+<span class="sd">        parameters, and number of channels. This function takes an audio signal </span>
+<span class="sd">        object loaded by the dataset and uses it to set the sample rate, STFT parameters,</span>
+<span class="sd">        and the number of channels. If ``self.sample_rate``, ``self.stft_params``, and</span>
+<span class="sd">        ``self.num_channels`` are set at construction time of the dataset, then the</span>
+<span class="sd">        opposite happens - attributes of the AudioSignal object are set to the desired</span>
+<span class="sd">        values.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            audio_signal (AudioSignal): AudioSignal object to query to set the parameters</span>
+<span class="sd">              of this dataset or to set the parameters of, according to what is in the </span>
+<span class="sd">              dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">!=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict_sample_rate</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DataSetException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;All audio files should have been the same sample rate already &quot;</span> 
+                    <span class="sa">f</span><span class="s2">&quot;because self.strict_sample_rate = True. Please resample or &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;turn set self.strict_sample_rate = False&quot;</span>
+                <span class="p">)</span>
+            <span class="n">audio_signal</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>  
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span>
+
+        <span class="c1"># set audio signal attributes to requested values, if they exist</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="p">:</span>
+            <span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span> <span class="o">=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">:</span>
+                <span class="c1"># pick the first ``self.num_channels`` channels </span>
+                <span class="n">audio_signal</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;AudioSignal had </span><span class="si">{</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="si">}</span><span class="s2"> channels &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;but self.num_channels = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="si">}</span><span class="s2">. Unsure &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;of what to do, so warning. You might want to make sure &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;your dataset is uniform!&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span></div>
+
+
+<span class="k">class</span> <span class="nc">DataSetException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exception class for errors when working with data sets in nussl.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

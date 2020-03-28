@@ -1,0 +1,1783 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Separation algorithms &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contribution Guide" href="contributing.html" />
+    <link rel="prev" title="Machine Learning" href="ml.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/examples.html">Examples</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">Evaluation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ml.html">Machine Learning</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Separation algorithms</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#base-classes">Base classes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#base-for-all-methods">Base for all methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#base-for-masking-based-methods">Base for masking-based methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#base-for-clustering-based-methods">Base for clustering-based methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mix-in-for-nmf-based-methods">Mix-in for NMF-based methods</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mix-in-for-deep-methods">Mix-in for deep methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#benchmark-methods">Benchmark methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#high-pass-filter">High pass filter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ideal-binary-mask">Ideal binary mask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ideal-ratio-mask">Ideal ratio mask</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#wiener-filter">Wiener filter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mix-as-estimate">Mix as estimate</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#deep-methods">Deep methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deep-clustering">Deep clustering</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deep-mask-estimation">Deep mask estimation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#composite-methods">Composite methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ensemble-clustering">Ensemble clustering</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#factorization-based-methods">Factorization-based methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#robust-principle-component-analysis">Robust principle component analysis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#independent-component-analysis">Independent component analysis</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#primitive-methods">Primitive methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#cluster-sources-by-timbre">Cluster sources by timbre</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#foreground-background-via-2dft">Foreground/background via 2DFT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#harmonic-percussive-separation">Harmonic/percussive separation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#foreground-background-via-repet">Foreground/background via REPET</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#foreground-background-via-repet-sim">Foreground/background via REPET-SIM</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vocal-melody-extraction-via-melodia">Vocal melody extraction via Melodia</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#spatial-methods">Spatial methods</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#cluster-by-inter-phase-and-inter-level-difference">Cluster by inter-phase and inter-level difference</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#projet-separate-via-spatial-projections">PROJET: Separate via spatial projections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#duet">DUET</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="api.html">API Documentation</a> &raquo;</li>
+        
+      <li>Separation algorithms</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/separation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<span class="target" id="module-nussl.separation"></span><div class="section" id="separation-algorithms">
+<h1>Separation algorithms<a class="headerlink" href="#separation-algorithms" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="base-classes">
+<h2>Base classes<a class="headerlink" href="#base-classes" title="Permalink to this headline">¶</a></h2>
+<p>These classes are used to build every type of source separation
+algorithm currently in nussl. They provide helpful utilities
+and make it such that the end-user only has to implement
+one or two functions to create a new separation algorithm,
+depending on what sort of algorithm they are trying to
+implement.</p>
+<span class="target" id="module-nussl.separation.base"></span><div class="section" id="base-for-all-methods">
+<h3>Base for all methods<a class="headerlink" href="#base-for-all-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.SeparationBase">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.</code><code class="sig-name descname">SeparationBase</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/separation_base.html#SeparationBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.SeparationBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all separation algorithms in nussl.</p>
+<p>Do not call this. It will not do anything.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – This will always be a copy of the provided AudioSignal object.</p>
+</dd>
+</dl>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.SeparationBase.audio_signal" title="nussl.separation.SeparationBase.audio_signal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">audio_signal</span></code></a></p></td>
+<td><p>Copy of AudioSignal that is made on initialization.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.SeparationBase.sample_rate" title="nussl.separation.SeparationBase.sample_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sample_rate</span></code></a></p></td>
+<td><p>Sample rate of <code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_signal</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.SeparationBase.stft_params" title="nussl.separation.SeparationBase.stft_params"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stft_params</span></code></a></p></td>
+<td><p>STFTParams object containing the STFT parameters of the copied AudioSignal.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.SeparationBase.make_audio_signals" title="nussl.separation.SeparationBase.make_audio_signals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_audio_signals</span></code></a>()</p></td>
+<td><p>Makes <code class="xref py py-class docutils literal notranslate"><span class="pre">audio_signal.AudioSignal</span></code> objects after separation algorithm is run</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.SeparationBase.run" title="nussl.separation.SeparationBase.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>()</p></td>
+<td><p>Runs separation algorithm.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.separation.SeparationBase.audio_signal">
+<em class="property">property </em><code class="sig-name descname">audio_signal</code><a class="headerlink" href="#nussl.separation.SeparationBase.audio_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy of AudioSignal that is made on initialization.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.SeparationBase.make_audio_signals">
+<code class="sig-name descname">make_audio_signals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/separation_base.html#SeparationBase.make_audio_signals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.SeparationBase.make_audio_signals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes <code class="xref py py-class docutils literal notranslate"><span class="pre">audio_signal.AudioSignal</span></code> objects after separation algorithm is run</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>NotImplementedError</strong> – Cannot call base class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.SeparationBase.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/separation_base.html#SeparationBase.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.SeparationBase.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs separation algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>NotImplementedError</strong> – Cannot call base class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.SeparationBase.sample_rate">
+<em class="property">property </em><code class="sig-name descname">sample_rate</code><a class="headerlink" href="#nussl.separation.SeparationBase.sample_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample rate of <a class="reference internal" href="#nussl.separation.SeparationBase.audio_signal" title="nussl.separation.SeparationBase.audio_signal"><code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_signal</span></code></a>.
+Literally <code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_signal.sample_rate</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.SeparationBase.stft_params">
+<em class="property">property </em><code class="sig-name descname">stft_params</code><a class="headerlink" href="#nussl.separation.SeparationBase.stft_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>STFTParams object containing the STFT parameters of the copied AudioSignal.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="base-for-masking-based-methods">
+<h3>Base for masking-based methods<a class="headerlink" href="#base-for-masking-based-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.MaskSeparationBase">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.</code><code class="sig-name descname">MaskSeparationBase</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/mask_separation_base.html#MaskSeparationBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.MaskSeparationBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for separation algorithms that create a mask (binary or soft) to do
+their separation. Most algorithms in nussl are derived from
+<a class="reference internal" href="#nussl.separation.MaskSeparationBase" title="nussl.separation.MaskSeparationBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaskSeparationBase</span></code></a>.</p>
+<p>Although this class will do nothing if you instantiate and run it by itself,
+algorithms that are derived from this class are expected to return a list of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">separation.masks.mask_base.MaskBase</span></code> -derived objects
+(i.e., either a <code class="xref py py-class docutils literal notranslate"><span class="pre">separation.masks.binary_mask.BinaryMask</span></code> or
+<code class="xref py py-class docutils literal notranslate"><span class="pre">separation.masks.soft_mask.SoftMask</span></code> object) by their <a class="reference internal" href="#nussl.separation.MaskSeparationBase.run" title="nussl.separation.MaskSeparationBase.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>
+method. Being a subclass of <a class="reference internal" href="#nussl.separation.MaskSeparationBase" title="nussl.separation.MaskSeparationBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaskSeparationBase</span></code></a> is an implicit contract
+assuring this.  Returning a <code class="xref py py-class docutils literal notranslate"><span class="pre">separation.masks.mask_base.MaskBase</span></code>-derived
+object standardizes algorithm return types for
+<code class="xref py py-class docutils literal notranslate"><span class="pre">evaluation.evaluation_base.EvaluationBase</span></code>-derived objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> – (<code class="xref py py-class docutils literal notranslate"><span class="pre">audio_signal.AudioSignal</span></code>) An
+<code class="xref py py-class docutils literal notranslate"><span class="pre">audio_signal.AudioSignal</span></code> object containing the mixture to be
+separated.</p></li>
+<li><p><strong>mask_type</strong> – (str, BinaryMask, or SoftMask) Indicates whether to make
+binary or soft masks. See <a class="reference internal" href="#nussl.separation.MaskSeparationBase.mask_type" title="nussl.separation.MaskSeparationBase.mask_type"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mask_type</span></code></a> property for details.</p></li>
+<li><p><strong>mask_threshold</strong> – (float) Value between [0.0, 1.0] to convert a soft mask
+to a binary mask. See <a class="reference internal" href="#nussl.separation.MaskSeparationBase.mask_threshold" title="nussl.separation.MaskSeparationBase.mask_threshold"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mask_threshold</span></code></a> property for details.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.MaskSeparationBase.make_audio_signals" title="nussl.separation.MaskSeparationBase.make_audio_signals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_audio_signals</span></code></a>()</p></td>
+<td><p>Makes <code class="xref py py-class docutils literal notranslate"><span class="pre">audio_signal.AudioSignal</span></code> objects after mask-based separation algorithm is run.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.MaskSeparationBase.ones_mask" title="nussl.separation.MaskSeparationBase.ones_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ones_mask</span></code></a>(shape)</p></td>
+<td><p>Creates a new ones mask with this object’s type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.MaskSeparationBase.run" title="nussl.separation.MaskSeparationBase.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>()</p></td>
+<td><p>Runs mask-based separation algorithm.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.MaskSeparationBase.zeros_mask" title="nussl.separation.MaskSeparationBase.zeros_mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">zeros_mask</span></code></a>(shape)</p></td>
+<td><p>Creates a new zeros mask with this object’s type.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.MaskSeparationBase.mask_threshold" title="nussl.separation.MaskSeparationBase.mask_threshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask_threshold</span></code></a></p></td>
+<td><p>Threshold of determining True/False if <code class="xref py py-attr docutils literal notranslate"><span class="pre">mask_type</span></code> is <code class="xref py py-attr docutils literal notranslate"><span class="pre">BINARY_MASK</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.MaskSeparationBase.mask_type" title="nussl.separation.MaskSeparationBase.mask_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mask_type</span></code></a></p></td>
+<td><p>This property indicates what type of mask the derived algorithm will create and be returned by <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.separation.MaskSeparationBase.make_audio_signals">
+<code class="sig-name descname">make_audio_signals</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/mask_separation_base.html#MaskSeparationBase.make_audio_signals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.MaskSeparationBase.make_audio_signals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes <code class="xref py py-class docutils literal notranslate"><span class="pre">audio_signal.AudioSignal</span></code> objects after mask-based
+separation algorithm is run. This looks in <code class="docutils literal notranslate"><span class="pre">self.result_masks</span></code>
+which must be filled by <code class="docutils literal notranslate"><span class="pre">run</span></code> in the algorithm that
+subclasses this. It applies each mask to the mixture audio
+signal and returns a list of the estimates, which are each
+AudioSignal objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>List of AudioSignal objects corresponding to the</dt><dd><p>separated estimates.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.MaskSeparationBase.mask_threshold">
+<em class="property">property </em><code class="sig-name descname">mask_threshold</code><a class="headerlink" href="#nussl.separation.MaskSeparationBase.mask_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Threshold of determining True/False if <a class="reference internal" href="#nussl.separation.MaskSeparationBase.mask_type" title="nussl.separation.MaskSeparationBase.mask_type"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mask_type</span></code></a> is
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">BINARY_MASK</span></code>. Some algorithms will first make a soft mask and then
+convert that to a binary mask using this threshold parameter. All
+values of the soft mask are between <code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code> and as such
+<a class="reference internal" href="#nussl.separation.MaskSeparationBase.mask_threshold" title="nussl.separation.MaskSeparationBase.mask_threshold"><code class="xref py py-func docutils literal notranslate"><span class="pre">mask_threshold()</span></code></a> is expected to be a float between
+<code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Value between <code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code> that indicates</dt><dd><p>the True/False cutoff when converting a soft mask to binary mask.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>mask_threshold (float)</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError if not a float</strong><strong> or </strong><strong>if set outside</strong><strong> [</strong><strong>0.0</strong><strong>, </strong><strong>1.0</strong><strong>]</strong><strong></strong> – </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.MaskSeparationBase.mask_type">
+<em class="property">property </em><code class="sig-name descname">mask_type</code><a class="headerlink" href="#nussl.separation.MaskSeparationBase.mask_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>This property indicates what type of mask the derived algorithm will create
+and be returned by <a class="reference internal" href="#nussl.separation.MaskSeparationBase.run" title="nussl.separation.MaskSeparationBase.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>. Options are either ‘soft’ or ‘binary’.
+<a class="reference internal" href="#nussl.separation.MaskSeparationBase.mask_type" title="nussl.separation.MaskSeparationBase.mask_type"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mask_type</span></code></a> is usually set when initializing a
+<a class="reference internal" href="#nussl.separation.MaskSeparationBase" title="nussl.separation.MaskSeparationBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaskSeparationBase</span></code></a>-derived class and defaults to ‘soft..</p>
+<p>This property, though stored as a string, can be set in two ways when
+initializing:</p>
+<ul>
+<li><p>First, it is possible to set this property with a string. Only <code class="docutils literal notranslate"><span class="pre">'soft'</span></code>
+and <code class="docutils literal notranslate"><span class="pre">'binary'</span></code> are accepted (case insensitive), every other value will
+raise an error. When initializing with a string, two helper
+attributes are provided: <code class="xref py py-attr docutils literal notranslate"><span class="pre">BINARY_MASK</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">SOFT_MASK</span></code>.</p>
+<p>It is <strong>HIGHLY</strong> encouraged to use these, as the API may change and code
+that uses bare strings (e.g. <code class="docutils literal notranslate"><span class="pre">mask_type</span> <span class="pre">=</span> <span class="pre">'soft'</span></code> or
+<code class="docutils literal notranslate"><span class="pre">mask_type</span> <span class="pre">=</span> <span class="pre">'binary'</span></code>) for assignment might not be future-proof.
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">BINARY_MASK`</span></code> and <code class="xref py py-attr docutils literal notranslate"><span class="pre">SOFT_MASK</span></code> are safe aliases in case these
+underlying types change.</p>
+</li>
+<li><p>The second way to set this property is by using a class prototype of
+either the <code class="xref py py-class docutils literal notranslate"><span class="pre">separation.masks.binary_mask.BinaryMask</span></code> or
+<code class="xref py py-class docutils literal notranslate"><span class="pre">separation.masks.soft_mask.SoftMask</span></code> class prototype. This is
+probably the most stable way to set this, and it’s fairly succinct.
+For example, <code class="docutils literal notranslate"><span class="pre">mask_type</span> <span class="pre">=</span> <span class="pre">nussl.BinaryMask</span></code> or
+<code class="docutils literal notranslate"><span class="pre">mask_type</span> <span class="pre">=</span> <span class="pre">nussl.SoftMask</span></code> are both perfectly valid.</p></li>
+</ul>
+<p>Though uncommon, this can be set outside of <code class="xref py py-func docutils literal notranslate"><span class="pre">__init__()</span></code></p>
+<p>Examples of both methods are shown below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Either <code class="docutils literal notranslate"><span class="pre">'soft'</span></code> or <code class="docutils literal notranslate"><span class="pre">'binary'</span></code>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>mask_type (str)</p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>ValueError if set invalidly.</strong> – </p>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">nussl</span>
+<span class="n">mixture_signal</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">AudioSignal</span><span class="p">()</span>
+
+<span class="c1"># Two options for determining mask upon init...</span>
+
+<span class="c1"># Option 1: Init with a string (BINARY_MASK is a string &#39;constant&#39;)</span>
+<span class="n">repet_sim</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">RepetSim</span><span class="p">(</span><span class="n">mixture_signal</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="n">nussl</span><span class="o">.</span><span class="n">MaskSeparationBase</span><span class="o">.</span><span class="n">BINARY_MASK</span><span class="p">)</span>
+
+<span class="c1"># Option 2: Init with a class type</span>
+<span class="n">ola</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">OverlapAdd</span><span class="p">(</span><span class="n">mixture_signal</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="n">nussl</span><span class="o">.</span><span class="n">SoftMask</span><span class="p">)</span>
+
+<span class="c1"># It&#39;s also possible to change these values after init by changing the `mask_type` property...</span>
+<span class="n">repet_sim</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">MaskSeparationBase</span><span class="o">.</span><span class="n">SOFT_MASK</span>  <span class="c1"># using a string</span>
+<span class="n">ola</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">BinaryMask</span>  <span class="c1"># or using a class type</span>
+</pre></div>
+</td></tr></table></div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.MaskSeparationBase.ones_mask">
+<code class="sig-name descname">ones_mask</code><span class="sig-paren">(</span><em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/mask_separation_base.html#MaskSeparationBase.ones_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.MaskSeparationBase.ones_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new ones mask with this object’s type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> (<em>tuple</em>) – tuple with shape of mask</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A subclass of <cite>MaskBase</cite> containing 1s.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.MaskSeparationBase.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/mask_separation_base.html#MaskSeparationBase.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.MaskSeparationBase.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs mask-based separation algorithm. Base class: Do not call directly!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>NotImplementedError</strong> – Cannot call base class!</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.MaskSeparationBase.zeros_mask">
+<code class="sig-name descname">zeros_mask</code><span class="sig-paren">(</span><em class="sig-param">shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/mask_separation_base.html#MaskSeparationBase.zeros_mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.MaskSeparationBase.zeros_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new zeros mask with this object’s type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> (<em>tuple</em>) – tuple with shape of mask</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A subclass of <cite>MaskBase</cite> containing 0s.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="base-for-clustering-based-methods">
+<h3>Base for clustering-based methods<a class="headerlink" href="#base-for-clustering-based-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.ClusteringSeparationBase">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.</code><code class="sig-name descname">ClusteringSeparationBase</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">clustering_type='KMeans'</em>, <em class="sig-param">fit_clusterer=True</em>, <em class="sig-param">percentile=90</em>, <em class="sig-param">beta=5.0</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/clustering_separation_base.html#ClusteringSeparationBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.ClusteringSeparationBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A base class for any clustering-based separation approach. Subclasses
+of this class must implement just one function to use it: <cite>extract_features</cite>.
+This function should uses the internal variables of the class to
+extract the appropriate time-frequency features of the signal. These
+time-frequency features will then be clustered by <cite>cluster_features</cite>.
+Masks will then be produced by the run function and applied to the
+audio signal to produce separated estimates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> – (<cite>AudioSignal</cite>) An AudioSignal object containing the
+mixture to be separated.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to cluster the features of and separate
+the mixture.</p></li>
+<li><p><strong>clustering_type</strong> (<em>str</em>) – One of ‘KMeans’, ‘GaussianMixture’, and ‘MiniBatchKMeans’.
+The clustering approach to use on the features. Defaults to ‘KMeans’.</p></li>
+<li><p><strong>fit_clusterer</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to call fit on the clusterer.
+If False, then the clusterer should already be fit for this to work. Defaults
+to True.</p></li>
+<li><p><strong>percentile</strong> (<em>int</em><em>, </em><em>optional</em>) – Percentile of time-frequency points to consider by loudness.
+Audio spectrograms are very high dimensional, and louder points tend to
+matter more than quieter points. By setting the percentile high, one can more
+efficiently cluster an auditory scene by considering only points above
+that threshold. Defaults to 90 (which means the top 10 percentile of
+time-frequency points will be used for clustering).</p></li>
+<li><p><strong>beta</strong> (<em>float</em><em>, </em><em>optional</em>) – When using KMeans, we use soft KMeans, which has an additional
+parameter <cite>beta</cite>. <cite>beta</cite> controls how soft the assignments are. As beta
+increases, the assignments become more binary (either 0 or 1). Defaults to
+5.0, a value discovered through cross-validation.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Masking approach to use. Passed up to MaskSeparationBase.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold for masking. Passed up to MaskSeparationBase.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional keyword arguments that are passed to the clustering
+object (one of KMeans, GaussianMixture, or MiniBatchKMeans).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>SeparationException</strong> – If clustering type is not one of the allowed ones, or if
+    the output of <cite>extract_features</cite> has the wrong shape according to the STFT
+    shape of the AudioSignal.</p>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.cluster_features" title="nussl.separation.ClusteringSeparationBase.cluster_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cluster_features</span></code></a>(features, clusterer)</p></td>
+<td><p>Clusters each time-frequency point according to features for each time-frequency point.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.extract_features" title="nussl.separation.ClusteringSeparationBase.extract_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_features</span></code></a>()</p></td>
+<td><p>This function should be implemented by the subclass.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.run" title="nussl.separation.ClusteringSeparationBase.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>([features])</p></td>
+<td><p>Clusters the features using the chosen clustering algorithm.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.separation.ClusteringSeparationBase.cluster_features">
+<code class="sig-name descname">cluster_features</code><span class="sig-paren">(</span><em class="sig-param">features</em>, <em class="sig-param">clusterer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/clustering_separation_base.html#ClusteringSeparationBase.cluster_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.ClusteringSeparationBase.cluster_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clusters each time-frequency point according to features for each
+time-frequency point. Features should be on the last axis.</p>
+<dl class="simple">
+<dt>Features should come in in the shape:</dt><dd><p><cite>(…, n_features)</cite></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>features</strong> (<em>np.ndarray</em>) – Features to cluster, for each time-frequency point.</p></li>
+<li><p><strong>clusterer</strong> (<em>object</em>) – Clustering object to use.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Responsibilities for each cluster for each time-frequency point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.ClusteringSeparationBase.extract_features">
+<code class="sig-name descname">extract_features</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/clustering_separation_base.html#ClusteringSeparationBase.extract_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.ClusteringSeparationBase.extract_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function should be implemented by the subclass. It should extract
+features. If the STFT shape is <cite>(n_freq, n_time, n_chan)</cite>, the output of this
+function should be <cite>(n_freq, n_time, n_chan, n_features)</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.ClusteringSeparationBase.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">features=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/clustering_separation_base.html#ClusteringSeparationBase.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.ClusteringSeparationBase.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clusters the features using the chosen clustering algorithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>features</strong> (<em>np.ndarray</em><em>, </em><em>optional</em>) – If features are given, then the
+<cite>extract_features</cite> step will be skipped. Defaults to None (so
+<cite>extract_features</cite> will be run.)</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>SeparationException</strong> – If features.shape doesn’t match what is expected
+    in the STFT of the audio signal, an exception is raised.</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>List of Mask objects in self.result_masks.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mix-in-for-nmf-based-methods">
+<h3>Mix-in for NMF-based methods<a class="headerlink" href="#mix-in-for-nmf-based-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.NMFMixin">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.</code><code class="sig-name descname">NMFMixin</code><a class="reference internal" href="_modules/nussl/separation/base/nmf_mixin.html#NMFMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.NMFMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.NMFMixin.fit" title="nussl.separation.NMFMixin.fit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code></a>(audio_signals, n_components[, …])</p></td>
+<td><p>Fits an NMF model to the magnitude spectrograms of each audio signal.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.NMFMixin.inverse_transform" title="nussl.separation.NMFMixin.inverse_transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">inverse_transform</span></code></a>(components, activations)</p></td>
+<td><p>Reconstructs the magnitude spectrogram by matrix multiplying the components with the activations.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.NMFMixin.transform" title="nussl.separation.NMFMixin.transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform</span></code></a>(audio_signal, model)</p></td>
+<td><p>Use an already fit model to transform the magnitude spectrogram of an audio signal into components and activations.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.separation.NMFMixin.fit">
+<em class="property">static </em><code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param">audio_signals</em>, <em class="sig-param">n_components</em>, <em class="sig-param">beta_loss='frobenius'</em>, <em class="sig-param">l1_ratio=0.5</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/nmf_mixin.html#NMFMixin.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.NMFMixin.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fits an NMF model to the magnitude spectrograms of each
+audio signal. If <cite>audio_signals</cite> is a list, the magnitude
+spectrograms of each signal are concatenated into a single
+data matrix to which NMF is fit. If <cite>audio_signals</cite>
+is a single audio signal, then NMF is fit only to the
+magnitude spectrogram for that audio signal. If any of
+the audio signals are multichannel, the channels are
+concatenated into a single (longer) data matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signals</strong> (<em>list</em><em> or </em><a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object(s) that
+NMF will be fit to.</p></li>
+<li><p><strong>n_components</strong> (<em>int</em>) – Number of components to use in the NMF
+module. Corresponds to number of spectral templates.</p></li>
+<li><p><strong>beta_loss</strong> (<em>float</em><em> or </em><em>string</em>) – String must be in
+{‘frobenius’, ‘kullback-leibler’, ‘itakura-saito’}.
+Beta divergence to be minimized, measuring the distance between X
+and the dot product WH. Note that values different from ‘frobenius’
+(or 2) and ‘kullback-leibler’ (or 1) lead to significantly slower
+fits. Note that for beta_loss &lt;= 0 (or ‘itakura-saito’), the input
+matrix X cannot contain zeros. Used only in ‘mu’ solver. Defaults to
+‘frobenius’.</p></li>
+<li><p><strong>l1_ratio</strong> (<em>float</em>) – The regularization mixing parameter, with 0 &lt;= l1_ratio &lt;= 1.
+For l1_ratio = 0 the penalty is an elementwise L2 penalty (aka Frobenius Norm).
+For l1_ratio = 1 it is an elementwise L1 penalty.
+For 0 &lt; l1_ratio &lt; 1, the penalty is a combination of L1 and L2.
+Defaults to 1.0 (sparse templates and activations).</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Additional keyword arguments to initialization of the NMF
+decomposition method.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>Fitted NMF model to the audio signal(s).
+components (np.ndarray): Spectral templates (n_components, n_features)
+activations (np.ndarray): Activations (n_components, n_time, n_channels)</p>
+<blockquote>
+<div><p>The shape here is as if it was like an STFT but with components as the
+features rather than frequencies of the STFT.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>model (NMF)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.NMFMixin.inverse_transform">
+<em class="property">static </em><code class="sig-name descname">inverse_transform</code><span class="sig-paren">(</span><em class="sig-param">components</em>, <em class="sig-param">activations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/nmf_mixin.html#NMFMixin.inverse_transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.NMFMixin.inverse_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstructs the magnitude spectrogram by matrix multiplying the components
+with the activations. Components and activations are considered to be 2D matrices,
+but if they are more, then the first dimension is interpreted to be the batch
+dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>components</strong> (<em>np.ndarray</em>) – Spectral templates (n_components, n_features)</p></li>
+<li><p><strong>activations</strong> (<em>np.ndarray</em>) – Activations (n_components, n_time, n_channels)
+The shape here is as if it was like an STFT but with components as the
+features rather than frequencies of the STFT.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.NMFMixin.transform">
+<em class="property">static </em><code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param">audio_signal</em>, <em class="sig-param">model</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/nmf_mixin.html#NMFMixin.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.NMFMixin.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use an already fit model to transform the magnitude spectrogram of an
+audio signal into components and activations. These can be multiplied to
+reconstruct the original matrix, or used to separate out sounds that correspond
+to components in the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object to transform with model.</p></li>
+<li><p><strong>model</strong> (<em>NMF</em>) – NMF model to separate with. Must be fitted prior to this call.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>Spectral templates (n_components, n_features)
+activations (np.ndarray): Activations (n_components, n_time, n_channels)</p>
+<blockquote>
+<div><p>The shape here is as if it was like an STFT but with components as the
+features rather than frequencies of the STFT.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>components (np.ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="mix-in-for-deep-methods">
+<h3>Mix-in for deep methods<a class="headerlink" href="#mix-in-for-deep-methods" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.DeepMixin">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.</code><code class="sig-name descname">DeepMixin</code><a class="reference internal" href="_modules/nussl/separation/base/deep_mixin.html#DeepMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.DeepMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.DeepMixin.load_model" title="nussl.separation.DeepMixin.load_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model</span></code></a>(model_path[, device])</p></td>
+<td><p>Loads the model at specified path <cite>model_path</cite>.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.separation.DeepMixin.load_model">
+<code class="sig-name descname">load_model</code><span class="sig-paren">(</span><em class="sig-param">model_path</em>, <em class="sig-param">device='cpu'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/deep_mixin.html#DeepMixin.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.DeepMixin.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads the model at specified path <cite>model_path</cite>. Uses GPU if
+available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_path</strong> (<em>str</em>) – path to model saved as SeparatonModel.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em> or </em><em>torch.Device</em>) – loads model on CPU or GPU. Defaults to
+‘cuda’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Loaded model, nn.Module
+metadata (dict): metadata associated with model, used for making
+the input data into the model.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>model (<a class="reference internal" href="ml.html#nussl.ml.SeparationModel" title="nussl.ml.SeparationModel">SeparationModel</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="benchmark-methods">
+<h2>Benchmark methods<a class="headerlink" href="#benchmark-methods" title="Permalink to this headline">¶</a></h2>
+<p>These methods are used for obtaining upper and lower baselines
+for source separation algorithms.</p>
+<span class="target" id="module-nussl.separation.benchmark"></span><div class="section" id="high-pass-filter">
+<h3>High pass filter<a class="headerlink" href="#high-pass-filter" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.benchmark.HighLowPassFilter">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.benchmark.</code><code class="sig-name descname">HighLowPassFilter</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">high_pass_cutoff_hz</em>, <em class="sig-param">mask_type='binary'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/benchmark/high_low_pass_filter.html#HighLowPassFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.benchmark.HighLowPassFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements a super simple separation algorithm that just masks everything below
+the specified hz. It does this by zeroing out the associated FFT bins via a mask to
+produce the “high” source, and the residual is the “low” source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>high_pass_cutoff_hz</strong> (<em>float</em>) – Cutoff in Hz. Will be rounded off</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type. Defaults to ‘binary’.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="ideal-binary-mask">
+<h3>Ideal binary mask<a class="headerlink" href="#ideal-binary-mask" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.benchmark.IdealBinaryMask">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.benchmark.</code><code class="sig-name descname">IdealBinaryMask</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">sources</em>, <em class="sig-param">mask_type='binary'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/benchmark/ideal_binary_mask.html#IdealBinaryMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.benchmark.IdealBinaryMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements an ideal binary mask (IBM) that is computed by using the known
+ground truth performance. This is one of the upper baselines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>sources</strong> (<em>list</em>) – List of audio signal objects that correspond to the sources.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type. Defaults to ‘binary’.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="ideal-ratio-mask">
+<h3>Ideal ratio mask<a class="headerlink" href="#ideal-ratio-mask" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.benchmark.IdealRatioMask">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.benchmark.</code><code class="sig-name descname">IdealRatioMask</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">sources</em>, <em class="sig-param">approach='psa'</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/benchmark/ideal_ratio_mask.html#IdealRatioMask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.benchmark.IdealRatioMask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements an ideal ratio mask (IRM) that is computed by using the known
+ground truth performance. This is one of the upper baselines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>sources</strong> (<em>list</em>) – List of audio signal objects that correspond to the sources.</p></li>
+<li><p><strong>approach</strong> (<em>str</em>) – Either ‘psa’ (phase sensitive spectrum approximation) or ‘msa’
+(magnitude spectrum approximation). Generally ‘psa’ does better.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type. Defaults to ‘soft’.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Masking threshold. Defaults to 0.5.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Extra keyword arguments are passed to the transform classes at
+initialization.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="wiener-filter">
+<h3>Wiener filter<a class="headerlink" href="#wiener-filter" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.benchmark.WienerFilter">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.benchmark.</code><code class="sig-name descname">WienerFilter</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">estimates</em>, <em class="sig-param">iterations=1</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/benchmark/wiener_filter.html#WienerFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.benchmark.WienerFilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements a multichannel Wiener filter that is computed by using some
+source estimates. When using the estimates produced by IdealRatioMask or
+IdealBinaryMask, this is one of the upper baselines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>estimates</strong> (<em>list</em>) – List of audio signal objects that correspond to the estimates.</p></li>
+<li><p><strong>iterations</strong> (<em>int</em>) – Number of iterations for expectation-maximization in Wiener
+filter.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type. Defaults to ‘soft’.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold for masking binary. Defaults to 0.5.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Additional keyword arguments to <cite>norbert.wiener</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="mix-as-estimate">
+<h3>Mix as estimate<a class="headerlink" href="#mix-as-estimate" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.benchmark.MixAsEstimate">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.benchmark.</code><code class="sig-name descname">MixAsEstimate</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/benchmark/mix_as_estimate.html#MixAsEstimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.benchmark.MixAsEstimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>This algorithm does nothing but scale the mix by the number of sources. This can
+be used to compute the improvement metrics (e.g. improvement in SDR over using the
+mixture as the estimate).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – How many sources to return.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="deep-methods">
+<h2>Deep methods<a class="headerlink" href="#deep-methods" title="Permalink to this headline">¶</a></h2>
+<p>Deep networks can be used for source separation via these
+classes.</p>
+<span class="target" id="module-nussl.separation.deep"></span><div class="section" id="deep-clustering">
+<h3>Deep clustering<a class="headerlink" href="#deep-clustering" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.deep.DeepClustering">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.deep.</code><code class="sig-name descname">DeepClustering</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">model_path=None</em>, <em class="sig-param">device='cpu'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/deep/deep_clustering.html#DeepClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.deep.DeepClustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clusters the embedding produced by a deep model for every time-frequency point.
+This is the deep clustering source separation approach. It is flexible with
+the number of sources. It expects that the model outputs a dictionary where one
+of the keys is ‘embedding’. This uses the <cite>DeepMixin</cite> class to load the model
+and set the audio signal’s parameters to be appropriate for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> – (AudioSignal`) An AudioSignal object containing the
+mixture to be separated.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to cluster the features of and separate
+the mixture.</p></li>
+<li><p><strong>model_path</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the model that will be used. Can be None,
+so that you can initialize a class and load the model later.
+Defaults to None.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to put the model on. Defaults to ‘cpu’.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – Keyword arguments for ClusteringSeparationBase and the
+clustering object used for clustering (one of KMeans, GaussianMixture,
+MiniBatchKmeans).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>SeparationException</strong> – If ‘embedding’ isn’t in the output of the model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="deep-mask-estimation">
+<h3>Deep mask estimation<a class="headerlink" href="#deep-mask-estimation" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.deep.DeepMaskEstimation">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.deep.</code><code class="sig-name descname">DeepMaskEstimation</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">model_path=None</em>, <em class="sig-param">device='cpu'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/deep/deep_mask_estimation.html#DeepMaskEstimation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.deep.DeepMaskEstimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separates an audio signal using the masks produced by a deep model for every
+time-frequency point. It expects that the model outputs a dictionary where one
+of the keys is ‘masks’. This uses the <cite>DeepMixin</cite> class to load the model
+and set the audio signal’s parameters to be appropriate for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> – (AudioSignal`) An AudioSignal object containing the
+mixture to be separated.</p></li>
+<li><p><strong>model_path</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the model that will be used. Can be None,
+so that you can initialize a class and load the model later.
+Defaults to None.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to put the model on. Defaults to ‘cpu’.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – Keyword arguments for MaskSeparationBase.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="composite-methods">
+<h2>Composite methods<a class="headerlink" href="#composite-methods" title="Permalink to this headline">¶</a></h2>
+<p>These are methods that use the output of
+multiple separation algorithms to build better
+more robust separation estimates.</p>
+<span class="target" id="module-nussl.separation.composite"></span><div class="section" id="ensemble-clustering">
+<h3>Ensemble clustering<a class="headerlink" href="#ensemble-clustering" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.composite.EnsembleClustering">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.composite.</code><code class="sig-name descname">EnsembleClustering</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">separators</em>, <em class="sig-param">weights=None</em>, <em class="sig-param">returns=None</em>, <em class="sig-param">num_cascades=1</em>, <em class="sig-param">extracted_feature='masks'</em>, <em class="sig-param">clustering_type='KMeans'</em>, <em class="sig-param">fit_clusterer=True</em>, <em class="sig-param">percentile=90</em>, <em class="sig-param">beta=5.0</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/composite/ensemble_clustering.html#EnsembleClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.composite.EnsembleClustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run multiple separation algorithms on a single mixture and concatenate their
+masks to input into a clustering algorithm.</p>
+<p>This algorithm allows you to combine the outputs of multiple separation
+algorithms, fusing them into a single output via clustering. It was first
+developed in [1]. When used with primitive separation algorithms, it becomes
+the PrimitiveClustering algorithm described in [1].</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition.</dt><dd><p>Diss. Northwestern University, 2019.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to separate from signal.</p></li>
+<li><p><strong>separators</strong> (<em>list</em>) – List of instantiated separation algorithms that will be
+run on the input audio signal.</p></li>
+<li><p><strong>weights</strong> (<em>list</em><em>, </em><em>optional</em>) – Weight to give to each algorithm in the resultant
+feature vector. For example, <cite>[3, 1]</cite>, will repeat the features from the first
+algorithm 3 times and the second algorithm 1 time. Defaults to None - every
+algorithm gets a weight of 1.</p></li>
+<li><p><strong>returns</strong> (<em>list</em><em>, </em><em>optional</em>) – Which outputs of each algorithm to keep in the resultant
+feature vector. Defaults to None.</p></li>
+<li><p><strong>num_cascades</strong> (<em>int</em><em>, </em><em>optional</em>) – The output of each algorithm can be cascaded into
+one another. The outputs of the first layer of algorithms will be refed to
+each separation algorithm to create more features. Defaults to 1.</p></li>
+<li><p><strong>extracted_feature</strong> (<em>str</em><em>, </em><em>optional</em>) – Which feature to extract from each algorithm.
+Must be one of <cite>[‘estimates’, ‘masks’]</cite>. <cite>estimates</cite> will reconstruct a soft
+mask using the output of the algorithm (useful if the algorithm is not a masking
+based separation algorithm). <cite>masks</cite> will use the data in the <cite>result_masks</cite>
+attribute of the separation algorithm. Defaults to ‘masks’.</p></li>
+<li><p><strong>clustering_type</strong> (<em>str</em>) – One of ‘KMeans’, ‘GaussianMixture’, and ‘MiniBatchKMeans’.
+The clustering approach to use on the features. Defaults to ‘KMeans’.</p></li>
+<li><p><strong>fit_clusterer</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to call fit on the clusterer.
+If False, then the clusterer should already be fit for this to work. Defaults
+to True.</p></li>
+<li><p><strong>percentile</strong> (<em>int</em><em>, </em><em>optional</em>) – Percentile of time-frequency points to consider by loudness.
+Audio spectrograms are very high dimensional, and louder points tend to
+matter more than quieter points. By setting the percentile high, one can more
+efficiently cluster an auditory scene by considering only points above
+that threshold. Defaults to 90 (which means the top 10 percentile of
+time-frequency points will be used for clustering).</p></li>
+<li><p><strong>beta</strong> (<em>float</em><em>, </em><em>optional</em>) – When using KMeans, we use soft KMeans, which has an additional
+parameter <cite>beta</cite>. <cite>beta</cite> controls how soft the assignments are. As beta
+increases, the assignments become more binary (either 0 or 1). Defaults to
+5.0, a value discovered through cross-validation.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Masking approach to use. Passed up to MaskSeparationBase.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold for masking. Passed up to MaskSeparationBase.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional keyword arguments that are passed to the clustering
+object (one of KMeans, GaussianMixture, or MiniBatchKMeans).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">nussl.separation</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">primitive</span><span class="p">,</span>
+    <span class="n">factorization</span><span class="p">,</span>
+    <span class="n">composite</span><span class="p">,</span>
+    <span class="n">SeparationException</span>
+<span class="p">)</span>
+
+<span class="n">separators</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">primitive</span><span class="o">.</span><span class="n">FT2D</span><span class="p">(</span><span class="n">mix</span><span class="p">),</span>
+    <span class="n">factorization</span><span class="o">.</span><span class="n">RPCA</span><span class="p">(</span><span class="n">mix</span><span class="p">),</span>
+    <span class="n">primitive</span><span class="o">.</span><span class="n">Melodia</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="n">voicing_tolerance</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span>
+    <span class="n">primitive</span><span class="o">.</span><span class="n">HPSS</span><span class="p">(</span><span class="n">mix</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">returns</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+<span class="n">ensemble</span> <span class="o">=</span> <span class="n">composite</span><span class="o">.</span><span class="n">EnsembleClustering</span><span class="p">(</span>
+    <span class="n">mix</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">separators</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">returns</span><span class="o">=</span><span class="n">returns</span><span class="p">)</span>
+<span class="n">estimates</span> <span class="o">=</span> <span class="n">ensemble</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="factorization-based-methods">
+<h2>Factorization-based methods<a class="headerlink" href="#factorization-based-methods" title="Permalink to this headline">¶</a></h2>
+<p>The methods use some sort of factorization-based algorithm
+like robust principle component analysis, or independent
+component analysis to separate the auditory scene.</p>
+<span class="target" id="module-nussl.separation.factorization"></span><div class="section" id="robust-principle-component-analysis">
+<h3>Robust principle component analysis<a class="headerlink" href="#robust-principle-component-analysis" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.factorization.RPCA">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.factorization.</code><code class="sig-name descname">RPCA</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">high_pass_cutoff=100</em>, <em class="sig-param">num_iterations=100</em>, <em class="sig-param">epsilon=1e-07</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/factorization/rpca.html#RPCA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.factorization.RPCA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements foreground/background separation using RPCA.</p>
+<p>Huang, Po-Sen, et al. “Singing-voice separation from monaural recordings using
+robust principal component analysis.” Acoustics, Speech and Signal Processing
+(ICASSP), 2012 IEEE International Conference on. IEEE, 2012.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – The AudioSignal object that has the
+audio data that RPCA will be run on.</p></li>
+<li><p><strong>high_pass_cutoff</strong> (<em>float</em><em>, </em><em>optional</em>) – Value (in Hz) for the high pass cutoff
+filter. Defaults to 100.</p></li>
+<li><p><strong>num_iterations</strong> (<em>int</em><em>, </em><em>optional</em>) – how many iterations to run RPCA for.
+Defaults to 100.</p></li>
+<li><p><strong>epsilon</strong> (<em>float</em><em>, </em><em>optional</em>) – Stopping criterion for RPCA convergence.
+Defaults to 1e-7.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of mask to use. Defaults to ‘soft’.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold for mask. Defaults to 0.5.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="independent-component-analysis">
+<h3>Independent component analysis<a class="headerlink" href="#independent-component-analysis" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.factorization.ICA">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.factorization.</code><code class="sig-name descname">ICA</code><span class="sig-paren">(</span><em class="sig-param">audio_signals</em>, <em class="sig-param">max_iterations=200</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/factorization/ica.html#ICA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.factorization.ICA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separate sources using the Independent Component Analysis, given
+observations of the audio scene. nussl’s ICA is a wrapper for sci-kit learn’s
+implementation of FastICA, and provides a way to interop between
+nussl’s <span class="xref std std-ref">AudioSignal</span> objects and FastICA.</p>
+<p class="rubric">References</p>
+<p><a class="reference external" href="http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.fastica.html">sci-kit learn FastICA</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signals</strong> – list of AudioSignal objects containing the observations
+of the mixture. Will be converted into a single multichannel AudioSignal.</p></li>
+<li><p><strong>max_iterations</strong> (<em>int</em>) – Max number of iterations to run ICA for. Defaults to 200.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments that will be passed to
+<cite>sklearn.decomposition.FastICA</cite></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="primitive-methods">
+<h2>Primitive methods<a class="headerlink" href="#primitive-methods" title="Permalink to this headline">¶</a></h2>
+<p>These methods are based on primitives - hard-wired perceptual
+grouping cues that are used automatically by the brain.
+Primitives were coined by Albert Bregman in the book
+<em>Auditory Scene Analysis</em>.</p>
+<span class="target" id="module-nussl.separation.primitive"></span><div class="section" id="cluster-sources-by-timbre">
+<h3>Cluster sources by timbre<a class="headerlink" href="#cluster-sources-by-timbre" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.primitive.TimbreClustering">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.primitive.</code><code class="sig-name descname">TimbreClustering</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">n_components</em>, <em class="sig-param">n_mfcc=13</em>, <em class="sig-param">nmf_kwargs=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/primitive/timbre.html#TimbreClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.primitive.TimbreClustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements separation by timbre via NMF with MFCC clustering. The
+steps are:</p>
+<ol class="arabic simple">
+<li><p>Factorize the magnitude spectrogram of the mixture with NMF.</p></li>
+<li><p>Take MFCC coefficients of each component.</p></li>
+<li><p>Express each time-frequency bin as a combination of components.</p></li>
+<li><p>The features for each time-frequency bin are the weighted combination
+of the MFCCs of each component.</p></li>
+<li><p>Cluster each time-frequency bin based on these features.</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>n_components</strong> (<em>int</em>) – Number of components to use in the NMF
+model. Corresponds to number of spectral templates.</p></li>
+<li><p><strong>n_mfcc</strong> (<em>int</em>) – Number of MFCC coefficients to use. Defaults to 13.</p></li>
+<li><p><strong>nmf_args</strong> (<em>dict</em>) – Dictionary containing keyword arguments for <cite>NMFMixin.fit</cite>.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Extra keyword arguments are passed to ClusteringSeparationBase.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="foreground-background-via-2dft">
+<h3>Foreground/background via 2DFT<a class="headerlink" href="#foreground-background-via-2dft" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.primitive.FT2D">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.primitive.</code><code class="sig-name descname">FT2D</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">neighborhood_size=(1</em>, <em class="sig-param">25)</em>, <em class="sig-param">high_pass_cutoff=100.0</em>, <em class="sig-param">quadrants_to_keep=(0</em>, <em class="sig-param">1</em>, <em class="sig-param">2</em>, <em class="sig-param">3)</em>, <em class="sig-param">filter_approach='local_std'</em>, <em class="sig-param">use_bg_2dft=True</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/primitive/ft2d.html#FT2D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.primitive.FT2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>This separation method is based on using 2DFT image processing for source
+separation [1].</p>
+<p>The algorithm has five main steps:</p>
+<ol class="arabic simple">
+<li><p>Take the 2DFT of Magnitude STFT.</p></li>
+<li><p>Identify peaks in the 2DFT (these correspond to repeating patterns).</p></li>
+<li><p>Mask everything but the peaks and invert the masked 2DFT back to a magnitude STFT.</p></li>
+<li><p>Take the residual peakless 2DFT and invert that to a magnitude STFT.</p></li>
+<li><p>Compare the two magnitude STFTs to construct masks for the foreground and
+the background.</p></li>
+</ol>
+<p>The algorithm runs on each channel independently. The masks can be constructed
+in two ways: either using the background (peaky) 2DFT as the reference for making
+masks, or using the foreground (peakless) 2DFT as the reference for making masks.
+This behavior can be toggled via <cite>use_bg_2dft=[True, False]</cite>. Using the background
+biases the algorithm towards separating repeating patterns whereas using
+the foreground biases it towards preserving micromodulation in the foreground.</p>
+<p>There are two ways to identify peaks: either using the <cite>original</cite> method, as
+laid out in the paper which identifies peaks in a binary way as being above
+some threshold, or by using the <cite>local_std</cite> way, which was developed and investigated
+in Chapter 2 in [2]. This method identifies peaks in a soft way and can thus
+be used to construct soft masks. It generally performs better.</p>
+<p>The main hyperparameter to consider is the <cite>neighborhood_size</cite>, which determines
+how big of a filter to apply when looking for peaks. It is two dimensional, but
+generally keeping 1D horizontal filters is the way to go.</p>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>[1] Seetharaman, Prem, Fatemeh Pishdadian, and Bryan Pardo.</dt><dd><p>“Music/Voice Separation Using the 2D Fourier Transform.”
+2017 IEEE Workshop on Applications of Signal Processing to
+Audio and Acoustics (WASPAA). IEEE, 2017.</p>
+</dd>
+<dt>[2] Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition.</dt><dd><p>Diss. Northwestern University, 2019.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>neighborhood_size</strong> (<em>tuple</em><em>, </em><em>optional</em>) – 2-tuple of ints telling the filter size to look for
+peaks in frequency and time: <cite>(f, t)</cite>. Defaults to (1, 25).</p></li>
+<li><p><strong>high_pass_cutoff</strong> (<em>float</em><em>, </em><em>optional</em>) – Time-frequency bins below this cutoff will be
+assigned to the background. Defaults to 100.0.</p></li>
+<li><p><strong>quadrants_to_keep</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Each quadrant of the 2DFT can be filtered out
+when separating. Can be used for separating out upward spectro-temporal patterns
+(via <cite>(0, 2)</cite> from downward ones <cite>(1, 3)</cite>. Defaults to (0,1,2,3).</p></li>
+<li><p><strong>filter_approach</strong> (<em>str</em><em>, </em><em>optional</em>) – One of ‘original’ or ‘local_std’. Which
+filtering approach to apply to identify peaks. Defaults to ‘local_std’.</p></li>
+<li><p><strong>use_bg_2dft</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use the background or foreground 2DFT
+as the reference for constructing masks. Defaults to True.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type. Defaults to ‘soft’.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Masking threshold. Defaults to 0.5.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="harmonic-percussive-separation">
+<h3>Harmonic/percussive separation<a class="headerlink" href="#harmonic-percussive-separation" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.primitive.HPSS">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.primitive.</code><code class="sig-name descname">HPSS</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">kernel_size=31</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/primitive/hpss.html#HPSS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.primitive.HPSS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements harmonic/percussive source separation based on [1]. This is a
+wrapper around the librosa implementation.</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Fitzgerald, Derry. “Harmonic/percussive separation using median filtering.”</dt><dd><p>13th International Conference on Digital Audio Effects (DAFX10), Graz,
+Austria, 2010.</p>
+</dd>
+<dt>[2] Driedger, Müller, Disch. “Extending harmonic-percussive separation of audio.”</dt><dd><p>15th International Society for Music Information Retrieval Conference
+(ISMIR 2014) Taipei, Taiwan, 2014.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – signal to separate.</p></li>
+<li><p><strong>kernel_size</strong> (<em>int</em><em> or </em><em>tuple</em><em> (</em><em>kernel_harmonic</em><em>, </em><em>kernel_percussive</em><em>)</em>) – kernel size(s) for the median filters.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type. Defaults to ‘soft’.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Masking threshold. Defaults to 0.5.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="foreground-background-via-repet">
+<h3>Foreground/background via REPET<a class="headerlink" href="#foreground-background-via-repet" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.primitive.Repet">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.primitive.</code><code class="sig-name descname">Repet</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">min_period=None</em>, <em class="sig-param">max_period=None</em>, <em class="sig-param">period=None</em>, <em class="sig-param">high_pass_cutoff=100.0</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/primitive/repet.html#Repet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.primitive.Repet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements the original REpeating Pattern Extraction Technique algorithm
+using the beat spectrum.</p>
+<p>REPET is a simple method for separating a repeating background from a
+non-repeating foreground in an audio mixture. It assumes a single repeating
+period over the whole signal duration, and finds that period based on finding
+a peak in the beat spectrum. The period can also be provided exactly, or you
+can give <code class="docutils literal notranslate"><span class="pre">Repet</span></code> a guess of the min and max period. Once it has a period,
+it “overlays” spectrogram sections of length <code class="docutils literal notranslate"><span class="pre">period</span></code> to create a median
+model (the background).</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Rafii, Zafar, and Bryan Pardo.</dt><dd><p>“Repeating pattern extraction technique (REPET): A simple method for
+music/voice separation.” IEEE transactions on audio, speech,
+and language processing 21.1 (2012): 73-84.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Signal to separate.</p></li>
+<li><p><strong>min_period</strong> (<em>float</em><em>, </em><em>optional</em>) – minimum time to look for repeating period in
+terms of seconds.</p></li>
+<li><p><strong>max_period</strong> (<em>float</em><em>, </em><em>optional</em>) – maximum time to look for repeating period in
+terms of seconds.</p></li>
+<li><p><strong>period</strong> (<em>float</em><em>, </em><em>optional</em>) – exact time that the repeating period is
+(in seconds).</p></li>
+<li><p><strong>high_pass_cutoff</strong> (<em>float</em><em>, </em><em>optional</em>) – value (in Hz) for the high pass
+cutoff filter.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type. Defaults to ‘soft’.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Masking threshold. Defaults to 0.5.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="foreground-background-via-repet-sim">
+<h3>Foreground/background via REPET-SIM<a class="headerlink" href="#foreground-background-via-repet-sim" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.primitive.RepetSim">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.primitive.</code><code class="sig-name descname">RepetSim</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">similarity_threshold=0</em>, <em class="sig-param">min_distance_between_frames=1</em>, <em class="sig-param">max_repeating_frames=100</em>, <em class="sig-param">high_pass_cutoff=100</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/primitive/repet_sim.html#RepetSim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.primitive.RepetSim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements the REpeating Pattern Extraction Technique algorithm using
+the Similarity Matrix (REPET-SIM).</p>
+<p>REPET is a simple method for separating the repeating background from the
+non-repeating foreground in a piece of audio mixture. REPET-SIM is a generalization
+of REPET, which looks for similarities instead of periodicities.</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Zafar Rafii and Bryan Pardo.</dt><dd><p>“Music/Voice Separation using the Similarity Matrix,”
+13th International Society on Music Information Retrieval,
+Porto, Portugal, October 8-12, 2012.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Audio signal to be separated.</p></li>
+<li><p><strong>similarity_threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold for considering two
+frames to be similar. Defaults to 0.</p></li>
+<li><p><strong>min_distance_between_frames</strong> (<em>float</em><em>, </em><em>optional</em>) – Number of seconds two frames
+must be apart to be considered neighbors. Defaults to 1.</p></li>
+<li><p><strong>max_repeating_frames</strong> (<em>int</em><em>, </em><em>optional</em>) – Max number of frames to consider as
+neighbors. Defaults to 100.</p></li>
+<li><p><strong>high_pass_cutoff</strong> (<em>float</em><em>, </em><em>optional</em>) – Cutoff for high pass filters. Bins below
+this cutoff will be given to the background. Defaults to 100.</p></li>
+<li><p><strong>mask_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Mask type to use.. Defaults to ‘soft’.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold for mask converting to binary.
+Defaults to 0.5.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="vocal-melody-extraction-via-melodia">
+<h3>Vocal melody extraction via Melodia<a class="headerlink" href="#vocal-melody-extraction-via-melodia" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.primitive.Melodia">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.primitive.</code><code class="sig-name descname">Melodia</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">high_pass_cutoff=100</em>, <em class="sig-param">minimum_frequency=55.0</em>, <em class="sig-param">maximum_frequency=1760.0</em>, <em class="sig-param">voicing_tolerance=0.2</em>, <em class="sig-param">minimum_peak_salience=0.0</em>, <em class="sig-param">compression=0.5</em>, <em class="sig-param">num_overtones=40</em>, <em class="sig-param">apply_vowel_filter=False</em>, <em class="sig-param">smooth_length=5</em>, <em class="sig-param">add_lower_octave=False</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/primitive/melodia.html#Melodia"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.primitive.Melodia" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements melody extraction using Melodia [1].</p>
+<p>This needs Melodia installed as a vamp plugin, as well as having vampy for
+Python installed. Install Melodia via: <a class="reference external" href="https://www.upf.edu/web/mtg/melodia">https://www.upf.edu/web/mtg/melodia</a>.
+Note that Melodia can be used only for NON-COMMERCIAL use.</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] J. Salamon and E. Gómez, “Melody Extraction from Polyphonic Music Signals using</dt><dd><p>Pitch Contour Characteristics”, IEEE Transactions on Audio, Speech and
+Language Processing, 20(6):1759-1770, Aug. 2012.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<em>AudioSignal object</em>) – The AudioSignal object that has the
+audio data that Melodia will be run on.</p></li>
+<li><p><strong>high_pass_cutoff</strong> (<em>optional</em><em>, </em><em>float</em>) – value (in Hz) for the high pass cutoff
+filter.</p></li>
+<li><p><strong>minimum_frequency</strong> (<em>optional</em><em>, </em><em>float</em>) – minimum frequency in Hertz (default 55.0)</p></li>
+<li><p><strong>maximum_frequency</strong> (<em>optional</em><em>, </em><em>float</em>) – maximum frequency in Hertz (default 1760.0)</p></li>
+<li><p><strong>voicing_tolerance</strong> (<em>optional</em><em>, </em><em>float</em>) – Greater values will result in more pitch contours
+included in the final melody. Smaller values will result in less pitch
+contours included in the final melody (default 0.2).</p></li>
+<li><p><strong>minimum_peak_salience</strong> (<em>optional</em><em>, </em><em>float</em>) – a hack to avoid silence turning into junk
+contours when analyzing monophonic recordings (e.g. solo voice with
+no accompaniment). Generally you want to leave this untouched (default 0.0).</p></li>
+<li><p><strong>num_overtones</strong> (<em>optional</em><em>, </em><em>int</em>) – Number of overtones to use when creating
+melody mask.</p></li>
+<li><p><strong>apply_vowel_filter</strong> (<em>optional</em><em>, </em><em>bool</em>) – Whether or not to apply a vowel filter
+on the resynthesized melody signal when masking.</p></li>
+<li><p><strong>smooth_length</strong> (<em>optional</em><em>, </em><em>int</em>) – Number of frames to smooth discontinuities in the
+mask.</p></li>
+<li><p><strong>add_lower_octave</strong> (<em>optional</em><em>, </em><em>fool</em>) – Use octave below fundamental frequency as well
+to take care of octave errors in pitch tracking, since we only care about
+the mask. Defaults to False.</p></li>
+<li><p><strong>mask_type</strong> (<em>optional</em><em>, </em><em>str</em>) – Type of mask to use.</p></li>
+<li><p><strong>mask_threshold</strong> (<em>optional</em><em>, </em><em>float</em>) – Threshold for mask to convert to binary.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="spatial-methods">
+<h2>Spatial methods<a class="headerlink" href="#spatial-methods" title="Permalink to this headline">¶</a></h2>
+<p>These methods are based on primitive spatial cues.</p>
+<span class="target" id="module-nussl.separation.spatial"></span><div class="section" id="cluster-by-inter-phase-and-inter-level-difference">
+<h3>Cluster by inter-phase and inter-level difference<a class="headerlink" href="#cluster-by-inter-phase-and-inter-level-difference" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.spatial.SpatialClustering">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.spatial.</code><code class="sig-name descname">SpatialClustering</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">clustering_type='KMeans'</em>, <em class="sig-param">fit_clusterer=True</em>, <em class="sig-param">percentile=90</em>, <em class="sig-param">beta=5.0</em>, <em class="sig-param">mask_type='soft'</em>, <em class="sig-param">mask_threshold=0.5</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/spatial/spatial_clustering.html#SpatialClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.spatial.SpatialClustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements clustering on IPD/ILD features between the first two channels.</p>
+<p>IPD/ILD features are inter-phase difference and inter-level difference
+features. Sounds coming from different directions will naturally cluster
+in IPD/ILD space.</p>
+<p>Subclasses ClusteringSeparationBase which actually handles all of the
+clustering functionality behind this function.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="projet-separate-via-spatial-projections">
+<h3>PROJET: Separate via spatial projections<a class="headerlink" href="#projet-separate-via-spatial-projections" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.spatial.Projet">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.spatial.</code><code class="sig-name descname">Projet</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">estimates=None</em>, <em class="sig-param">num_iterations=50</em>, <em class="sig-param">maximum_delay_in_samples=20</em>, <em class="sig-param">location_set_panning=30</em>, <em class="sig-param">location_set_delay=17</em>, <em class="sig-param">projection_set_panning=10</em>, <em class="sig-param">projection_set_delay=9</em>, <em class="sig-param">beta=1</em>, <em class="sig-param">alpha=1</em>, <em class="sig-param">device='cpu'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/spatial/projet.html#Projet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.spatial.Projet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements the PROJET algorithm for spatial audio separation using projections.
+This implementation uses PyTorch to speed up computation considerably. PROJET
+does the following steps:</p>
+<ol class="arabic simple">
+<li><p>Project the complex stereo STFT onto multiple angles and delay via
+projection and delay matrix transformations.</p></li>
+<li><p>Initialize the parameters of the system to “remix” these projections along with
+PSDs of the sources such that they try to reconstruct the original stereo mixture.</p></li>
+<li><p>Find the optimal parameters via multiplicative update rules for P and for Q.</p></li>
+<li><p>Use the discovered parameters to isolate the sources via spatial cues.</p></li>
+</ol>
+<p>This implementation considers BOTH panning and delays when isolating sources.
+PROJET is not a masking based method, it estimates the sources directly by
+projecting the complex STFT.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – Audio signal to separate.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of source to separate.</p></li>
+<li><p><strong>estimates</strong> (<em>list of AudioSignal</em>) – initial estimates for the separated sources
+if available. These will be used to initialize the update algorithm. So
+one could (for example), run FT2D on a signal and then refine the estimates
+using PROJET. Defaults to None (randomly initialize P).</p></li>
+<li><p><strong>num_iterations</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of iterations to do for the update
+rules for P and Q. Defaults to 50.</p></li>
+<li><p><strong>maximum_delay_in_samples</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum delay in samples that you are
+willing to consider in the projection matrices. Defaults to 20.</p></li>
+<li><p><strong>location_set_panning</strong> (<em>int</em><em>, </em><em>optional</em>) – How many locations in panning you are
+willing to consider. Defaults to 30.</p></li>
+<li><p><strong>location_set_delay</strong> (<em>int</em><em>, </em><em>optional</em>) – How many delays you are willing to
+consider. Defaults to 17.</p></li>
+<li><p><strong>projection_set_panning</strong> (<em>int</em><em>, </em><em>optional</em>) – How many projections you are willing
+use in panning-space. Defaults to 10.</p></li>
+<li><p><strong>projection_set_delay</strong> (<em>int</em><em>, </em><em>optional</em>) – How many delays you are willing to project
+the mixutre onto in panning-space. Defaults to 9.</p></li>
+<li><p><strong>beta</strong> (<em>int</em><em>, </em><em>optional</em>) – Beta in beta divergence. See Table 1 in [1]. Defaults to 1.</p></li>
+<li><p><strong>alpha</strong> (<em>int</em><em>, </em><em>optional</em>) – Power to raise each power spectral density estimate of each
+source to. Defaults to 1.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to use when performing update rules. ‘cuda’ will
+be fastest, if available. Defaults to ‘cpu’.</p></li>
+</ul>
+</dd>
+</dl>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Fitzgerald, Derry, Antoine Liutkus, and Roland Badeau.</dt><dd><p>“Projection-based demixing of spatial audio.”
+IEEE/ACM Transactions on Audio, Speech, and Language
+Processing 24.9 (2016): 1560-1572.</p>
+</dd>
+<dt>[2] Fitzgerald, Derry, Antoine Liutkus, and Roland Badeau.</dt><dd><p>“Projet—spatial audio separation using projections.” 2016 IEEE International
+Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2016.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="duet">
+<h3>DUET<a class="headerlink" href="#duet" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.spatial.Duet">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.spatial.</code><code class="sig-name descname">Duet</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">attenuation_min=-3</em>, <em class="sig-param">attenuation_max=3</em>, <em class="sig-param">num_attenuation_bins=50</em>, <em class="sig-param">delay_min=-3</em>, <em class="sig-param">delay_max=3</em>, <em class="sig-param">num_delay_bins=50</em>, <em class="sig-param">peak_threshold=0.0</em>, <em class="sig-param">attenuation_min_distance=5</em>, <em class="sig-param">delay_min_distance=5</em>, <em class="sig-param">p=1</em>, <em class="sig-param">q=0</em>, <em class="sig-param">mask_type='binary'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/spatial/duet.html#Duet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.spatial.Duet" title="Permalink to this definition">¶</a></dt>
+<dd><p>The DUET algorithm was originally proposed by S.Rickard and F.Dietrich for DOA
+estimation and further developed for BSS and demixing by A. Jourjine, S.Rickard,
+and O. Yilmaz.</p>
+<p>DUET extracts sources using the symmetric attenuation and relative delay between
+two channels. The symmetric attenuation is calculated from the ratio of the two
+channels’ stft amplitudes, and the delay is the arrival delay between the two
+sensors used to record the audio signal. These two values are clustered as peaks on
+a histogram to determine where each source occurs. This implementation of DUET
+creates and returns Mask objects after the run() function, which can then be
+applied to the original audio signal to extract each individual source.</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Rickard, Scott. “The DUET blind source separation algorithm.”</dt><dd><p>Blind Speech Separation. Springer Netherlands, 2007. 217-241.</p>
+</dd>
+<dt>[2] Yilmaz, Ozgur, and Scott Rickard. “Blind separation of speech mixtures</dt><dd><p>via time-frequency masking.”
+Signal Processing, IEEE transactions on 52.7 (2004): 1830-1847.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> (<em>np.array</em>) – a 2-row Numpy matrix containing samples of the
+two-channel mixture.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to find.</p></li>
+<li><p><strong>attenuation_min</strong> (<em>int</em>) – Minimum distance in utils.find_peak_indices, change if
+not enough peaks are identified.</p></li>
+<li><p><strong>attenuation_max</strong> (<em>int</em>) – Used for creating a histogram without outliers.</p></li>
+<li><p><strong>num_attenuation_bins</strong> (<em>int</em>) – Number of bins for attenuation.</p></li>
+<li><p><strong>delay_min</strong> (<em>int</em>) – Lower bound on delay, used as minimum distance in
+utils.find_peak_indices.</p></li>
+<li><p><strong>delay_max</strong> (<em>int</em>) – Upper bound on delay, used for creating a histogram without
+outliers.</p></li>
+<li><p><strong>num_delay_bins</strong> (<em>int</em>) – Number of bins for delay.</p></li>
+<li><p><strong>peak_threshold</strong> (<em>float</em>) – Value in [0, 1] for peak picking.</p></li>
+<li><p><strong>attenuation_min_distance</strong> (<em>int</em>) – Minimum distance between peaks wrt attenuation.</p></li>
+<li><p><strong>delay_min_distance</strong> (<em>int</em>) – Minimum distance between peaks wrt delay.</p></li>
+<li><p><strong>p</strong> (<em>int</em>) – Weight the histogram with the symmetric attenuation estimator.</p></li>
+<li><p><strong>q</strong> (<em>int</em>) – Weight the histogram with the delay estimato</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>On page 8 of his paper, Rickard recommends p=1 and q=0 as a default starting
+point and p=.5, q=0 if one source is more dominant.</p>
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.stft_ch0">
+<code class="sig-name descname">stft_ch0</code><a class="headerlink" href="#nussl.separation.spatial.Duet.stft_ch0" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy matrix containing the stft data of channel 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.stft_ch1">
+<code class="sig-name descname">stft_ch1</code><a class="headerlink" href="#nussl.separation.spatial.Duet.stft_ch1" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy matrix containing the stft data of channel 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.frequency_matrix">
+<code class="sig-name descname">frequency_matrix</code><a class="headerlink" href="#nussl.separation.spatial.Duet.frequency_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy matrix containing the frequencies of
+analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.symmetric_atn">
+<code class="sig-name descname">symmetric_atn</code><a class="headerlink" href="#nussl.separation.spatial.Duet.symmetric_atn" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy matrix containing the symmetric attenuation
+between the two channels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.delay">
+<code class="sig-name descname">delay</code><a class="headerlink" href="#nussl.separation.spatial.Duet.delay" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy matrix containing the delay between the two channels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.num_time_bins">
+<code class="sig-name descname">num_time_bins</code><a class="headerlink" href="#nussl.separation.spatial.Duet.num_time_bins" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of time bins for the frequency matrix and
+mask arrays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.num_frequency_bins">
+<code class="sig-name descname">num_frequency_bins</code><a class="headerlink" href="#nussl.separation.spatial.Duet.num_frequency_bins" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of frequency bins for the mask arrays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.attenuation_bins">
+<code class="sig-name descname">attenuation_bins</code><a class="headerlink" href="#nussl.separation.spatial.Duet.attenuation_bins" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy array containing the attenuation bins for the
+histogram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.delay_bins">
+<code class="sig-name descname">delay_bins</code><a class="headerlink" href="#nussl.separation.spatial.Duet.delay_bins" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy array containing the delay bins for the histogram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.normalized_attenuation_delay_histogram">
+<code class="sig-name descname">normalized_attenuation_delay_histogram</code><a class="headerlink" href="#nussl.separation.spatial.Duet.normalized_attenuation_delay_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>A normalized Numpy matrix
+containing the attenuation delay histogram, which has peaks for each source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.attenuation_delay_histogram">
+<code class="sig-name descname">attenuation_delay_histogram</code><a class="headerlink" href="#nussl.separation.spatial.Duet.attenuation_delay_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>A non-normalized Numpy matrix containing
+the attenuation delay histogram, which has peaks for each source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.peak_indices">
+<code class="sig-name descname">peak_indices</code><a class="headerlink" href="#nussl.separation.spatial.Duet.peak_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy array containing the indices of the peaks for
+the histogram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.separation.spatial.Duet.separated_sources">
+<code class="sig-name descname">separated_sources</code><a class="headerlink" href="#nussl.separation.spatial.Duet.separated_sources" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Numpy array of arrays containing each
+separated source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contribution Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ml.html" class="btn btn-neutral float-left" title="Machine Learning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

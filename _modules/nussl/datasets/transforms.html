@@ -1,0 +1,949 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.datasets.transforms &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.datasets.transforms</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.datasets.transforms</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">zarr</span>
+<span class="kn">import</span> <span class="nn">numcodecs</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">OneHotEncoder</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utils</span>
+
+
+<span class="k">def</span> <span class="nf">compute_ideal_binary_mask</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">):</span>
+    <span class="n">ibm</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">source_magnitudes</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">ibm</span> <span class="o">=</span> <span class="n">ibm</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ibm</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ibm</span><span class="p">[</span><span class="n">ibm</span> <span class="o">&lt;=</span> <span class="o">.</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">ibm</span>
+
+
+<span class="c1"># Keys that correspond to the time-frequency representations after being passed through</span>
+<span class="c1"># the transforms here.</span>
+<span class="n">time_frequency_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">,</span> <span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">,</span> <span class="s1">&#39;weights&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="SumSources"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.SumSources">[docs]</a><span class="k">class</span> <span class="nc">SumSources</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sums sources together. Looks for sources in ``data[self.source_key]``. If </span>
+<span class="sd">    a source belongs to a group, it is popped from the ``data[self.source_key]`` and</span>
+<span class="sd">    summed with the other sources in the group. If there is a corresponding </span>
+<span class="sd">    group_name in group_names, it is named that in ``data[self.source_key]``. If</span>
+<span class="sd">    group_names are not given, then the names are constructed using the keys</span>
+<span class="sd">    in each group (e.g. `drums+bass+other`).</span>
+
+<span class="sd">    If using Scaper datasets, then there may be multiple sources with the same</span>
+<span class="sd">    label but different counts. The Scaper dataset hook organizes the source</span>
+<span class="sd">    dictionary as follows:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        data[&#39;sources] = {</span>
+<span class="sd">            &#39;{label}::{count}&#39;: AudioSignal,</span>
+<span class="sd">            &#39;{label}::{count}&#39;: AudioSignal,</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+<span class="sd">    </span>
+<span class="sd">    SumSources sums by source label, so the ``::count`` will be ignored and only the</span>
+<span class="sd">    label part will be used when grouping sources.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; tfm = transforms.SumSources(</span>
+<span class="sd">        &gt;&gt;&gt;     groupings=[[&#39;drums&#39;, &#39;bass&#39;, &#39;other]],</span>
+<span class="sd">        &gt;&gt;&gt;     group_names=[&#39;accompaniment],</span>
+<span class="sd">        &gt;&gt;&gt; )</span>
+<span class="sd">        &gt;&gt;&gt; # data[&#39;sources&#39;] is a dict containing keys: </span>
+<span class="sd">        &gt;&gt;&gt; #   [&#39;vocals&#39;, &#39;drums&#39;, &#39;bass&#39;, &#39;other]</span>
+<span class="sd">        &gt;&gt;&gt; data = tfm(data)</span>
+<span class="sd">        &gt;&gt;&gt; # data[&#39;sources&#39;] is now a dict containing keys:</span>
+<span class="sd">        &gt;&gt;&gt; #   [&#39;vocals&#39;, &#39;accompaniment&#39;]</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        groupings (list): a list of lists telling how to group each sources. </span>
+<span class="sd">        group_names (list, optional): A list containing the names of each group, or None. </span>
+<span class="sd">          Defaults to None.</span>
+<span class="sd">        source_key (str, optional): The key to look for in the data containing the list of</span>
+<span class="sd">          source AudioSignals. Defaults to &#39;sources&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        TransformException: if groupings is not a list</span>
+<span class="sd">        TransformException: if group_names is not None but </span>
+<span class="sd">            len(groupings) != len(group_names)</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        data: modified dictionary with summed sources</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groupings</span><span class="p">,</span> <span class="n">group_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">groupings</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;groupings must be a list, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">groupings</span><span class="p">)</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">group_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">group_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">groupings</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;group_names and groupings must be same length or &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;group_names can be None! Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">group_names</span><span class="p">)</span><span class="si">}</span><span class="s2"> for &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;len(group_names) and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">groupings</span><span class="p">)</span><span class="si">}</span><span class="s2"> for len(groupings).&quot;</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">groupings</span> <span class="o">=</span> <span class="n">groupings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
+        <span class="k">if</span> <span class="n">group_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">group_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;+&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">groupings</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groupings</span><span class="p">))]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_names</span> <span class="o">=</span> <span class="n">group_names</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;passed to this Transform!&quot;</span>
+            <span class="p">)</span>
+        <span class="n">sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
+        <span class="n">source_keys</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;::&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groupings</span><span class="p">):</span>
+            <span class="n">combined</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">source_keys</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">key2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">key1</span><span class="p">:</span>
+                        <span class="n">combined</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sources</span><span class="p">[</span><span class="n">key2</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                        <span class="n">sources</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key2</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">sources</span><span class="p">[</span><span class="n">group_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+            <span class="n">sources</span><span class="p">[</span><span class="n">group_name</span><span class="p">]</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="o">=</span> <span class="n">group_name</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sources</span>
+        <span class="k">if</span> <span class="s1">&#39;metadata&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;labels&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;labels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group_names</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;groupings = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">groupings</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;group_names = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">group_names</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;source_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LabelsToOneHot"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.LabelsToOneHot">[docs]</a><span class="k">class</span> <span class="nc">LabelsToOneHot</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a data dictionary with sources and their keys and converts the keys to</span>
+<span class="sd">    a one-hot numpy array using the list in data[&#39;metadata&#39;][&#39;labels&#39;] to figure</span>
+<span class="sd">    out which index goes where.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;metadata&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected metadata in data, got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;labels&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected labels in data[&#39;metadata&#39;], got &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">enc</span> <span class="o">=</span> <span class="n">OneHotEncoder</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;labels&#39;</span><span class="p">]])</span>
+
+        <span class="n">sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
+        <span class="n">source_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;::&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+        <span class="n">source_labels</span> <span class="o">=</span> <span class="p">[[</span><span class="n">l</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">source_keys</span><span class="p">)]</span>
+
+        <span class="n">one_hot_labels</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">source_labels</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;one_hot_labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">one_hot_labels</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="MagnitudeSpectrumApproximation"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.MagnitudeSpectrumApproximation">[docs]</a><span class="k">class</span> <span class="nc">MagnitudeSpectrumApproximation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a dictionary and looks for two special keys, defined by the</span>
+<span class="sd">    arguments ``mix_key`` and ``source_key``. These default to `mix` and `sources`.</span>
+<span class="sd">    These values of these keys are used to calculate the magnitude spectrum </span>
+<span class="sd">    approximation [1]. The input dictionary is modified to have additional</span>
+<span class="sd">    keys:</span>
+
+<span class="sd">    - mix_magnitude: The magnitude spectrogram of the mixture audio signal.</span>
+<span class="sd">    - source_magnitudes: The magnitude spectrograms of each source spectrogram.</span>
+<span class="sd">    - assignments: The ideal binary assignments for each time-frequency bin.</span>
+
+<span class="sd">    ``data[self.source_key]`` points to a dictionary containing the source names in</span>
+<span class="sd">    the keys and the corresponding AudioSignal in the values. The keys are sorted</span>
+<span class="sd">    in alphabetical order and then appended to the mask. ``data[self.source_key]``</span>
+<span class="sd">    then points to an OrderedDict instead, where the keys are in the same order</span>
+<span class="sd">    as in ``data[&#39;source_magnitudes&#39;]`` and ``data[&#39;assignments&#39;]``.</span>
+
+<span class="sd">    This transform uses the STFTParams that are attached to the AudioSignal objects</span>
+<span class="sd">    contained in ``data[mix_key]`` and ``data[source_key]``.</span>
+
+<span class="sd">    [1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux. </span>
+<span class="sd">        &quot;Phase-sensitive and recognition-boosted speech separation using </span>
+<span class="sd">        deep recurrent neural networks.&quot; In 2015 IEEE International Conference </span>
+<span class="sd">        on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE, </span>
+<span class="sd">        2015.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        mix_key (str, optional): The key to look for in data for the mixture AudioSignal. </span>
+<span class="sd">          Defaults to &#39;mix&#39;.</span>
+<span class="sd">        source_key (str, optional): The key to look for in the data containing the list of</span>
+<span class="sd">          source AudioSignals. Defaults to &#39;sources&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">            TransformException: if the expected keys are not in the dictionary, an</span>
+<span class="sd">              Exception is raised.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        data: Modified version of the input dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix&#39;</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="o">=</span> <span class="n">mix_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;passed to this Transform! Got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">mixture</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="p">]</span>
+        <span class="n">mixture</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
+        <span class="n">mix_magnitude</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">magnitude_spectrogram_data</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mix_magnitude</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="n">_sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
+        <span class="n">source_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_sources</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="n">sources</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
+            <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sources</span>
+
+        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
+            <span class="n">source_magnitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">magnitude_spectrogram_data</span><span class="p">)</span>
+
+        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_ideal_binary_mask</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;source_magnitudes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_magnitudes</span>
+
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;mix_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;source_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MagnitudeWeights"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.MagnitudeWeights">[docs]</a><span class="k">class</span> <span class="nc">MagnitudeWeights</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applying time-frequency weights to the deep clustering objective results in a</span>
+<span class="sd">    huge performance boost. This transform looks for &#39;mix_magnitude&#39;, which is output</span>
+<span class="sd">    by either MagnitudeSpectrumApproximation or PhaseSensitiveSpectrumApproximation</span>
+<span class="sd">    and puts it into the weights.</span>
+
+<span class="sd">    [1] Wang, Zhong-Qiu, Jonathan Le Roux, and John R. Hershey. </span>
+<span class="sd">    &quot;Alternative objective functions for deep clustering.&quot; 2018 IEEE International </span>
+<span class="sd">    Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2018.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        mix_magnitude_key (str): Which key to look for the mix_magnitude data in.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix&#39;</span><span class="p">,</span> <span class="n">mix_magnitude_key</span><span class="o">=</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span> <span class="o">=</span> <span class="n">mix_magnitude_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="o">=</span> <span class="n">mix_key</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span><span class="si">}</span><span class="s2"> or </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;passed to this Transform! Got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="s2">&quot;Either MagnitudeSpectrumApproximation or &quot;</span>
+                <span class="s2">&quot;PhaseSensitiveSpectrumApproximation should be called &quot;</span>
+                <span class="s2">&quot;on the data dict prior to this transform. &quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="p">]</span><span class="o">.</span><span class="n">stft</span><span class="p">())</span>
+
+        <span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span><span class="p">]</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">magnitude_spectrogram</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">*=</span> <span class="p">(</span>
+                <span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="PhaseSensitiveSpectrumApproximation"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation">[docs]</a><span class="k">class</span> <span class="nc">PhaseSensitiveSpectrumApproximation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a dictionary and looks for two special keys, defined by the</span>
+<span class="sd">    arguments ``mix_key`` and ``source_key``. These default to `mix` and `sources`.</span>
+<span class="sd">    These values of these keys are used to calculate the phase sensitive spectrum </span>
+<span class="sd">    approximation [1]. The input dictionary is modified to have additional</span>
+<span class="sd">    keys:</span>
+
+<span class="sd">    - mix_magnitude: The magnitude spectrogram of the mixture audio signal.</span>
+<span class="sd">    - source_magnitudes: The magnitude spectrograms of each source spectrogram.</span>
+<span class="sd">    - assignments: The ideal binary assignments for each time-frequency bin.</span>
+
+<span class="sd">    ``data[self.source_key]`` points to a dictionary containing the source names in</span>
+<span class="sd">    the keys and the corresponding AudioSignal in the values. The keys are sorted</span>
+<span class="sd">    in alphabetical order and then appended to the mask. ``data[self.source_key]``</span>
+<span class="sd">    then points to an OrderedDict instead, where the keys are in the same order</span>
+<span class="sd">    as in ``data[&#39;source_magnitudes&#39;]`` and ``data[&#39;assignments&#39;]``.</span>
+
+<span class="sd">    This transform uses the STFTParams that are attached to the AudioSignal objects</span>
+<span class="sd">    contained in ``data[mix_key]`` and ``data[source_key]``.</span>
+
+<span class="sd">    [1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux. </span>
+<span class="sd">        &quot;Phase-sensitive and recognition-boosted speech separation using </span>
+<span class="sd">        deep recurrent neural networks.&quot; In 2015 IEEE International Conference </span>
+<span class="sd">        on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE, </span>
+<span class="sd">        2015.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        mix_key (str, optional): The key to look for in data for the mixture AudioSignal. </span>
+<span class="sd">          Defaults to &#39;mix&#39;.</span>
+<span class="sd">        source_key (str, optional): The key to look for in the data containing the list of</span>
+<span class="sd">          source AudioSignals. Defaults to &#39;sources&#39;.</span>
+<span class="sd">        range_min (float, optional): The lower end to use when truncating the source </span>
+<span class="sd">          magnitudes in the phase sensitive spectrum approximation. Defaults to 0.0 (construct</span>
+<span class="sd">          non-negative masks). Use -np.inf for untruncated source magnitudes.</span>
+<span class="sd">        range_max (float, optional): The higher end of the truncated spectrum. This gets</span>
+<span class="sd">          multiplied by the magnitude of the mixture. Use 1.0 to truncate the source </span>
+<span class="sd">          magnitudes to `max(source_magnitudes, mix_magnitude)`. Use np.inf for untruncated</span>
+<span class="sd">          source magnitudes (best performance for an oracle mask but may be beyond what a</span>
+<span class="sd">          neural network is capable of masking). Defaults to 1.0.</span>
+<span class="sd">          </span>
+<span class="sd">    Raises:</span>
+<span class="sd">            TransformException: if the expected keys are not in the dictionary, an</span>
+<span class="sd">              Exception is raised.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        data: Modified version of the input dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix&#39;</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">,</span>
+                 <span class="n">range_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">range_max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="o">=</span> <span class="n">mix_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">range_min</span> <span class="o">=</span> <span class="n">range_min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">range_max</span> <span class="o">=</span> <span class="n">range_max</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;passed to this Transform! Got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">mixture</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="p">]</span>
+
+        <span class="n">mix_stft</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
+        <span class="n">mix_magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">mix_stft</span><span class="p">)</span>
+        <span class="n">mix_angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">mix_stft</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mix_magnitude</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="n">_sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
+        <span class="n">source_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_sources</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+
+        <span class="n">sources</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
+            <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sources</span>
+
+        <span class="n">source_angles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">_stft</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
+            <span class="n">source_magnitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_stft</span><span class="p">))</span>
+            <span class="n">source_angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">_stft</span><span class="p">))</span>
+
+        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">source_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">source_angles</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">range_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_min</span>
+        <span class="n">range_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_max</span> <span class="o">*</span> <span class="n">mix_magnitude</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="c1"># Section 3.1: https://arxiv.org/pdf/1909.08494.pdf</span>
+        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                <span class="n">source_magnitudes</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">source_angles</span> <span class="o">-</span> <span class="n">mix_angle</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]),</span>
+                <span class="n">range_min</span>
+            <span class="p">),</span>
+            <span class="n">range_max</span>
+        <span class="p">)</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_ideal_binary_mask</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;source_magnitudes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_magnitudes</span>
+
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;mix_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;source_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IndexSources"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.IndexSources">[docs]</a><span class="k">class</span> <span class="nc">IndexSources</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes in a dictionary containing Torch tensors or numpy arrays and extracts the </span>
+<span class="sd">    indexed sources from the set key (usually either `source_magnitudes` or </span>
+<span class="sd">    `ideal_binary_mask`). Can be used to train single-source separation models </span>
+<span class="sd">    (e.g. mix goes in, vocals come out).</span>
+<span class="sd">    </span>
+<span class="sd">    You need to know which slice of the source magnitudes or ideal binary mask arrays </span>
+<span class="sd">    to extract. The order of the sources in the source magnitudes array will be in </span>
+<span class="sd">    alphabetical order according to their source labels. </span>
+
+<span class="sd">    For example, if source magnitudes has shape `(257, 400, 1, 4)`, and the data is</span>
+<span class="sd">    from MUSDB, then the four possible source labels are bass, drums, other, and vocals.</span>
+<span class="sd">    The data in source magnitudes is in alphabetical order, so:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        # source_magnitudes is an array returned by either MagnitudeSpectrumApproximation</span>
+<span class="sd">        # or PhaseSensitiveSpectrumApproximation</span>
+<span class="sd">        source_magnitudes[..., 0] # bass spectrogram</span>
+<span class="sd">        source_magnitudes[..., 1] # drums spectrogram</span>
+<span class="sd">        source_magnitudes[..., 2] # other spectrogram</span>
+<span class="sd">        source_magnitudes[..., 3] # vocals spectrogram</span>
+
+<span class="sd">        # ideal_binary_mask is an array returned by either MagnitudeSpectrumApproximation</span>
+<span class="sd">        # or PhaseSensitiveSpectrumApproximation</span>
+<span class="sd">        ideal_binary_mask[..., 0] # bass ibm mask</span>
+<span class="sd">        ideal_binary_mask[..., 1] # drums ibm mask</span>
+<span class="sd">        ideal_binary_mask[..., 2] # other ibm mask</span>
+<span class="sd">        ideal_binary_mask[..., 3] # vocals ibm mask</span>
+
+<span class="sd">    You can apply this transform to either the `source_magnitudes` or the</span>
+<span class="sd">    `ideal_binary_mask` or both.</span>
+
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        object ([type]): [description]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_key</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="o">=</span> <span class="n">target_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2"> in dictionary, got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Shape of data[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2">] is </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;but index =  </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2"> out of bounds bounds of last dim.&quot;</span><span class="p">)</span>
+        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="GetExcerpt"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.GetExcerpt">[docs]</a><span class="k">class</span> <span class="nc">GetExcerpt</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes in a dictionary containing Torch tensors or numpy arrays and extracts an </span>
+<span class="sd">    excerpt from each tensor corresponding to a spectral representation of a specified </span>
+<span class="sd">    length in frames. Can be used to get L-length spectrograms from mixture and source</span>
+<span class="sd">    spectrograms. If the data is shorter than the specified length, it</span>
+<span class="sd">    is padded to the specified length. If it is longer, a random offset between</span>
+<span class="sd">    ``(0, data_length - specified_length)`` is chosen. This function assumes that</span>
+<span class="sd">    it is being passed data AFTER ToSeparationModel. Thus the time dimension is</span>
+<span class="sd">    on axis=1. </span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        excerpt_length (int): Specified length of transformed data in frames.</span>
+
+<span class="sd">        time_dim (int): Which dimension time is on (excerpts are taken along this axis).</span>
+<span class="sd">          Defaults to 0.</span>
+
+<span class="sd">        time_frequency_keys (list): Which keys to look at it in the data dictionary to</span>
+<span class="sd">          take excerpts from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">excerpt_length</span><span class="p">,</span> <span class="n">time_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">tf_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span> <span class="o">=</span> <span class="n">excerpt_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span> <span class="o">=</span> <span class="n">time_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_frequency_keys</span> <span class="o">=</span> <span class="n">tf_keys</span> <span class="k">if</span> <span class="n">tf_keys</span> <span class="k">else</span> <span class="n">time_frequency_keys</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="n">is_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="n">is_array</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_tensor</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_array</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;data[</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">] was not a torch Tensor or a numpy array!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">is_tensor</span><span class="p">,</span> <span class="n">is_array</span>
+
+    <span class="k">def</span> <span class="nf">_get_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">data_length</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">data_length</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data_length</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">pad_amount</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span> <span class="o">-</span> <span class="n">data_length</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">offset</span><span class="p">,</span> <span class="n">pad_amount</span>
+
+    <span class="k">def</span> <span class="nf">_construct_pad_func_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">pad_amount</span><span class="p">,</span> <span class="n">is_tensor</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_tensor</span><span class="p">:</span>
+            <span class="n">pad_func</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pad</span>
+            <span class="n">pad_tuple</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">))]</span>
+            <span class="n">pad_tuple</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">pad_tuple</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">pad_amount</span>
+            <span class="n">pad_tuple</span> <span class="o">=</span> <span class="n">pad_tuple</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pad_func</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span>
+            <span class="n">pad_tuple</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">))]</span>
+            <span class="n">pad_tuple</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pad_amount</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pad_func</span><span class="p">,</span> <span class="n">pad_tuple</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">offset</span><span class="p">,</span> <span class="n">pad_amount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_offset</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">time_frequency_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_frequency_keys</span><span class="p">:</span>
+                <span class="n">is_tensor</span><span class="p">,</span> <span class="n">is_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">pad_amount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">pad_func</span><span class="p">,</span> <span class="n">pad_tuple</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_pad_func_tuple</span><span class="p">(</span>
+                        <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">pad_amount</span><span class="p">,</span> <span class="n">is_tensor</span><span class="p">)</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">pad_func</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">pad_tuple</span><span class="p">)</span>
+
+                <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">_slice_along_dim</span><span class="p">(</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="Cache"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.Cache">[docs]</a><span class="k">class</span> <span class="nc">Cache</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The Cache transform can be placed within a Compose transform. The data </span>
+<span class="sd">    dictionary coming into this transform will be saved to the specified</span>
+<span class="sd">    location using ``zarr``. Then instead of computing all of the transforms</span>
+<span class="sd">    before the cache, one can simply read from the cache. The transforms after</span>
+<span class="sd">    this will then be applied to the data dictionary that is read from the</span>
+<span class="sd">    cache. A typical pipeline might look like this:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        dataset = datasets.Scaper(&#39;path/to/scaper/folder&#39;)</span>
+<span class="sd">        tfm = transforms.Compose([</span>
+<span class="sd">            transforms.PhaseSensitiveApproximation(),</span>
+<span class="sd">            transforms.ToSeparationModel(),</span>
+<span class="sd">            transforms.Cache(&#39;~/.nussl/cache/tag&#39;, overwrite=True),</span>
+<span class="sd">            transforms.GetExcerpt()</span>
+<span class="sd">        ])</span>
+<span class="sd">        dataset[0] # first time will write to cache then apply GetExcerpt</span>
+<span class="sd">        dataset.cache_populated = True # switches to reading from cache</span>
+<span class="sd">        dataset[0] # second time will read from cache then apply GetExcerpt</span>
+<span class="sd">        dataset[1] # will error out as it wasn&#39;t written to the cache!</span>
+
+<span class="sd">        dataset.cache_populated = False</span>
+<span class="sd">        for i in range(len(dataset)):</span>
+<span class="sd">            dataset[i] # every item will get written to cache</span>
+<span class="sd">        dataset.cache_populated = True</span>
+<span class="sd">        dataset[1] # now it exists</span>
+
+<span class="sd">        dataset = datasets.Scaper(&#39;path/to/scaper/folder&#39;) # next time around</span>
+<span class="sd">        tfm = transforms.Compose([</span>
+<span class="sd">            transforms.PhaseSensitiveApproximation(),</span>
+<span class="sd">            transforms.ToSeparationModel(),</span>
+<span class="sd">            transforms.Cache(&#39;~/.nussl/cache/tag&#39;, overwrite=False),</span>
+<span class="sd">            transforms.GetExcerpt()</span>
+<span class="sd">        ])</span>
+<span class="sd">        dataset.cache_populated = True</span>
+<span class="sd">        dataset[0] # will read from cache, which still exists from last time</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        object ([type]): [description]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">location</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="o">=</span> <span class="n">cache_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span> <span class="o">=</span> <span class="n">overwrite</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">info</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">overwrite</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_overwrite</span>
+
+    <span class="nd">@overwrite</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">overwrite</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_overwrite</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_open_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_clear_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Cache </span><span class="si">{</span><span class="n">location</span><span class="si">}</span><span class="s2"> exists and overwrite = True, clearing cache.&quot;</span><span class="p">)</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_open_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">,),</span>
+                                   <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">,</span> <span class="n">object_codec</span><span class="o">=</span><span class="n">numcodecs</span><span class="o">.</span><span class="n">Pickle</span><span class="p">(),</span>
+                                   <span class="n">synchronizer</span><span class="o">=</span><span class="n">zarr</span><span class="o">.</span><span class="n">ThreadSynchronizer</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
+                    <span class="n">object_codec</span><span class="o">=</span><span class="n">numcodecs</span><span class="o">.</span><span class="n">Pickle</span><span class="p">(),</span>
+                    <span class="n">synchronizer</span><span class="o">=</span><span class="n">zarr</span><span class="o">.</span><span class="n">ThreadSynchronizer</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;index&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected &#39;index&#39; in dictionary, got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Reading from cache resulted in not a dictionary! &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Maybe you haven&#39;t written to index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> yet in &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the cache?&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="ToSeparationModel"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.ToSeparationModel">[docs]</a><span class="k">class</span> <span class="nc">ToSeparationModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes in a dictionary containing objects and removes any objects that cannot</span>
+<span class="sd">    be passed to SeparationModel (e.g. not a numpy array or torch Tensor).</span>
+<span class="sd">    If these objects are passed to SeparationModel, then an error will occur. This </span>
+<span class="sd">    class should be the last one in your list of transforms, if you&#39;re using </span>
+<span class="sd">    this dataset in a DataLoader object for training a network. If the keys</span>
+<span class="sd">    correspond to numpy arrays, they are converted to tensors using </span>
+<span class="sd">    ``torch.from_numpy``. Finally, the dimensions corresponding to time and</span>
+<span class="sd">    frequency are swapped for all the keys in swap_tf_dims, as this is how </span>
+<span class="sd">    SeparationModel expects it.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. code-block:: none</span>
+
+<span class="sd">        data = {</span>
+<span class="sd">            # 2ch spectrogram for mixture</span>
+<span class="sd">            &#39;mix_magnitude&#39;: torch.randn(513, 400, 2),</span>
+<span class="sd">            # 2ch spectrogram for each source</span>
+<span class="sd">            &#39;source_magnitudes&#39;: torch.randn(513, 400, 2, 4) </span>
+<span class="sd">            &#39;mix&#39;: AudioSignal()</span>
+<span class="sd">        }</span>
+
+<span class="sd">        tfm = transforms.ToSeparationModel()</span>
+<span class="sd">        data = tfm(data)</span>
+
+<span class="sd">        data[&#39;mix_magnitude&#39;].shape # (400, 513, 2)</span>
+<span class="sd">        data[&#39;source_magnitudes].shape # (400, 513, 2, 4)</span>
+<span class="sd">        &#39;mix&#39; in data.keys() # False</span>
+<span class="sd">    </span>
+
+<span class="sd">    If this class isn&#39;t in your transforms list for the dataset, but you are</span>
+<span class="sd">    using it in the Trainer class, then it is added automatically as the</span>
+<span class="sd">    last transform.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">swap_tf_dims</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">swap_tf_dims</span> <span class="o">=</span> <span class="n">swap_tf_dims</span> <span class="k">if</span> <span class="n">swap_tf_dims</span> <span class="k">else</span> <span class="n">time_frequency_keys</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;index&#39;</span><span class="p">:</span>
+                <span class="n">is_array</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">is_array</span><span class="p">:</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">swap_tf_dims</span><span class="p">:</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span></div>
+
+
+<div class="viewcode-block" id="Compose"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.Compose">[docs]</a><span class="k">class</span> <span class="nc">Compose</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Composes several transforms together. Inspired by torchvision implementation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        transforms (list of ``Transform`` objects): list of transforms to compose.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; transforms.Compose([</span>
+<span class="sd">        &gt;&gt;&gt;     transforms.MagnitudeSpectrumApproximation(),</span>
+<span class="sd">        &gt;&gt;&gt;     transforms.ToSeparationModel(),</span>
+<span class="sd">        &gt;&gt;&gt; ])</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transforms</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
+                    <span class="s2">&quot;The output of every transform must be a dictionary!&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
+            <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;    </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">)&#39;</span>
+        <span class="k">return</span> <span class="n">format_string</span></div>
+
+
+<div class="viewcode-block" id="TransformException"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.TransformException">[docs]</a><span class="k">class</span> <span class="nc">TransformException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exception class for errors when working with transforms in nussl.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

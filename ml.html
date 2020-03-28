@@ -1,0 +1,1465 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Machine Learning &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Separation algorithms" href="separation.html" />
+    <link rel="prev" title="Evaluation" href="evaluation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/examples.html">Examples</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evaluation.html">Evaluation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Machine Learning</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#separationmodel">SeparationModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.networks.modules">Building blocks for SeparationModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.train">Training</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Training</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-nussl.ml.train.loss">Loss functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-nussl.ml.train.closures">Closures</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="separation.html">Separation algorithms</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="api.html">API Documentation</a> &raquo;</li>
+        
+      <li>Machine Learning</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/ml.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<span class="target" id="module-nussl.ml"></span><div class="section" id="machine-learning">
+<h1>Machine Learning<a class="headerlink" href="#machine-learning" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="separationmodel">
+<h2>SeparationModel<a class="headerlink" href="#separationmodel" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.ml.SeparationModel">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.</code><code class="sig-name descname">SeparationModel</code><span class="sig-paren">(</span><em class="sig-param">config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/separation_model.html#SeparationModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.SeparationModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>SeparationModel takes a configuration file or dictionary that describes the model
+structure, which is some combination of MelProjection, Embedding, RecurrentStack,
+ConvolutionalStack, and other modules found in <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules</span></code>.</p>
+<p class="rubric">References</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.SeparationModel.forward" title="nussl.ml.SeparationModel.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">param data</dt>
+<dd class="field-odd"><p>(dict) a dictionary containing the input data for the model.</p>
+</dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.SeparationModel.save" title="nussl.ml.SeparationModel.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>(location[, metadata])</p></td>
+<td><p>Saves a SeparationModel into a location into a dictionary with the weights and model configuration.</p></td>
+</tr>
+</tbody>
+</table>
+<p>Hershey, J. R., Chen, Z., Le Roux, J., &amp; Watanabe, S. (2016, March).
+Deep clustering: Discriminative embeddings for segmentation and separation.
+In Acoustics, Speech and Signal Processing (ICASSP),
+2016 IEEE International Conference on (pp. 31-35). IEEE.</p>
+<p>Luo, Y., Chen, Z., Hershey, J. R., Le Roux, J., &amp; Mesgarani, N. (2017, March).
+Deep clustering and conventional networks for music separation: Stronger together.
+In Acoustics, Speech and Signal Processing (ICASSP),
+2017 IEEE International Conference on (pp. 61-65). IEEE.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config</strong> – (str, dict) Either a config dictionary that defines the model and its
+connections, or the path to a json file containing the dictionary. If the
+latter, the path will be loaded and used.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>ml.register_module to register your custom modules with SeparationModel.</p>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">ml</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">builders</span><span class="o">.</span><span class="n">build_recurrent_dpcl</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">num_features</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">num_layers</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">bidirectional</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">dropout</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">embedding_size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">embedding_activation</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">,</span> <span class="s1">&#39;unit_norm&#39;</span><span class="p">])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">SeparationModel</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="nussl.ml.SeparationModel.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/separation_model.html#SeparationModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.SeparationModel.forward" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – (dict) a dictionary containing the input data for the model.</p></li>
+<li><p><strong>match the input_keys in self.input.</strong> (<em>Should</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.SeparationModel.save">
+<code class="sig-name descname">save</code><span class="sig-paren">(</span><em class="sig-param">location</em>, <em class="sig-param">metadata=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/separation_model.html#SeparationModel.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.SeparationModel.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves a SeparationModel into a location into a dictionary with the
+weights and model configuration.
+:param location: (str) Where you want the model saved, as a path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>where the model was saved.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-nussl.ml.networks.modules">
+<span id="building-blocks-for-separationmodel"></span><h2>Building blocks for SeparationModel<a class="headerlink" href="#module-nussl.ml.networks.modules" title="Permalink to this headline">¶</a></h2>
+<p><strong>Classes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.AmplitudeToDB" title="nussl.ml.networks.modules.AmplitudeToDB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AmplitudeToDB</span></code></a>()</p></td>
+<td><p>Takes a magnitude spectrogram and converts it to a log amplitude spectrogram in decibels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.BatchNorm" title="nussl.ml.networks.modules.BatchNorm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BatchNorm</span></code></a>([num_features])</p></td>
+<td><p>Applies a batch norm layer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.ConvolutionalStack2D" title="nussl.ml.networks.modules.ConvolutionalStack2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvolutionalStack2D</span></code></a>(in_channels, channels, …)</p></td>
+<td><p>Implements a stack of dilated convolutional layers for source separation from</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.Embedding" title="nussl.ml.networks.modules.Embedding"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Embedding</span></code></a>(num_features, hidden_size, …[, …])</p></td>
+<td><p>Maps output from an audio representation module (e.g.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.InstanceNorm" title="nussl.ml.networks.modules.InstanceNorm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InstanceNorm</span></code></a>([num_features])</p></td>
+<td><p>Applies an instance norm layer.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.Mask" title="nussl.ml.networks.modules.Mask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Mask</span></code></a>()</p></td>
+<td><p>Takes a mask and applies it to a representation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.MelProjection" title="nussl.ml.networks.modules.MelProjection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MelProjection</span></code></a>(sample_rate, num_frequencies, …)</p></td>
+<td><p>MelProjection takes as input a time-frequency representation (e.g.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.RecurrentStack" title="nussl.ml.networks.modules.RecurrentStack"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RecurrentStack</span></code></a>(num_features, hidden_size, …)</p></td>
+<td><p>Creates a stack of RNNs used to process an audio sequence represented as (sequence_length, num_features).</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="nussl.ml.networks.modules.AmplitudeToDB">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">AmplitudeToDB</code><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#AmplitudeToDB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.AmplitudeToDB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a magnitude spectrogram and converts it to a log
+amplitude spectrogram in decibels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>torch.Tensor</em>) – Magnitude spectrogram to convert to</p></li>
+<li><p><strong>spectrogram.</strong> (<em>log</em>) – </p></li>
+<li><p><strong>ref</strong> (<em>float</em>) – reference value. Defaults to 1.0.</p></li>
+<li><p><strong>amin</strong> (<em>float</em>) – lowest possible value for numerical stability.</p></li>
+<li><p><strong>to 1e-8.</strong> (<em>Defaults</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>[description]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>[type]</p>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.AmplitudeToDB.forward" title="nussl.ml.networks.modules.AmplitudeToDB.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data[, ref, amin])</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.AmplitudeToDB.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">ref=1.0</em>, <em class="sig-param">amin=0.0001</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#AmplitudeToDB.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.AmplitudeToDB.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.networks.modules.BatchNorm">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">BatchNorm</code><span class="sig-paren">(</span><em class="sig-param">num_features=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#BatchNorm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.BatchNorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a batch norm layer. Defaults to using only 1 feature, commonly
+used at the very beginning of the network to normalize the input spectrogram.</p>
+<p>Data comes and goes as (nb, nt, nf, nc). Inside this module, the data undergoes
+the following procedure:</p>
+<ol class="arabic simple">
+<li><p>It is first reshaped to (nb, nf, nt, nc)</p></li>
+<li><p>Data is reshaped to (nb, nf, nt * nc).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BatchNorm1d</span></code> is applied with <code class="docutils literal notranslate"><span class="pre">num_features</span></code> to data.</p></li>
+<li><p>Data is reshaped back to (nb, nt, nf, nc) and returned.</p></li>
+</ol>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.BatchNorm.forward" title="nussl.ml.networks.modules.BatchNorm.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_features</strong> (<em>int</em>) – num_features argument to BatchNorm1d, defaults to 1.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – additional keyword arguments that can be passed to BatchNorm2d.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>modified input data tensor with batch norm.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.BatchNorm.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#BatchNorm.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.BatchNorm.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.networks.modules.ConvolutionalStack2D">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">ConvolutionalStack2D</code><span class="sig-paren">(</span><em class="sig-param">in_channels</em>, <em class="sig-param">channels</em>, <em class="sig-param">dilations</em>, <em class="sig-param">filter_shapes</em>, <em class="sig-param">residuals</em>, <em class="sig-param">batch_norm=True</em>, <em class="sig-param">use_checkpointing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#ConvolutionalStack2D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.ConvolutionalStack2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements a stack of dilated convolutional layers for source separation from
+the following papers:</p>
+<blockquote>
+<div><p>Mobin, Shariq, Brian Cheung, and Bruno Olshausen. “Convolutional vs. recurrent
+neural networks for audio source separation.”
+arXiv preprint arXiv:1803.08629 (2018). https://arxiv.org/pdf/1803.08629.pdf</p>
+<p>Yu, Fisher, Vladlen Koltun, and Thomas Funkhouser. “Dilated residual networks.”
+Proceedings of the IEEE conference on computer vision and pattern recognition.
+2017. <a class="reference external" href="https://arxiv.org/abs/1705.09914">https://arxiv.org/abs/1705.09914</a></p>
+</div></blockquote>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.ConvolutionalStack2D.forward" title="nussl.ml.networks.modules.ConvolutionalStack2D.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data)</p></td>
+<td><p>Data comes in as: [num_batch, sequence_length, num_frequencies, num_audio_channels] We reshape it in the forward pass so that everything works to:   [num_batch, num_audio_channels, sequence_length, num_frequencies] After this input is processed, the shape is then:   [num_batch, num_output_channels, sequence_length, num_frequencies] We transpose again to make the shape:   [num_batch, sequence_length, num_frequencies, num_output_channels] So it can be passed to an Embedding module.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>in_channels</strong> (<em>int</em>) – Number of channels in input</p></li>
+<li><p><strong>channels</strong> (<em>list of int</em>) – Number of channels for each layer</p></li>
+<li><p><strong>dilations</strong> (<em>list of ints</em><em> or </em><em>int tuples</em>) – Dilation rate for each layer. If
+int, it is same in both height and width. If tuple, tuple is defined as
+(height, width).</p></li>
+<li><p><strong>filter_shapes</strong> (<em>list of ints</em><em> or </em><em>int tuples</em>) – Filter shape for each layer. If
+int, it is same in both height and width. If tuple, tuple is defined as
+(height, width).</p></li>
+<li><p><strong>residuals</strong> (<em>list of bool</em>) – Whether or not to keep a residual connection at
+each layer.</p></li>
+<li><p><strong>batch_norm</strong> (<em>bool</em>) – Whether to use BatchNorm or not at each layer (default: True)</p></li>
+<li><p><strong>use_checkpointing</strong> (<em>bool</em>) – Whether to use torch’s checkpointing functionality
+to reduce memory usage.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError -- All the input lists must be the same length.</strong> – </p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.ConvolutionalStack2D.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#ConvolutionalStack2D.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.ConvolutionalStack2D.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data comes in as: [num_batch, sequence_length, num_frequencies, num_audio_channels]
+We reshape it in the forward pass so that everything works to:</p>
+<blockquote>
+<div><p>[num_batch, num_audio_channels, sequence_length, num_frequencies]</p>
+</div></blockquote>
+<dl class="simple">
+<dt>After this input is processed, the shape is then:</dt><dd><p>[num_batch, num_output_channels, sequence_length, num_frequencies]</p>
+</dd>
+<dt>We transpose again to make the shape:</dt><dd><p>[num_batch, sequence_length, num_frequencies, num_output_channels]</p>
+</dd>
+</dl>
+<p>So it can be passed to an Embedding module.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.networks.modules.Embedding">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">Embedding</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">embedding_size</em>, <em class="sig-param">activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">dim_to_embed=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#Embedding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.Embedding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps output from an audio representation module (e.g. RecurrentStack,
+DilatedConvolutionalStack) to an embedding space. The output shape is
+(batch_size, sequence_length, num_features, embedding_size). The embeddings can
+be passed through an activation function. If activation is ‘softmax’ or
+‘sigmoid’, and embedding_size is equal to the number of sources, this module
+can be used to implement a mask inference network (or a mask inference
+head in a Chimera network setup).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_features</strong> (<em>int</em>) – Number of features being mapped for each frame.
+Either num_frequencies, or if used with MelProjection, num_mels if using
+RecurrentStack. Should be 1 if using DilatedConvolutionalStack.</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – Size of output from RecurrentStack (hidden_size) or
+DilatedConvolutionalStack (num_filters). If RecurrentStack is bidirectional,
+this should be set to 2 * hidden_size.</p></li>
+<li><p><strong>embedding_size</strong> (<em>int</em>) – Dimensionality of embedding.</p></li>
+<li><p><strong>activation</strong> (<em>list of str</em>) – Activation functions to be applied. Options
+are ‘sigmoid’, ‘tanh’, ‘softmax’, ‘relu’. Unit normalization can be applied by
+adding ‘unit_norm’ in list (e.g. [‘sigmoid’, unit_norm’]).</p></li>
+<li><p><strong>dim_to_embed</strong> (<em>int</em>) – Which dimension of the input to apply the embedding to.
+Defaults to -1 (the last dimension).</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.Embedding.forward" title="nussl.ml.networks.modules.Embedding.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">param data</dt>
+<dd class="field-odd"><p>output from RecurrentStack or ConvolutionalStack. Shape is:</p>
+</dd>
+</dl>
+</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.Embedding.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#Embedding.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.Embedding.forward" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> – output from RecurrentStack or ConvolutionalStack. Shape is:
+(num_batch, …, hidden_size or num_filters)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An embedding (with an optional activation) for each point in the</dt><dd><p>representation of shape (num_batch, …, embedding_size).</p>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.networks.modules.InstanceNorm">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">InstanceNorm</code><span class="sig-paren">(</span><em class="sig-param">num_features=1</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#InstanceNorm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.InstanceNorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies an instance norm layer. Defaults to using only 1 feature, commonly
+used at the very beginning of the network to normalize the input spectrogram.</p>
+<p>Data comes and goes as (nb, nt, nf, nc). Inside this module, the data undergoes
+the following procedure:</p>
+<ol class="arabic simple">
+<li><p>It is first reshaped to (nb, nf, nt, nc)</p></li>
+<li><p>Data is reshaped to (nb, nf, nt * nc).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">InstanceNorm1d</span></code> is applied with <code class="docutils literal notranslate"><span class="pre">num_features</span></code> to data.</p></li>
+<li><p>Data is reshaped back to (nb, nt, nf, nc) and returned.</p></li>
+</ol>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.InstanceNorm.forward" title="nussl.ml.networks.modules.InstanceNorm.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>use_instance_norm</strong> (<em>bool</em>) – Skip normalization or not.</p></li>
+<li><p><strong>num_features</strong> (<em>int</em>) – num_features argument to InstanceNorm1d, defaults to 1.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – additional keyword arguments that are passed to InstanceNorm2d.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>modified input data tensor with instance norm applied.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.InstanceNorm.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#InstanceNorm.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.InstanceNorm.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.networks.modules.Mask">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">Mask</code><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#Mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.Mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a mask and applies it to a representation. Mask and representation must match
+in their first 3 dimensions (nb, nt, nf). The last
+dimension of the representation is unsqueezed to match the mask shape. So if there
+are <code class="docutils literal notranslate"><span class="pre">ns</span></code> sources to separate, the mask shape will be (nb, nt, nf, ns), the
+representation shape will be (nb, nt, nf).</p>
+<p>Representation gets unsqueezed to (nb, nt, nf, 1). Multiplying with the mask
+broadcasts, resulting in (nb, nt, nf, ns) output corresponding to each separated
+source from the representation.</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.Mask.forward" title="nussl.ml.networks.modules.Mask.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(mask, representation)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.Mask.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">mask</em>, <em class="sig-param">representation</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#Mask.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.Mask.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.networks.modules.MelProjection">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">MelProjection</code><span class="sig-paren">(</span><em class="sig-param">sample_rate</em>, <em class="sig-param">num_frequencies</em>, <em class="sig-param">num_mels</em>, <em class="sig-param">direction='forward'</em>, <em class="sig-param">clamp=False</em>, <em class="sig-param">trainable=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#MelProjection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.MelProjection" title="Permalink to this definition">¶</a></dt>
+<dd><p>MelProjection takes as input a time-frequency representation (e.g. a spectrogram, or a mask) and outputs a mel
+project that can be learned or fixed. The initialization uses librosa to get a mel filterbank. Direction
+controls whether it is a forward transform or the inverse transform (e.g. back to spectrogram).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sample_rate</strong> – (int) Sample rate of audio for computing the mel filters.</p></li>
+<li><p><strong>num_frequencies</strong> – (int) Number of frequency bins in input spectrogram.</p></li>
+<li><p><strong>num_mels</strong> – (int) Number of mel bins in output mel spectrogram. if num_mels &lt; 0, this does nothing
+other than clamping the output if clamp is True.</p></li>
+<li><p><strong>direction</strong> – (str) Which direction to go in (either ‘forward’ - to mel, or ‘backward’ - to frequencies).
+Defaults to ‘forward’.</p></li>
+<li><p><strong>clamp</strong> – (bool) Whether to clamp the output values of the transform between 0.0 and 1.0. Used for transforming
+a mask in and out of the mel-domain. Defaults to False.</p></li>
+<li><p><strong>trainable</strong> – (bool) Whether the mel transform can be adjusted by the optimizer. Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.MelProjection.forward" title="nussl.ml.networks.modules.MelProjection.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">param data</dt>
+<dd class="field-odd"><p>Representation - shape:</p>
+</dd>
+</dl>
+</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.MelProjection.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#MelProjection.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.MelProjection.forward" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> – Representation - shape:
+(batch_size, sequence_length, num_frequencies or num_mels, num_sources)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(batch_size, sequence_length, num_mels or num_frequencies, num_sources).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Mel-spectrogram or time-frequency representation of shape</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.networks.modules.RecurrentStack">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.networks.modules.</code><code class="sig-name descname">RecurrentStack</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">rnn_type='lstm'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#RecurrentStack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.RecurrentStack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a stack of RNNs used to process an audio sequence represented as
+(sequence_length, num_features). With bidirectional = True, hidden_size = 600,
+num_layers = 4, rnn_type=’lstm’, and dropout = .3, this becomes the
+audio processor used in deep clustering networks, deep attractor networks, etc.
+Note that batch_first is set to True here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_features</strong> – (int) Number of features being mapped for each frame.
+Either num_frequencies, or if used with MelProjection, num_mels.</p></li>
+<li><p><strong>hidden_size</strong> – (int) Hidden size of recurrent stack for each layer.</p></li>
+<li><p><strong>num_layers</strong> – (int) Number of layers in stack.</p></li>
+<li><p><strong>bidirectional</strong> – (int) True makes this a BiLSTM or a BiGRU. Note that this
+doubles the hidden size.</p></li>
+<li><p><strong>dropout</strong> – (float) Dropout between layers.</p></li>
+<li><p><strong>rnn_type</strong> – (str) LSTM (‘lstm’) or GRU (‘gru’).</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.modules.RecurrentStack.forward" title="nussl.ml.networks.modules.RecurrentStack.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(data)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">param data</dt>
+<dd class="field-odd"><p>Audio representation to be processed. Should be of shape:</p>
+</dd>
+</dl>
+</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.ml.networks.modules.RecurrentStack.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/modules.html#RecurrentStack.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.modules.RecurrentStack.forward" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Audio representation to be processed. Should be of shape:</p></li>
+<li><p><strong>sequence_length</strong><strong>, </strong><strong>..</strong><strong>)</strong><strong></strong> (<em>(</em><em>num_batch</em><em>,</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(num_batch, sequence_length, hidden_size or hidden_size*2 if
+bidirectional=True)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Outputs the features after processing of the RNN. Shape is</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-nussl.ml.cluster"></span></div>
+<div class="section" id="module-nussl.ml.train">
+<span id="training"></span><h2>Training<a class="headerlink" href="#module-nussl.ml.train" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Training<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="nussl.ml.train.create_train_and_validation_engines">
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">create_train_and_validation_engines</code><span class="sig-paren">(</span><em class="sig-param">train_func</em>, <em class="sig-param">val_func=None</em>, <em class="sig-param">device='cpu'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#create_train_and_validation_engines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.create_train_and_validation_engines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for creating an ignite Engine object with helpful defaults.
+This sets up an Engine that has four handlers attached to it:</p>
+<ul class="simple">
+<li><p>prepare_batch: before a batch is passed to train_func or val_func, this
+function runs, moving every item in the batch (which is a dictionary) to
+the appropriate device (‘cpu’  or ‘cuda’).</p></li>
+<li><p>book_keeping: sets up some dictionaries that are used for bookkeeping so one
+can easily track the epoch and iteration losses for both training and
+validation.</p></li>
+<li><p>add_to_iter_history: records the iteration, epoch, and past iteration losses
+into the dictionaries set up by book_keeping.</p></li>
+<li><p>clear_iter_history: resets the current iteration history of losses after moving
+the current iteration history into past iteration history.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_func</strong> (<em>func</em>) – Function that provides the closure for training for
+a single batch.</p></li>
+<li><p><strong>val_func</strong> (<em>func</em><em>, </em><em>optional</em>) – Function that provides the closure for
+validating a single batch. Defaults to None.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to move tensors to. Defaults to ‘cpu’.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.train.add_tensorboard_handler">
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">add_tensorboard_handler</code><span class="sig-paren">(</span><em class="sig-param">output_folder</em>, <em class="sig-param">engine</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#add_tensorboard_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.add_tensorboard_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Every key in engine.state.epoch_history[-1] is logged to TensorBoard.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_folder</strong> (<em>str</em>) – Where the tensorboard logs should go. The output
+logs will go into a subfolder ‘tensorboard’.</p></li>
+<li><p><strong>trainer</strong> (<em>ignite.Engine</em>) – The engine to log.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.train.cache_dataset">
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">cache_dataset</code><span class="sig-paren">(</span><em class="sig-param">dataset</em>, <em class="sig-param">log_frequency=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#cache_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.cache_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs through an entire dataset and caches it if there nussl.datasets.transforms.Cache
+is in dataset.transform. If there is no caching, or dataset.cache_populated = True,
+then this function just iterates through the dataset and does nothing.</p>
+<p>This function can also take a <cite>torch.util.data.DataLoader</cite> object wrapped around
+a <cite>nussl.datasets.BaseDataset</cite> object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<a class="reference internal" href="datasets.html#nussl.datasets.BaseDataset" title="nussl.datasets.BaseDataset"><em>nussl.datasets.BaseDataset</em></a>) – Must be a subclass of
+<cite>nussl.datasets.BaseDataset</cite>.</p></li>
+<li><p><strong>log_frequency</strong> (<em>float</em><em>, </em><em>optional</em>) – How often to log progress, as a fraction between
+0.0 and 1.0 of the total dataset length. Defaults to .1
+(10x over the course of caching).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.train.add_validate_and_checkpoint">
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">add_validate_and_checkpoint</code><span class="sig-paren">(</span><em class="sig-param">output_folder</em>, <em class="sig-param">model</em>, <em class="sig-param">optimizer</em>, <em class="sig-param">train_data</em>, <em class="sig-param">trainer</em>, <em class="sig-param">val_data=None</em>, <em class="sig-param">validator=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#add_validate_and_checkpoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.add_validate_and_checkpoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>This adds the following handler to the trainer:</p>
+<ul class="simple">
+<li><p>validate_and_checkpoint: this runs the validator on the validation dataset
+(<code class="docutils literal notranslate"><span class="pre">val_data</span></code>) using a defined validation process function <code class="docutils literal notranslate"><span class="pre">val_func</span></code>.
+These are optional. If these are not provided, then no validator is run
+and the model is simply checkpointed. The model is always saved to
+<code class="docutils literal notranslate"><span class="pre">{output_folder}/checkpoints/latest.model.pth</span></code>. If the model is also the
+one with the lowest validation loss, then it is <em>also</em> saved to
+<code class="docutils literal notranslate"><span class="pre">{output_folder}/checkpoints/best.model.pth.</span> <span class="pre">This</span> <span class="pre">is</span> <span class="pre">attached</span> <span class="pre">to</span>
+<span class="pre">``Events.EPOCH_COMPLETED</span></code> on the trainer. After completion, it fires a
+<code class="docutils literal notranslate"><span class="pre">ValidationEvents.VALIDATION_COMPLETED</span></code> event.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – Model that is being trained (typically a SeparationModel).
+optimizer (torch.optim.Optimizer): Optimizer being used to train.</p></li>
+<li><p><strong>train_data</strong> (<a class="reference internal" href="datasets.html#nussl.datasets.BaseDataset" title="nussl.datasets.BaseDataset"><em>BaseDataset</em></a>) – dataset that is being used to train the model. This is to
+save additional metadata information alongside the model checkpoint such as the
+STFTParams, dataset folder, length, list of transforms, etc.</p></li>
+<li><p><strong>trainer</strong> (<em>ignite.Engine</em>) – Engine for trainer</p></li>
+<li><p><strong>validator</strong> (<em>ignite.Engine</em><em>, </em><em>optional</em>) – Engine for validation.
+Defaults to None.</p></li>
+<li><p><strong>val_data</strong> (<em>torch.utils.data.Dataset</em><em>, </em><em>optional</em>) – The validation data.
+Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.train.add_stdout_handler">
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">add_stdout_handler</code><span class="sig-paren">(</span><em class="sig-param">trainer</em>, <em class="sig-param">validator=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#add_stdout_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.add_stdout_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>This adds the following handler to the trainer engine, and also sets up
+Timers:</p>
+<ul>
+<li><p>log_epoch_to_stdout: This logs the results of a model after it has trained
+for a single epoch on both the training and validation set. The output typically
+looks like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>EPOCH SUMMARY
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Epoch number: 0010 / 0010
+- Training loss:   0.583591
+- Validation loss: 0.137209
+- Epoch took: 00:00:03
+- Time since start: 00:00:32
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Saving to test.
+Output @ tests/local/trainer
+</pre></div>
+</div>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<em>ignite.Engine</em>) – Engine for trainer</p></li>
+<li><p><strong>validator</strong> (<em>ignite.Engine</em><em>, </em><em>optional</em>) – Engine for validation.
+Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.ValidationEvents">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">ValidationEvents</code><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#ValidationEvents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.ValidationEvents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Events based on validation running</p>
+<dl class="attribute">
+<dt id="nussl.ml.train.ValidationEvents.VALIDATION_COMPLETED">
+<code class="sig-name descname">VALIDATION_COMPLETED</code><em class="property"> = 'validation_completed'</em><a class="headerlink" href="#nussl.ml.train.ValidationEvents.VALIDATION_COMPLETED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="nussl.ml.train.ValidationEvents.VALIDATION_STARTED">
+<code class="sig-name descname">VALIDATION_STARTED</code><em class="property"> = 'validation_started'</em><a class="headerlink" href="#nussl.ml.train.ValidationEvents.VALIDATION_STARTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.BackwardsEvents">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">BackwardsEvents</code><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#BackwardsEvents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.BackwardsEvents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Events based on validation running</p>
+<dl class="attribute">
+<dt id="nussl.ml.train.BackwardsEvents.BACKWARDS_COMPLETED">
+<code class="sig-name descname">BACKWARDS_COMPLETED</code><em class="property"> = 'backwards_completed'</em><a class="headerlink" href="#nussl.ml.train.BackwardsEvents.BACKWARDS_COMPLETED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-nussl.ml.train.loss">
+<span id="loss-functions"></span><h3>Loss functions<a class="headerlink" href="#module-nussl.ml.train.loss" title="Permalink to this headline">¶</a></h3>
+<p><strong>Classes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.CombinationInvariantLoss" title="nussl.ml.train.loss.CombinationInvariantLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CombinationInvariantLoss</span></code></a>(loss_function)</p></td>
+<td><p>Variant on Permutation Invariant Loss where instead a combination of the sources output by the model are used.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.loss.DeepClusteringLoss" title="nussl.ml.train.loss.DeepClusteringLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeepClusteringLoss</span></code></a>()</p></td>
+<td><p>Computes the deep clustering loss with weights.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.KLDivLoss" title="nussl.ml.train.loss.KLDivLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KLDivLoss</span></code></a>([size_average, reduce, reduction])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.loss.L1Loss" title="nussl.ml.train.loss.L1Loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">L1Loss</span></code></a>([size_average, reduce, reduction])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.MSELoss" title="nussl.ml.train.loss.MSELoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MSELoss</span></code></a>([size_average, reduce, reduction])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.loss.PermutationInvariantLoss" title="nussl.ml.train.loss.PermutationInvariantLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PermutationInvariantLoss</span></code></a>(loss_function)</p></td>
+<td><p>Computes the Permutation Invariant Loss (PIT) [1] by permuting the estimated sources and the reference sources.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.SISDRLoss" title="nussl.ml.train.loss.SISDRLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SISDRLoss</span></code></a>([scaling, reduction])</p></td>
+<td><p>Computes the Scale-Invariant Source-to-Distortion Ratio between a batch of estimated and reference audio signals.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="nussl.ml.train.loss.CombinationInvariantLoss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">CombinationInvariantLoss</code><span class="sig-paren">(</span><em class="sig-param">loss_function</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#CombinationInvariantLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.CombinationInvariantLoss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Variant on Permutation Invariant Loss where instead a combination of the
+sources output by the model are used. This way a model can output more
+sources than there are in the ground truth. A subset of the output sources
+will be compared using Permutation Invariant Loss with the ground truth
+estimates.</p>
+<p>For when you’re trying to match the estimates to the sources but you don’t
+know the order in which your model outputs the estimates AND you are
+outputting more estimates then there are sources.</p>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.CombinationInvariantLoss.DEFAULT_KEYS" title="nussl.ml.train.loss.CombinationInvariantLoss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.CombinationInvariantLoss.forward" title="nussl.ml.train.loss.CombinationInvariantLoss.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(estimates, targets)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.CombinationInvariantLoss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'estimates': 'estimates', 'source_magnitudes': 'targets'}</em><a class="headerlink" href="#nussl.ml.train.loss.CombinationInvariantLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.train.loss.CombinationInvariantLoss.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">estimates</em>, <em class="sig-param">targets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#CombinationInvariantLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.CombinationInvariantLoss.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.loss.DeepClusteringLoss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">DeepClusteringLoss</code><a class="reference internal" href="_modules/nussl/ml/train/loss.html#DeepClusteringLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.DeepClusteringLoss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the deep clustering loss with weights. Equation (7) in [1].</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Wang, Z. Q., Le Roux, J., &amp; Hershey, J. R. (2018, April).</dt><dd><p>Alternative Objective Functions for Deep Clustering.
+In Proc. IEEE International Conference on Acoustics,  Speech
+and Signal Processing (ICASSP).</p>
+</dd>
+</dl>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.DeepClusteringLoss.DEFAULT_KEYS" title="nussl.ml.train.loss.DeepClusteringLoss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.DeepClusteringLoss.forward" title="nussl.ml.train.loss.DeepClusteringLoss.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(embedding, assignments, weights)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.DeepClusteringLoss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'embedding': 'embedding', 'ideal_binary_mask': 'assignments', 'weights': 'weights'}</em><a class="headerlink" href="#nussl.ml.train.loss.DeepClusteringLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.train.loss.DeepClusteringLoss.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">embedding</em>, <em class="sig-param">assignments</em>, <em class="sig-param">weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#DeepClusteringLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.DeepClusteringLoss.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.loss.KLDivLoss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">KLDivLoss</code><span class="sig-paren">(</span><em class="sig-param">size_average=None</em>, <em class="sig-param">reduce=None</em>, <em class="sig-param">reduction='mean'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#KLDivLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.KLDivLoss" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.KLDivLoss.DEFAULT_KEYS" title="nussl.ml.train.loss.KLDivLoss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.KLDivLoss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'estimates': 'input', 'source_magnitudes': 'target'}</em><a class="headerlink" href="#nussl.ml.train.loss.KLDivLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.loss.L1Loss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">L1Loss</code><span class="sig-paren">(</span><em class="sig-param">size_average=None</em>, <em class="sig-param">reduce=None</em>, <em class="sig-param">reduction='mean'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#L1Loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.L1Loss" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.L1Loss.DEFAULT_KEYS" title="nussl.ml.train.loss.L1Loss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.L1Loss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'estimates': 'input', 'source_magnitudes': 'target'}</em><a class="headerlink" href="#nussl.ml.train.loss.L1Loss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.loss.MSELoss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">MSELoss</code><span class="sig-paren">(</span><em class="sig-param">size_average=None</em>, <em class="sig-param">reduce=None</em>, <em class="sig-param">reduction='mean'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#MSELoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.MSELoss" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.MSELoss.DEFAULT_KEYS" title="nussl.ml.train.loss.MSELoss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.MSELoss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'estimates': 'input', 'source_magnitudes': 'target'}</em><a class="headerlink" href="#nussl.ml.train.loss.MSELoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.loss.PermutationInvariantLoss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">PermutationInvariantLoss</code><span class="sig-paren">(</span><em class="sig-param">loss_function</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#PermutationInvariantLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.PermutationInvariantLoss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Permutation Invariant Loss (PIT) [1] by permuting the estimated
+sources and the reference sources. Takes the best permutation and only backprops
+the loss from that.</p>
+<p>For when you’re trying to match the estimates to the sources but you don’t
+know the order in which your model outputs the estimates.</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Yu, Dong, Morten Kolbæk, Zheng-Hua Tan, and Jesper Jensen.</dt><dd><p>“Permutation invariant training of deep models for speaker-independent
+multi-talker speech separation.” In 2017 IEEE International Conference on
+Acoustics, Speech and Signal Processing (ICASSP), pp. 241-245. IEEE, 2017.</p>
+</dd>
+</dl>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.PermutationInvariantLoss.DEFAULT_KEYS" title="nussl.ml.train.loss.PermutationInvariantLoss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.PermutationInvariantLoss.forward" title="nussl.ml.train.loss.PermutationInvariantLoss.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(estimates, targets)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.PermutationInvariantLoss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'estimates': 'estimates', 'source_magnitudes': 'targets'}</em><a class="headerlink" href="#nussl.ml.train.loss.PermutationInvariantLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.train.loss.PermutationInvariantLoss.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">estimates</em>, <em class="sig-param">targets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#PermutationInvariantLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.PermutationInvariantLoss.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.loss.SISDRLoss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">SISDRLoss</code><span class="sig-paren">(</span><em class="sig-param">scaling=True</em>, <em class="sig-param">reduction='mean'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#SISDRLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Scale-Invariant Source-to-Distortion Ratio between a batch
+of estimated and reference audio signals. Used in end-to-end networks.
+This is essentially a batch PyTorch version of the function
+<code class="docutils literal notranslate"><span class="pre">nussl.evaluation.bss_eval.scale_bss_eval</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scaling</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use scale-invariant (True) or
+scale-dependent SDR. Defaults to True.</p>
+</dd>
+</dl>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.SISDRLoss.DEFAULT_KEYS" title="nussl.ml.train.loss.SISDRLoss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.SISDRLoss.forward" title="nussl.ml.train.loss.SISDRLoss.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(estimates, references)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.SISDRLoss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'estimates': 'estimates', 'references': 'references'}</em><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.train.loss.SISDRLoss.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">estimates</em>, <em class="sig-param">references</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#SISDRLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-nussl.ml.train.closures">
+<span id="closures"></span><h3>Closures<a class="headerlink" href="#module-nussl.ml.train.closures" title="Permalink to this headline">¶</a></h3>
+<p><strong>Classes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure" title="nussl.ml.train.closures.Closure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Closure</span></code></a>(loss_dictionary)</p></td>
+<td><p>Closures are used with ignite Engines to train a model given an optimizer and a set of loss functions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.closures.TrainClosure" title="nussl.ml.train.closures.TrainClosure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrainClosure</span></code></a>(loss_dictionary, optimizer, model)</p></td>
+<td><p>This closure takes an optimization step on a SeparationModel object given a loss.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.ValidationClosure" title="nussl.ml.train.closures.ValidationClosure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidationClosure</span></code></a>(loss_dictionary, model)</p></td>
+<td><p>This closure validates the model on some data dictionary.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exceptions</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.ClosureException" title="nussl.ml.train.closures.ClosureException"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosureException</span></code></a></p></td>
+<td><p>Exception class for errors when working with closures in nussl.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="class">
+<dt id="nussl.ml.train.closures.Closure">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">Closure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closures are used with ignite Engines to train a model given an optimizer
+and a set of loss functions. Closures perform forward passes of models given
+the input data. The loss is computed via <code class="docutils literal notranslate"><span class="pre">self.compute_loss</span></code>.
+The forward pass is implemented via the objects <code class="docutils literal notranslate"><span class="pre">__call__</span></code> function.</p>
+<p>This closure object provides a way to define the loss functions you want to
+use to train your model as a loss dictionary that is structured as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loss_dictionary</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;LossClassName&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">how</span> <span class="n">much</span> <span class="n">to</span> <span class="n">weight</span> <span class="n">the</span> <span class="n">loss</span> <span class="ow">in</span> <span class="n">the</span> <span class="nb">sum</span><span class="p">,</span> <span class="n">defaults</span> <span class="n">to</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">key</span> <span class="n">mapping</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">dictionary</span> <span class="n">to</span> <span class="n">arguments</span> <span class="n">to</span> <span class="n">loss</span><span class="p">],</span>
+        <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">any</span> <span class="n">positional</span> <span class="n">arguments</span> <span class="n">to</span> <span class="n">the</span> <span class="n">loss</span> <span class="n">class</span><span class="p">],</span>
+        <span class="s1">&#39;kwargs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">keyword</span> <span class="n">arguments</span> <span class="n">to</span> <span class="n">the</span> <span class="n">loss</span> <span class="n">class</span><span class="p">],</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure.compute_loss" title="nussl.ml.train.closures.Closure.compute_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_loss</span></code></a>(output, target)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p>The keys value will default to <code class="docutils literal notranslate"><span class="pre">LossClassName.DEFAULT_KEYS</span></code>, which can be
+found in <code class="docutils literal notranslate"><span class="pre">nussl.ml.train.loss</span></code> within each available class. Here’s an example
+of a Chimera loss combining deep clustering with permutation invariant L1 loss:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loss_dictionary</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;DeepClusteringLoss&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;PermutationInvariantLoss&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">8</span><span class="p">,</span>
+        <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;L1Loss&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>If you have your own loss function classes you wish to use, you can pass those
+into the loss dictionary and make them discoverable by the closure by using
+<cite>ml.register_loss.</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>loss_dictionary</strong> (<em>dict</em>) – Dictionary of losses described above.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>ml.register_loss to register your loss functions with this closure.</p>
+</div>
+<dl class="method">
+<dt id="nussl.ml.train.closures.Closure.compute_loss">
+<code class="sig-name descname">compute_loss</code><span class="sig-paren">(</span><em class="sig-param">output</em>, <em class="sig-param">target</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure.compute_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure.compute_loss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="nussl.ml.train.closures.ClosureException">
+<em class="property">exception </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">ClosureException</code><a class="reference internal" href="_modules/nussl/ml/train/closures.html#ClosureException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.ClosureException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception class for errors when working with closures in nussl.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.closures.TrainClosure">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">TrainClosure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em>, <em class="sig-param">optimizer</em>, <em class="sig-param">model</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#TrainClosure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.TrainClosure" title="Permalink to this definition">¶</a></dt>
+<dd><p>This closure takes an optimization step on a SeparationModel object given a
+loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loss_dictionary</strong> (<em>dict</em>) – Dictionary containing loss functions and specification.</p></li>
+<li><p><strong>optimizer</strong> (<em>torch Optimizer</em>) – Optimizer to use to train the model.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="#nussl.ml.SeparationModel" title="nussl.ml.SeparationModel"><em>SeparationModel</em></a>) – The model to be trained.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.closures.ValidationClosure">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">ValidationClosure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em>, <em class="sig-param">model</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#ValidationClosure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.ValidationClosure" title="Permalink to this definition">¶</a></dt>
+<dd><p>This closure validates the model on some data dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loss_dictionary</strong> (<em>dict</em>) – Dictionary containing loss functions and specification.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="#nussl.ml.SeparationModel" title="nussl.ml.SeparationModel"><em>SeparationModel</em></a>) – The model to be validated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="separation.html" class="btn btn-neutral float-right" title="Separation algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="evaluation.html" class="btn btn-neutral float-left" title="Evaluation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

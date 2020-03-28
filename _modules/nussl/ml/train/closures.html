@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.ml.train.closures &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.ml.train.closures</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.ml.train.closures</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">loss</span>
+<span class="kn">from</span> <span class="nn">.trainer</span> <span class="kn">import</span> <span class="n">BackwardsEvents</span>
+
+
+<div class="viewcode-block" id="Closure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure">[docs]</a><span class="k">class</span> <span class="nc">Closure</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Closures are used with ignite Engines to train a model given an optimizer </span>
+<span class="sd">    and a set of loss functions. Closures perform forward passes of models given </span>
+<span class="sd">    the input data. The loss is computed via ``self.compute_loss``. </span>
+<span class="sd">    The forward pass is implemented via the objects ``__call__`` function. </span>
+
+<span class="sd">    This closure object provides a way to define the loss functions you want to</span>
+<span class="sd">    use to train your model as a loss dictionary that is structured as follows:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        loss_dictionary = {</span>
+<span class="sd">            &#39;LossClassName&#39;: {</span>
+<span class="sd">                &#39;weight&#39;: [how much to weight the loss in the sum, defaults to 1],</span>
+<span class="sd">                &#39;keys&#39;: [key mapping items in dictionary to arguments to loss],</span>
+<span class="sd">                &#39;args&#39;: [any positional arguments to the loss class],</span>
+<span class="sd">                &#39;kwargs&#39;: [keyword arguments to the loss class],</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+
+<span class="sd">    The keys value will default to ``LossClassName.DEFAULT_KEYS``, which can be</span>
+<span class="sd">    found in ``nussl.ml.train.loss`` within each available class. Here&#39;s an example</span>
+<span class="sd">    of a Chimera loss combining deep clustering with permutation invariant L1 loss:</span>
+
+<span class="sd">    .. code-block:: python </span>
+
+<span class="sd">        loss_dictionary = {</span>
+<span class="sd">            &#39;DeepClusteringLoss&#39;: {</span>
+<span class="sd">                &#39;weight&#39;: .2,</span>
+<span class="sd">            },</span>
+<span class="sd">            &#39;PermutationInvariantLoss&#39;: {</span>
+<span class="sd">                &#39;weight&#39;: .8,</span>
+<span class="sd">                &#39;args&#39;: [&#39;L1Loss&#39;]</span>
+<span class="sd">            }</span>
+<span class="sd">        }</span>
+
+<span class="sd">    If you have your own loss function classes you wish to use, you can pass those</span>
+<span class="sd">    into the loss dictionary and make them discoverable by the closure by using</span>
+<span class="sd">    `ml.register_loss.`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        loss_dictionary (dict): Dictionary of losses described above.</span>
+
+<span class="sd">    See also:</span>
+<span class="sd">        ml.register_loss to register your loss functions with this closure.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_dictionary</span><span class="p">):</span>
+        <span class="n">loss_dictionary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_loss_dictionary</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">loss_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">loss_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;weight&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="n">loss_class</span><span class="o">.</span><span class="n">DEFAULT_KEYS</span> <span class="k">if</span> <span class="s1">&#39;keys&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;keys&#39;</span><span class="p">]</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="s1">&#39;args&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="s1">&#39;kwargs&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;CombinationInvariantLoss&#39;</span><span class="p">,</span> <span class="s1">&#39;PermutationInvariantLoss&#39;</span><span class="p">]:</span>
+                <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])()</span>
+
+            <span class="n">_loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">loss_class</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">weight</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_loss</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_validate_loss_dictionary</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
+                <span class="s2">&quot;loss_dictionary must be a dictionary specifying the &quot;</span>
+                <span class="s2">&quot;class and arguments for each loss function! &quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">loss_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">loss</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Loss function </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found in loss which has </span><span class="si">{</span><span class="nb">dir</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
+                    <span class="s2">&quot;Each key in loss dictionary must point to a dict!&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">val_key</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">val_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="s1">&#39;kwargs&#39;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in loss_dictionary not in [&#39;weight&#39;, &#39;args&#39;, &#39;kwargs&#39;&quot;</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">val_key</span> <span class="o">==</span> <span class="s1">&#39;weight&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weight can only be an int or a float&quot;</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">val_key</span> <span class="o">==</span> <span class="s1">&#39;args&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;args must be a list&quot;</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">val_key</span> <span class="o">==</span> <span class="s1">&#39;kwargs&#39;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span><span class="s2">&quot;kwargs must be a dict&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Closure.compute_loss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure.compute_loss">[docs]</a>    <span class="k">def</span> <span class="nf">compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">loss_output</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+        <span class="n">loss_output</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">loss_obj</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="p">:</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">keys</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span> <span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span>
+            <span class="n">loss_output</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_obj</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">loss_output</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span> <span class="o">*</span> <span class="n">loss_output</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">loss_output</span></div></div>
+
+
+<div class="viewcode-block" id="TrainClosure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.TrainClosure">[docs]</a><span class="k">class</span> <span class="nc">TrainClosure</span><span class="p">(</span><span class="n">Closure</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This closure takes an optimization step on a SeparationModel object given a</span>
+<span class="sd">    loss.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        loss_dictionary (dict): Dictionary containing loss functions and specification.</span>
+<span class="sd">        optimizer (torch Optimizer): Optimizer to use to train the model.</span>
+<span class="sd">        model (SeparationModel): The model to be trained.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_dictionary</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">loss_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">loss_</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="n">engine</span><span class="o">.</span><span class="n">fire_event</span><span class="p">(</span><span class="n">BackwardsEvents</span><span class="o">.</span><span class="n">BACKWARDS_COMPLETED</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="n">loss_</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">loss_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">loss_</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">loss_</span></div>
+
+
+<div class="viewcode-block" id="ValidationClosure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.ValidationClosure">[docs]</a><span class="k">class</span> <span class="nc">ValidationClosure</span><span class="p">(</span><span class="n">Closure</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This closure validates the model on some data dictionary.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        loss_dictionary (dict): Dictionary containing loss functions and specification.</span>
+<span class="sd">        model (SeparationModel): The model to be validated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_dictionary</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">loss_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="n">loss_</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">loss_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">loss_</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">loss_</span></div>
+
+
+<div class="viewcode-block" id="ClosureException"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.ClosureException">[docs]</a><span class="k">class</span> <span class="nc">ClosureException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">    Exception class for errors when working with closures in nussl.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

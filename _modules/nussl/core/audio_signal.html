@@ -1,0 +1,1889 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.core.audio_signal &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.core.audio_signal</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.core.audio_signal</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">numbers</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">import</span> <span class="nn">audioread</span>
+<span class="kn">import</span> <span class="nn">librosa</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy.io.wavfile</span> <span class="k">as</span> <span class="nn">wav</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">check_COLA</span>
+<span class="kn">import</span> <span class="nn">soundfile</span> <span class="k">as</span> <span class="nn">sf</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">masks</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AudioSignal&#39;</span><span class="p">,</span> <span class="s1">&#39;STFTParams&#39;</span><span class="p">,</span> <span class="s1">&#39;AudioSignalException&#39;</span><span class="p">]</span>
+
+<span class="n">STFTParams</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;STFTParams&#39;</span><span class="p">,</span>
+                        <span class="p">[</span><span class="s1">&#39;window_length&#39;</span><span class="p">,</span> <span class="s1">&#39;hop_length&#39;</span><span class="p">,</span> <span class="s1">&#39;window_type&#39;</span><span class="p">],</span>
+                        <span class="n">defaults</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">STFTParams object is a container that holds STFT parameters - window_length, </span>
+<span class="sd">hop_length, and window_type. Not all parameters need to be specified. Ones that</span>
+<span class="sd">are not specified will be inferred by the AudioSignal parameters and the settings</span>
+<span class="sd">in `nussl.core.constants`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="AudioSignal"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal">[docs]</a><span class="k">class</span> <span class="nc">AudioSignal</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    **Overview**</span>
+
+<span class="sd">    :class:`AudioSignal` is the main entry and exit point for all source separation algorithms</span>
+<span class="sd">    in ``nussl``. The :class:`AudioSignal` class is a general container for all things related to</span>
+<span class="sd">    audio data. It contains utilities for:</span>
+
+<span class="sd">    * Input and output from an array or from a file,</span>
+<span class="sd">    * Time-series and frequency domain manipulation,</span>
+<span class="sd">    * Plotting and visualizing,</span>
+<span class="sd">    * Playing audio within a terminal or jupyter notebook,</span>
+<span class="sd">    * Applying a mask to estimate signals</span>
+
+<span class="sd">    and more. The :class:`AudioSignal` class is used in all source separation objects in ``nussl``.</span>
+
+<span class="sd">    :class:`AudioSignal` object stores time-series audio data as a 2D ``numpy`` array in</span>
+<span class="sd">    :attr:`audio_data` (see :attr:`audio_data` for details) and stores Short-Time Fourier Transform</span>
+<span class="sd">    data as 3D ``numpy`` array in :ref:`stft_data` (see :attr:`stft_data` for details).</span>
+
+
+<span class="sd">    **Initialization**</span>
+
+<span class="sd">    There are a few options for initializing an :class:`AudioSignal` object. The first is to</span>
+<span class="sd">    initialize an empty :class:`AudioSignal` object, with no parameters:</span>
+
+<span class="sd">     &gt;&gt;&gt; import nussl</span>
+<span class="sd">     &gt;&gt;&gt; signal = nussl.AudioSignal()</span>
+
+<span class="sd">    In this case, there is no data stored in :attr:`audio_data` or in :attr:`stft_data`, though</span>
+<span class="sd">    these attributes can be updated at any time after the object has been created.</span>
+
+<span class="sd">    Additionally, an :class:`AudioSignal` object can be loaded with exactly one of the following:</span>
+
+<span class="sd">        1. A path to an input audio file (see :func:`load_audio_from_file` for details).</span>
+<span class="sd">        2. A `numpy` array of 1D or 2D real-valued time-series audio data.</span>
+<span class="sd">        3. A `numpy` array of 2D or 3D complex-valued time-frequency STFT data.</span>
+
+<span class="sd">    :class:`AudioSignal` will throw an error if it is initialized with more than one of the</span>
+<span class="sd">    previous at once.</span>
+
+<span class="sd">    Here are examples of all three of these cases:</span>
+
+<span class="sd">     .. code-block:: python</span>
+<span class="sd">        :linenos:</span>
+
+<span class="sd">        import numpy as np</span>
+<span class="sd">        import nussl</span>
+
+<span class="sd">        # Initializing an empty AudioSignal object:</span>
+<span class="sd">        sig_empty = nussl.AudioSignal()</span>
+
+<span class="sd">        # Initializing from a path:</span>
+<span class="sd">        file_path = &#39;my/awesome/mixture.wav&#39;</span>
+<span class="sd">        sig_path = nussl.AudioSignal(file_path)</span>
+
+<span class="sd">        # Initializing with a 1D or 2D numpy array containing audio data:</span>
+<span class="sd">        aud_1d = np.sin(np.linspace(0.0, 1.0, 48000))</span>
+<span class="sd">        sig_1d = nussl.AudioSignal(audio_data_array=aud_1d, sample_rate=48000)</span>
+
+<span class="sd">        # FYI: The shape doesn&#39;t matter, nussl will correct for it</span>
+<span class="sd">        aud_2d = np.array([aud_1d, -2 * aud_1d])</span>
+<span class="sd">        sig_2d = nussl.AudioSignal(audio_data_array=aud_2d)</span>
+
+<span class="sd">        # Initializing with a 2D or 3D numpy array containing STFT data:</span>
+<span class="sd">        stft_2d = np.random.rand((513, 300)) + 1j * np.random.rand((513, 300))</span>
+<span class="sd">        sig_stft_2d = nussl.AudioSignal(stft=stft_2d)</span>
+
+<span class="sd">        # Two channels of STFT data:</span>
+<span class="sd">        stft_3d = nussl.utils.complex_randn((513, 300, 2))</span>
+<span class="sd">        sig_stft_3d = nussl.AudioSignal(stft=stft_3d)</span>
+
+<span class="sd">        # Initializing with more than one of the above methods will raise an exception:</span>
+<span class="sd">        sig_exception = nussl.AudioSignal(audio_data_array=aud_2d, stft=stft_2d)</span>
+
+<span class="sd">    When initializing from a path, :class:`AudioSignal` can read many types of audio files,</span>
+<span class="sd">    provided that your computer has the backends installed to understand the corresponding codecs.</span>
+<span class="sd">    ``nussl`` uses ``librosa``&#39;s `load` function to read in audio data. See librosa&#39;s documentation</span>
+<span class="sd">    for details: https://github.com/librosa/librosa#audioread</span>
+
+<span class="sd">    Once initialized with a single type of data (time-series or time-frequency), there are methods</span>
+<span class="sd">    to compute an STFT from time-series data (:func:`stft`) and vice versa (:func:`istft`).</span>
+
+<span class="sd">    **Sample Rate**</span>
+
+<span class="sd">    The sample rate of an :class:`AudioSignal` object is set upon initialization. If initializing</span>
+<span class="sd">    from a path, the sample rate of the :class:`AudioSignal` object inherits the native sample</span>
+<span class="sd">    rate from the file. If initialized with an audio or stft data array, the sample rate is passed</span>
+<span class="sd">    in as an optional argument. In these cases, with no sample rate explicitly defined, the default</span>
+<span class="sd">    sample rate is 44.1 kHz (CD quality). If this argument is provided when reading from a file</span>
+<span class="sd">    and the provided sample rate does not match the native sample rate of the file,</span>
+<span class="sd">    :class:`AudioSignal` will resample the data from the file so that it matches the provided</span>
+<span class="sd">    sample rate.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        There is no guarantee that data in :attr:`audio_data` corresponds to data in</span>
+<span class="sd">        :attr:`stft_data`. E.g., when an :class:`AudioSignal` object is initialized with</span>
+<span class="sd">        :attr:`audio_data` of an audio mixture, its :attr:`stft_data` is ``None`` until :func:`stft`</span>
+<span class="sd">        is called. Once :func:`stft` is called and a mask is applied to :attr:`stft_data` (via some</span>
+<span class="sd">        algorithm), the :attr:`audio_data` in this :class:`AudioSignal` object still contains data</span>
+<span class="sd">        from the original mixture that it was initialized with even though :attr:`stft_data`</span>
+<span class="sd">        contains altered data. (To hear the results, simply call :func:`istft` on the</span>
+<span class="sd">        :class:`AudioSignal` object.) It is up to the user to keep track of the contents of</span>
+<span class="sd">        :attr:`audio_data` and :attr:`stft_data`.</span>
+
+<span class="sd">    See Also:</span>
+<span class="sd">        For a walk-through of AudioSignal features, see :ref:`audio_signal_basics` and</span>
+<span class="sd">        :ref:`audio_signal_stft`.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        path_to_input_file (``str``): Path to an input file to load upon initialization. Audio</span>
+<span class="sd">            gets loaded into :attr:`audio_data`.</span>
+<span class="sd">        audio_data_array (:obj:`np.ndarray`): 1D or 2D numpy array containing a real-valued,</span>
+<span class="sd">            time-series representation of the audio.</span>
+<span class="sd">        stft (:obj:`np.ndarray`): 2D or 3D numpy array containing pre-computed complex-valued STFT</span>
+<span class="sd">            data.</span>
+<span class="sd">        label (``str``): A label for this :class:`AudioSignal` object.</span>
+<span class="sd">        offset (``float``): Starting point of the section to be extracted (in seconds) if</span>
+<span class="sd">            initializing from  a file.</span>
+<span class="sd">        duration (``float``): Length of the signal to read from the file (in seconds). Defaults to</span>
+<span class="sd">            full length of the signal (i.e., ``None``).</span>
+<span class="sd">        sample_rate (``int``): Sampling rate of this :class:`AudioSignal` object.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        path_to_input_file (``str``): Path to the input file. ``None`` if this AudioSignal never</span>
+<span class="sd">            loaded a file, i.e., initialized with a ``np.ndarray``.</span>
+<span class="sd">        label (``str``): A user-definable label for this :class:`AudioSignal` object.</span>
+<span class="sd">  </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_to_input_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">audio_data_array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stft</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stft_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="o">=</span> <span class="n">path_to_input_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_signal_length</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stft_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_start</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_end</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+
+        <span class="c1"># Assert that this object was only initialized in one way</span>
+        <span class="n">got_path</span> <span class="o">=</span> <span class="n">path_to_input_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">got_audio_array</span> <span class="o">=</span> <span class="n">audio_data_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">got_stft</span> <span class="o">=</span> <span class="n">stft</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">init_inputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">got_path</span><span class="p">,</span> <span class="n">got_audio_array</span><span class="p">,</span> <span class="n">got_stft</span><span class="p">])</span>
+
+        <span class="c1"># noinspection PyPep8</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">init_inputs</span><span class="p">[</span><span class="n">init_inputs</span> <span class="o">==</span> <span class="kc">True</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># ignore inspection for clarity</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Can only initialize AudioSignal object with one and only &#39;</span>
+                                       <span class="s1">&#39;one of {path, audio, stft}!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">path_to_input_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_audio_from_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">audio_data_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_audio_from_array</span><span class="p">(</span><span class="n">audio_data_array</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">DEFAULT_SAMPLE_RATE</span> \
+                <span class="k">if</span> <span class="n">sample_rate</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sample_rate</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="o">=</span> <span class="n">stft</span>  <span class="c1"># complex spectrogram data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span> <span class="o">=</span> <span class="n">stft_params</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">dur</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">signal_duration</span><span class="si">:</span><span class="s1">0.3f</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_duration</span> <span class="k">else</span> <span class="s1">&#39;[unknown]&#39;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="k">else</span> <span class="s1">&#39;unlabeled&#39;</span><span class="si">}</span><span class="s2">): &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dur</span><span class="si">}</span><span class="s2"> sec @ &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="k">else</span> <span class="s1">&#39;path unknown&#39;</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="k">else</span> <span class="s1">&#39;[unknown]&#39;</span><span class="si">}</span><span class="s2"> Hz, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="k">else</span> <span class="s1">&#39;[unknown]&#39;</span><span class="si">}</span><span class="s2"> ch.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#                 Properties</span>
+    <span class="c1">##################################################</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">signal_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``int``</span>
+<span class="sd">            Number of samples in the active region of :attr:`audio_data`.</span>
+<span class="sd">            The length of the audio signal represented by this object in samples.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`signal_duration` for the signal duration in seconds.</span>
+<span class="sd">            * :func:`set_active_region_to_default` for information about active regions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_signal_length</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">LEN_INDEX</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">signal_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``float``</span>
+<span class="sd">            Duration of the active region of :attr:`audio_data` in seconds.</span>
+<span class="sd">            The length of the audio signal represented by this object in seconds.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`signal_length` for the signal length in samples.</span>
+<span class="sd">            * :func:`set_active_region_to_default` for information about active regions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">num_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``int``</span>
+<span class="sd">            Number of channels this :class:`AudioSignal` has.</span>
+<span class="sd">            Defaults to returning number of channels in :attr:`audio_data`. If that is ``None``,</span>
+<span class="sd">            returns number of channels in :attr:`stft_data`. If both are ``None`` then returns</span>
+<span class="sd">            ``None``.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`is_mono`</span>
+<span class="sd">            * :func:`is_stereo`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: what about a mismatch between audio_data and stft_data??</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">CHAN_INDEX</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">]</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_mono</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``bool``</span>
+<span class="sd">            Whether or not this signal is mono (i.e., has exactly **one** channel). First</span>
+<span class="sd">            looks at :attr:`audio_data`, then (if that&#39;s ``None``) looks at :attr:`stft_data`.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`num_channels`</span>
+<span class="sd">            * :func:`is_stereo`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">==</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_stereo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``bool``</span>
+<span class="sd">            Whether or not this signal is stereo (i.e., has exactly **two** channels). First</span>
+<span class="sd">            looks at :attr:`audio_data`, then (if that&#39;s ``None``) looks at :attr:`stft_data`.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`num_channels`</span>
+<span class="sd">            * :func:`is_mono`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">==</span> <span class="mi">2</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">audio_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``np.ndarray``</span>
+<span class="sd">            Stored as a ``numpy`` :obj:`np.ndarray`, :attr:`audio_data` houses the raw, uncompressed</span>
+<span class="sd">            time-domain audio data in the :class:`AudioSignal`. Audio data is stored with shape</span>
+<span class="sd">            ``(n_channels, n_samples)`` as an array of floats.</span>
+
+<span class="sd">            ``None`` by default, can be initialized upon object instantiation or set at any time by</span>
+<span class="sd">            accessing this attribute or calling :func:`load_audio_from_array`. It is recommended to</span>
+<span class="sd">            set :attr:`audio_data` by using :func:`load_audio_from_array` if this</span>
+<span class="sd">            :class:`AudioSignal` has been initialized without any audio or STFT data.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`</span>
+<span class="sd">                If set incorrectly, will raise an error. Expects a real, finite-valued 1D or 2D</span>
+<span class="sd">                ``numpy`` :obj:`np.ndarray`-typed array.</span>
+
+<span class="sd">        Warnings:</span>
+<span class="sd">            :attr:`audio_data` and :attr:`stft_data` are not automatically synchronized, meaning</span>
+<span class="sd">            that if one of them is changed, those changes are not instantly reflected in the other.</span>
+<span class="sd">            To propagate changes, either call :func:`stft` or :func:`istft`.</span>
+
+
+<span class="sd">        Notes:</span>
+<span class="sd">            * This attribute only returns values within the active region. For more information</span>
+<span class="sd">                see :func:`set_active_region_to_default`. When setting this attribute, the active</span>
+<span class="sd">                region are reset to default.</span>
+
+<span class="sd">            * If :attr:`audio_data` is set with an improperly transposed array, it will</span>
+<span class="sd">                automatically transpose it so that it is set the expected way. A warning will be</span>
+<span class="sd">                displayed on the console.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`load_audio_from_file` to load audio into :attr:`audio_data` after</span>
+<span class="sd">                initialization.</span>
+
+<span class="sd">            * :func:`load_audio_from_array` to safely load audio into :attr:`audio_data` after</span>
+<span class="sd">                initialization.</span>
+
+<span class="sd">            * :func:`set_active_region_to_default` for more information about the active region.</span>
+
+<span class="sd">            * :attr:`signal_duration` and :attr:`signal_length` for length of audio data in seconds</span>
+<span class="sd">                and samples, respectively.</span>
+
+<span class="sd">            * :func:`stft` to calculate an STFT from this data,</span>
+<span class="sd">                and :func:`istft` to calculate the inverse STFT and put it in :attr:`audio_data`.</span>
+
+<span class="sd">            * :func:`plot_time_domain` to create a plot of audio data stored in this attribute.</span>
+
+<span class="sd">            * :func:`peak_normalize` to apply gain such that to the absolute max value is exactly</span>
+<span class="sd">                ``1.0``.</span>
+
+<span class="sd">            * :func:`rms` to calculate the root-mean-square of :attr:`audio_data`</span>
+
+<span class="sd">            * :func:`apply_gain` to apply a gain.</span>
+
+<span class="sd">            * :func:`get_channel` to safely retrieve a single channel in :attr:`audio_data`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">LEN_INDEX</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_end</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_end</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_end</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_start</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_start</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span><span class="p">[:,</span> <span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+
+    <span class="nd">@audio_data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">audio_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span>
+
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Type of self.audio_data must be of type np.ndarray!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Not all values of audio_data are finite!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">CHAN_INDEX</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">LEN_INDEX</span><span class="p">]:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">T</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;self.audio_data cannot have more than 2 dimensions!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">CHAN_INDEX</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_region_to_default</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stft_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``np.ndarray``</span>
+<span class="sd">            Stored as a ``numpy`` :obj:`np.ndarray`, :attr:`stft_data` houses complex-valued data</span>
+<span class="sd">            computed from a Short-time Fourier Transform (STFT) of audio data in the</span>
+<span class="sd">            :class:`AudioSignal`. ``None`` by default, this :class:`AudioSignal` object can be</span>
+<span class="sd">            initialized with STFT data upon initialization or it can be set at any time.</span>
+
+<span class="sd">            The STFT data is stored with shape ``(n_frequency_bins, n_hops, n_channels)`` as</span>
+<span class="sd">            a complex-valued ``numpy`` array.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`</span>
+<span class="sd">                if set with an :obj:`np.ndarray` with one dimension or more than three dimensions.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`stft` to calculate an STFT from :attr:`audio_data`, and :func:`istft` to</span>
+<span class="sd">             calculate the inverse STFT from this attribute and put it in :attr:`audio_data`.</span>
+
+<span class="sd">            * :func:`magnitude_spectrogram` to calculate and get the magnitude spectrogram from</span>
+<span class="sd">             :attr:`stft_data`. :func:`power_spectrogram` to calculate and get the power</span>
+<span class="sd">             spectrogram from :attr:`stft_data`.</span>
+
+<span class="sd">            * :func:`get_stft_channel` to safely get a specific channel in :attr:`stft_data`.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            * :attr:`audio_data` and :attr:`stft_data` are not automatically synchronized, meaning</span>
+<span class="sd">            that if one of them is changed, those changes are not instantly reflected in the other.</span>
+<span class="sd">            To propagate changes, either call :func:`stft` or :func:`istft`.</span>
+
+<span class="sd">            * :attr:`stft_data` will expand a two dimensional array so that it has the expected</span>
+<span class="sd">            shape `(n_frequency_bins, n_hops, n_channels)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stft_data</span>
+
+    <span class="nd">@stft_data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">stft_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stft_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span>
+
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Type of self.stft_data must be of type np.ndarray!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot support arrays with less than 2 dimensions!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot support arrays with more than 3 dimensions!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">iscomplexobj</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Initializing STFT with data that is non-complex. &#39;</span>
+                          <span class="s1">&#39;This might lead to weird results!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stft_data</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stft_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``STFTParams``</span>
+<span class="sd">            STFT parameters are kept in this property. STFT parameters are a ``namedtuple``</span>
+<span class="sd">            called ``STFTParams`` with the following signature:</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                STFTParams(</span>
+<span class="sd">                    window_length=2048,</span>
+<span class="sd">                    hop_length=512,</span>
+<span class="sd">                    window_type=&#39;hann&#39;</span>
+<span class="sd">                )</span>
+
+<span class="sd">            The defaults are 32ms windows, 8ms hop, and a hann window.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stft_params</span>
+
+    <span class="nd">@stft_params</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">stft_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">STFTParams</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;stft_params must be of type STFTParams or None!&quot;</span><span class="p">)</span>
+
+        <span class="n">default_win_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">DEFAULT_WIN_LEN_PARAM</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)))</span>
+        <span class="p">)</span>
+        <span class="n">default_hop_len</span> <span class="o">=</span> <span class="n">default_win_len</span> <span class="o">//</span> <span class="mi">4</span>
+        <span class="n">default_win_type</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">WINDOW_DEFAULT</span>
+
+        <span class="n">default_stft_params</span> <span class="o">=</span> <span class="n">STFTParams</span><span class="p">(</span>
+            <span class="n">window_length</span><span class="o">=</span><span class="n">default_win_len</span><span class="p">,</span>
+            <span class="n">hop_length</span><span class="o">=</span><span class="n">default_hop_len</span><span class="p">,</span>
+            <span class="n">window_type</span><span class="o">=</span><span class="n">default_win_type</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="n">default_stft_params</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">default_stft_params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">value</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_stft_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stft_params</span> <span class="o">=</span> <span class="n">STFTParams</span><span class="p">(</span><span class="o">**</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stft_params</span><span class="o">.</span><span class="n">window_type</span> <span class="o">==</span> <span class="s1">&#39;sqrt_hann&#39;</span><span class="p">:</span>
+            <span class="n">window_type</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">WINDOW_HANN</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">window_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stft_params</span><span class="o">.</span><span class="n">window_type</span>
+        <span class="n">check_COLA</span><span class="p">(</span><span class="n">window_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stft_params</span><span class="o">.</span><span class="n">window_length</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stft_params</span><span class="o">.</span><span class="n">hop_length</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">has_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``bool``</span>
+<span class="sd">            Returns ``False`` if :attr:`audio_data` and :attr:`stft_data` are empty. Else,</span>
+<span class="sd">            returns ``True``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">has_audio_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="n">has_stft_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">has_audio_data</span> <span class="ow">or</span> <span class="n">has_stft_data</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">file_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``str``</span>
+<span class="sd">            The name of the file associated with this object. Includes extension, but not the full</span>
+<span class="sd">            path.</span>
+<span class="sd">        </span>
+<span class="sd">        Notes:</span>
+<span class="sd">            This will return ``None`` if this :class:`AudioSignal` object was not</span>
+<span class="sd">            loaded from a file.</span>
+<span class="sd">        </span>
+<span class="sd">        See Also:</span>
+<span class="sd">            :attr:`path_to_input_file` for the full path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sample_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``int``</span>
+<span class="sd">            Sample rate associated with this object. If audio was read from a file, the sample</span>
+<span class="sd">            rate will be set to the sample rate associated with the file. If this object was</span>
+<span class="sd">            initialized from an array then the sample rate is set upon init. This property is</span>
+<span class="sd">            read-only. To change the sample rate, use :func:`resample`.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            This property is read-only and cannot be set directly. To change</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`resample` to change the sample rate and resample data in :attr:`sample_rate`.</span>
+
+<span class="sd">            * :func:`load_audio_from_array` to read audio from an array and set the sample rate.</span>
+
+<span class="sd">            * :var:`nussl.constants.DEFAULT_SAMPLE_RATE` the default sample rate for *nussl*</span>
+<span class="sd">                if not specified</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``np.ndarray``</span>
+<span class="sd">            A 1D :obj:`np.ndarray` with timestamps (in seconds) for each sample in</span>
+<span class="sd">            :attr:`audio_data`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_duration</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">freq_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``np.ndarray``</span>
+<span class="sd">            A 1D numpy array with frequency values (in Hz) that correspond</span>
+<span class="sd">            to each frequency bin (vertical axis) in :attr:`stft_data`. Assumes</span>
+<span class="sd">            linearly spaced frequency bins.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`: If :attr:`stft_data` is ``None``. </span>
+<span class="sd">                Run :func:`stft` before accessing this.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot calculate freq_vector until self.stft() is run&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_VERT_INDEX</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time_bins_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``np.ndarray``</span>
+<span class="sd">            A 1D numpy array with time values (in seconds) that correspond</span>
+<span class="sd">            to each time bin (horizontal/time axis) in :attr:`stft_data`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`: If :attr:`stft_data` is ``None``. Run :func:`stft`</span>
+<span class="sd">                before accessing this.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot calculate time_bins_vector until self.stft() is run&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_duration</span><span class="p">,</span>
+                           <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_LEN_INDEX</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stft_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``int``</span>
+<span class="sd">            The length of :attr:`stft_data` along the time axis. In units of hops.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`: If ``self.stft_dat``a is ``None``. Run :func:`stft`</span>
+<span class="sd">                before accessing this.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot calculate stft_length until self.stft() is run&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_LEN_INDEX</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">active_region_is_default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``bool``</span>
+<span class="sd">            ``True`` if active region is the full length of :attr:`audio_data`. ``False`` otherwise.</span>
+
+<span class="sd">        See Also:</span>
+
+<span class="sd">            * :func:`set_active_region` for a description of active regions in :class:`AudioSignal`</span>
+
+<span class="sd">            * :func:`set_active_region_to_default`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_start</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_end</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_length</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_signal_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``int``</span>
+<span class="sd">            This is the length of the full signal, not just the active region.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_audio_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">LEN_INDEX</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">power_spectrogram_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``np.ndarray``</span>
+<span class="sd">            Returns a real valued :obj:`np.ndarray` with power</span>
+<span class="sd">            spectrogram data. The power spectrogram is defined as ``(STFT)^2``, where ``^2`` is</span>
+<span class="sd">            element-wise squaring of entries of the STFT. Same shape as :attr:`stft_data`.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`: if :attr:`stft_data` is ``None``. Run :func:`stft`</span>
+<span class="sd">                before accessing this.</span>
+<span class="sd">            </span>
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`stft` to calculate the STFT before accessing this attribute.</span>
+<span class="sd">            * :attr:`stft_data` complex-valued Short-time Fourier Transform data.</span>
+<span class="sd">            * :attr:`magnitude_spectrogram_data` to get magnitude spectrogram data.</span>
+<span class="sd">            * :func:`get_power_spectrogram_channel` to get a specific channel</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot calculate power_spectrogram_data &#39;</span>
+                                       <span class="s1">&#39;because self.stft_data is None&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">magnitude_spectrogram_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``np.ndarray``</span>
+<span class="sd">            Returns a real valued ``np.array`` with magnitude spectrogram data. The magnitude</span>
+<span class="sd">            spectrogram is defined as ``abs(STFT)``, the element-wise absolute value of every item</span>
+<span class="sd">            in the STFT. Same shape as :attr:`stft_data`.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            AudioSignalException: if :attr:`stft_data` is ``None``. Run :func:`stft` before</span>
+<span class="sd">                accessing this.</span>
+<span class="sd">            </span>
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`stft` to calculate the STFT before accessing this attribute.</span>
+<span class="sd">            * :attr:`stft_data` complex-valued Short-time Fourier Transform data.</span>
+<span class="sd">            * :attr:`power_spectrogram_data`</span>
+<span class="sd">            * :func:`get_magnitude_spectrogram_channel`</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot calculate magnitude_spectrogram_data &#39;</span>
+                                       <span class="s1">&#39;because self.stft_data is None&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">log_magnitude_spectrogram_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (:obj:`np.ndarray`): Returns a real valued ``np.array`` with log magnitude spectrogram data.</span>
+<span class="sd">        </span>
+<span class="sd">        The log magnitude spectrogram is defined as 20*log10(Abs(STFT)). Same shape as :attr:`stft_data`.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            AudioSignalException: if :attr:`stft_data` is ``None``. Run :func:`stft` before</span>
+<span class="sd">                accessing this.</span>
+<span class="sd">            </span>
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`stft` to calculate the STFT before accessing this attribute.</span>
+<span class="sd">            * :attr:`stft_data` complex-valued Short-time Fourier Transform data.</span>
+<span class="sd">            * :attr:`power_spectrogram_data`</span>
+<span class="sd">            * :func:`get_magnitude_spectrogram_channel`</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot calculate log_magnitude_spectrogram_data &#39;</span>
+                                       <span class="s1">&#39;because self.stft_data is None&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#                     I/O</span>
+    <span class="c1">##################################################</span>
+
+<div class="viewcode-block" id="AudioSignal.load_audio_from_file"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.load_audio_from_file">[docs]</a>    <span class="k">def</span> <span class="nf">load_audio_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_file_path</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">new_sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># type: (str, float, float, int) -&gt; None</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads an audio signal into memory from a file on disc. The audio is stored in</span>
+<span class="sd">        :class:`AudioSignal` as a :obj:`np.ndarray` of `float` s. The sample rate is read from</span>
+<span class="sd">        the file, and this :class:`AudioSignal` object&#39;s sample rate is set from it. If</span>
+<span class="sd">        :param:`new_sample_rate` is not ``None`` nor the same as the sample rate of the file,</span>
+<span class="sd">        the audio will be resampled to the sample rate provided in the :param:`new_sample_rate`</span>
+<span class="sd">        parameter. After reading the audio data into memory, the active region is set to default.</span>
+
+<span class="sd">        :param:`offset` and :param:`duration` allow the user to determine how much of the audio is</span>
+<span class="sd">        read from the file. If those are non-default, then only the values provided will be stored</span>
+<span class="sd">        in :attr:`audio_data` (unlike with the active region, which has the entire audio data stored</span>
+<span class="sd">        in memory but only allows access to a subset of the audio).</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`load_audio_from_array` to read audio data from a :obj:`np.ndarray`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_file_path (str): Path to input file.</span>
+<span class="sd">            offset (float,): The starting point of the section to be extracted (seconds).</span>
+<span class="sd">                Defaults to 0 seconds (i.e., the very beginning of the file).</span>
+<span class="sd">            duration (float): Length of signal to load in second.</span>
+<span class="sd">                signal_length of 0 means read the whole file. Defaults to the full</span>
+<span class="sd">                length of the signal.</span>
+<span class="sd">            new_sample_rate (int): If this parameter is not ``None`` or the same sample rate as</span>
+<span class="sd">                provided by the input file, then the audio data will be resampled to the new</span>
+<span class="sd">                sample rate dictated by this parameter.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">offset</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Parameter `offset` must be &gt;= 0!&#39;</span>
+        <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">duration</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Parameter `duration` must be &gt;= 0!&#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># try reading headers with soundfile for speed</span>
+            <span class="n">audio_info</span> <span class="o">=</span> <span class="n">sf</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">)</span>
+            <span class="n">file_length</span> <span class="o">=</span> <span class="n">audio_info</span><span class="o">.</span><span class="n">duration</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="c1"># if that doesn&#39;t work try audioread</span>
+            <span class="k">with</span> <span class="n">audioread</span><span class="o">.</span><span class="n">audio_open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">))</span> <span class="k">as</span> <span class="n">input_file</span><span class="p">:</span>
+                <span class="n">file_length</span> <span class="o">=</span> <span class="n">input_file</span><span class="o">.</span><span class="n">duration</span>
+
+        <span class="k">if</span> <span class="n">offset</span> <span class="o">&gt;</span> <span class="n">file_length</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;offset is longer than signal!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">duration</span> <span class="o">&gt;=</span> <span class="n">file_length</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;offset + duration are longer than the signal.&#39;</span>
+                          <span class="s1">&#39; Reading until end of signal...&#39;</span><span class="p">,</span>
+                          <span class="ne">UserWarning</span><span class="p">)</span>
+
+        <span class="n">audio_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">,</span>
+                                                      <span class="n">sr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                      <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
+                                                      <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+                                                      <span class="n">mono</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">audio_input</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_signal_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span>
+
+        <span class="k">if</span> <span class="n">new_sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">new_sample_rate</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Input sample rate is different than the sample rate&#39;</span>
+                          <span class="s1">&#39; read from the file! Resampling...&#39;</span><span class="p">,</span>
+                          <span class="ne">UserWarning</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">new_sample_rate</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="o">=</span> <span class="n">input_file_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_region_to_default</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="AudioSignal.load_audio_from_array"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.load_audio_from_array">[docs]</a>    <span class="k">def</span> <span class="nf">load_audio_from_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">DEFAULT_SAMPLE_RATE</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads an audio signal from a :obj:`np.ndarray`. :param:`sample_rate` is the sample</span>
+<span class="sd">        of the signal.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`load_audio_from_file` to read in an audio file from disc.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Only accepts float arrays and int arrays of depth 16-bits.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            signal (:obj:`np.ndarray`): Array containing the audio signal sampled at</span>
+<span class="sd">                :param:`sample_rate`.</span>
+<span class="sd">            sample_rate (int): The sample rate of signal.</span>
+<span class="sd">                Default is :ref:`constants.DEFAULT_SAMPLE_RATE` (44.1kHz)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Change from fixed point to floating point</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">max</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">signal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_signal_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span> <span class="o">=</span> <span class="n">sample_rate</span> <span class="k">if</span> <span class="n">sample_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+            <span class="k">else</span> <span class="n">constants</span><span class="o">.</span><span class="n">DEFAULT_SAMPLE_RATE</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_region_to_default</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="AudioSignal.write_audio_to_file"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.write_audio_to_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_audio_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_file_path</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Outputs the audio signal data in :attr:`audio_data` to a file at :param:`output_file_path`</span>
+<span class="sd">        with sample rate of :param:`sample_rate`.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            output_file_path (str): Filename where output file will be saved.</span>
+<span class="sd">            sample_rate (int): The sample rate to write the file at. Default is</span>
+<span class="sd">                :attr:`sample_rate`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s2">&quot;Cannot write audio file because there is no audio data.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">sample_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span>
+
+        <span class="n">audio_output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">)</span>
+
+        <span class="c1"># TODO: better fix</span>
+        <span class="c1"># convert to fixed point again</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">audio_output</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">):</span>
+            <span class="n">audio_output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span>
+                <span class="n">audio_output</span><span class="p">,</span>
+                <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">DEFAULT_BIT_DEPTH</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;int16&#39;</span><span class="p">)</span>
+        <span class="n">wav</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">audio_output</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#                Active Region</span>
+    <span class="c1">##################################################</span>
+
+<div class="viewcode-block" id="AudioSignal.set_active_region"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.set_active_region">[docs]</a>    <span class="k">def</span> <span class="nf">set_active_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines the bounds of what gets returned when you access :attr:`audio_data`.</span>
+<span class="sd">        None of the data in :attr:`audio_data` is discarded when you set the active region, it</span>
+<span class="sd">        merely becomes inaccessible until the active region is set back to default (i.e., the full</span>
+<span class="sd">        length of the signal).</span>
+
+<span class="sd">        This is useful for reusing a single :class:`AudioSignal` object to do multiple operations on</span>
+<span class="sd">        only select parts of the audio data.</span>
+
+<span class="sd">        Warnings:</span>
+<span class="sd">            Many functions will raise exceptions while the active region is not default. Be aware</span>
+<span class="sd">            that adding, subtracting, concatenating, truncating, and other utilities are not</span>
+<span class="sd">            available when the active region is not default.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`set_active_region_to_default`</span>
+<span class="sd">            * :attr:`active_region_is_default`</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; import nussl</span>
+<span class="sd">            &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">            &gt;&gt;&gt; n = nussl.constants.DEFAULT_SAMPLE_RATE  # 1 second of audio at 44.1kHz</span>
+<span class="sd">            &gt;&gt;&gt; np_sin = np.sin(np.linspace(0, 100 * 2 * np.pi, n))  # sine wave @ 100 Hz</span>
+<span class="sd">            &gt;&gt;&gt; sig = nussl.AudioSignal(audio_data_array=np_sin)</span>
+<span class="sd">            &gt;&gt;&gt; sig.signal_duration</span>
+<span class="sd">            1.0</span>
+<span class="sd">            &gt;&gt;&gt; sig.set_active_region(0, n // 2)</span>
+<span class="sd">            &gt;&gt;&gt; sig.signal_duration</span>
+<span class="sd">            0.5</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            start (int): Beginning of active region (in samples). Cannot be less than 0.</span>
+<span class="sd">            end (int): End of active region (in samples). Cannot be larger than</span>
+<span class="sd">                :attr:`signal_length`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_start</span> <span class="o">=</span> <span class="n">start</span> <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_end</span> <span class="o">=</span> <span class="n">end</span> <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_length</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_length</span></div>
+
+<div class="viewcode-block" id="AudioSignal.set_active_region_to_default"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.set_active_region_to_default">[docs]</a>    <span class="k">def</span> <span class="nf">set_active_region_to_default</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the active region of this :class:`AudioSignal` object to its default value of the</span>
+<span class="sd">        entire :attr:`audio_data` array.</span>
+<span class="sd">        </span>
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`set_active_region` for an explanation of active regions within the</span>
+<span class="sd">            :class:`AudioSignal`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signal_length</span></div>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#               STFT Utilities</span>
+    <span class="c1">##################################################</span>
+
+<div class="viewcode-block" id="AudioSignal.get_window"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.get_window">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_window</span><span class="p">(</span><span class="n">window_type</span><span class="p">,</span> <span class="n">window_length</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wrapper around scipy.signal.get_window so one can also get the </span>
+<span class="sd">        popular sqrt-hann window.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            window_type (str): Type of window to get (see constants.ALL_WINDOW).</span>
+<span class="sd">            window_length (int): Length of the window</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Window returned by scipy.signa.get_window</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">window_type</span> <span class="o">==</span> <span class="n">constants</span><span class="o">.</span><span class="n">WINDOW_SQRT_HANN</span><span class="p">:</span>
+            <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">get_window</span><span class="p">(</span>
+                <span class="s1">&#39;hann&#39;</span><span class="p">,</span> <span class="n">window_length</span>
+            <span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">window</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">get_window</span><span class="p">(</span>
+                <span class="n">window_type</span><span class="p">,</span> <span class="n">window_length</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">window</span></div>
+
+<div class="viewcode-block" id="AudioSignal.stft"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.stft">[docs]</a>    <span class="k">def</span> <span class="nf">stft</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hop_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the Short Time Fourier Transform (STFT) of :attr:`audio_data`.</span>
+<span class="sd">        The results of the STFT calculation can be accessed from :attr:`stft_data`</span>
+<span class="sd">        if :attr:`stft_data` is ``None`` prior to running this function or ``overwrite == True``</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            If overwrite=True (default) this will overwrite any data in :attr:`stft_data`!</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            window_length (int): Amount of time (in samples) to do an FFT on</span>
+<span class="sd">            hop_length (int): Amount of time (in samples) to skip ahead for the new FFT</span>
+<span class="sd">            window_type (str): Type of scaling to apply to the window.</span>
+<span class="sd">            overwrite (bool): Overwrite :attr:`stft_data` with current calculation</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`np.ndarray`) Calculated, complex-valued STFT from :attr:`audio_data`, 3D numpy</span>
+<span class="sd">            array with shape `(n_frequency_bins, n_hops, n_channels)`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span>
+                <span class="s2">&quot;No time domain signal (self.audio_data) to make STFT from!&quot;</span><span class="p">)</span>
+
+        <span class="n">window_length</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">window_length</span>
+            <span class="k">if</span> <span class="n">window_length</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_length</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">hop_length</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">hop_length</span>
+            <span class="k">if</span> <span class="n">hop_length</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">hop_length</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">window_type</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">window_type</span>
+            <span class="k">if</span> <span class="n">window_type</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">window_type</span>
+        <span class="p">)</span>
+
+        <span class="n">stft_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_window</span><span class="p">(</span><span class="n">window_type</span><span class="p">,</span> <span class="n">window_length</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channels</span><span class="p">():</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_stft</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">stft</span><span class="p">(</span>
+                <span class="n">chan</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+                <span class="n">nperseg</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">noverlap</span><span class="o">=</span><span class="n">window_length</span> <span class="o">-</span> <span class="n">hop_length</span><span class="p">)</span>
+            <span class="n">stft_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_stft</span><span class="p">)</span>
+
+        <span class="n">stft_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stft_data</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="o">=</span> <span class="n">stft_data</span>
+
+        <span class="k">return</span> <span class="n">stft_data</span></div>
+
+<div class="viewcode-block" id="AudioSignal.istft"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.istft">[docs]</a>    <span class="k">def</span> <span class="nf">istft</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hop_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">window_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">truncate_to_length</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Computes and returns the inverse Short Time Fourier Transform (iSTFT).</span>
+
+<span class="sd">        The results of the iSTFT calculation can be accessed from :attr:`audio_data`</span>
+<span class="sd">        if :attr:`audio_data` is ``None`` prior to running this function or ``overwrite == True``</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            If overwrite=True (default) this will overwrite any data in :attr:`audio_data`!</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            window_length (int): Amount of time (in samples) to do an FFT on</span>
+<span class="sd">            hop_length (int): Amount of time (in samples) to skip ahead for the new FFT</span>
+<span class="sd">            window_type (str): Type of scaling to apply to the window.</span>
+<span class="sd">            overwrite (bool): Overwrite :attr:`stft_data` with current calculation</span>
+<span class="sd">            truncate_to_length (int): truncate resultant signal to specified length. Default ``None``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`np.ndarray`) Calculated, real-valued iSTFT from :attr:`stft_data`, 2D numpy array</span>
+<span class="sd">            with shape `(n_channels, n_samples)`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot do inverse STFT without self.stft_data!&#39;</span><span class="p">)</span>
+
+        <span class="n">window_length</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">window_length</span>
+            <span class="k">if</span> <span class="n">window_length</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_length</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">hop_length</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">hop_length</span>
+            <span class="k">if</span> <span class="n">hop_length</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">hop_length</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">window_type</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">window_type</span>
+            <span class="k">if</span> <span class="n">window_type</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">window_type</span>
+        <span class="p">)</span>
+
+        <span class="n">signals</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_window</span><span class="p">(</span><span class="n">window_type</span><span class="p">,</span> <span class="n">window_length</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">stft</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_stft_channels</span><span class="p">():</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_signal</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">istft</span><span class="p">(</span>
+                <span class="n">stft</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+                <span class="n">nperseg</span><span class="o">=</span><span class="n">window_length</span><span class="p">,</span> <span class="n">noverlap</span><span class="o">=</span><span class="n">window_length</span> <span class="o">-</span> <span class="n">hop_length</span><span class="p">)</span>
+
+            <span class="n">signals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_signal</span><span class="p">)</span>
+
+        <span class="n">calculated_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">signals</span><span class="p">)</span>
+
+        <span class="c1"># Make sure it&#39;s shaped correctly</span>
+        <span class="n">calculated_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">calculated_signal</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> \
+            <span class="k">if</span> <span class="n">calculated_signal</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">calculated_signal</span>
+
+        <span class="c1"># if truncate_to_length isn&#39;t provided</span>
+        <span class="k">if</span> <span class="n">truncate_to_length</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">truncate_to_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_signal_length</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">truncate_to_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span>
+
+        <span class="k">if</span> <span class="n">truncate_to_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">truncate_to_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">calculated_signal</span> <span class="o">=</span> <span class="n">calculated_signal</span><span class="p">[:,</span> <span class="p">:</span><span class="n">truncate_to_length</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">overwrite</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">calculated_signal</span>
+
+        <span class="k">return</span> <span class="n">calculated_signal</span></div>
+
+<div class="viewcode-block" id="AudioSignal.apply_mask"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.apply_mask">[docs]</a>    <span class="k">def</span> <span class="nf">apply_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the input mask to the time-frequency representation in this :class:`AudioSignal`</span>
+<span class="sd">        object and returns a new :class:`AudioSignal` object with the mask applied. The mask</span>
+<span class="sd">        is applied to the magnitude of audio signal. The phase of the original audio</span>
+<span class="sd">        signal is then applied to construct the masked STFT.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            mask (:obj:`MaskBase`-derived object): A ``MaskBase``-derived object </span>
+<span class="sd">                containing a mask.</span>
+<span class="sd">            overwrite (bool): If ``True``, this will alter ``stft_data`` in self. </span>
+<span class="sd">                If ``False``, this function will create a new ``AudioSignal`` object </span>
+<span class="sd">                with the mask applied.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A new :class:`AudioSignal`` object with the input mask applied to the STFT,</span>
+<span class="sd">            iff ``overwrite`` is False.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">masks</span><span class="o">.</span><span class="n">MaskBase</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expected MaskBase-derived object, given </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;There is no STFT data to apply a mask to!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span>
+                    <span class="s1">&#39;Input mask and self.stft_data are not the same shape! mask:&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">, self.stft_data: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="p">)</span>
+
+        <span class="n">magnitude</span><span class="p">,</span> <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="p">)</span>
+        <span class="n">masked_abs</span> <span class="o">=</span> <span class="n">magnitude</span> <span class="o">*</span> <span class="n">mask</span><span class="o">.</span><span class="n">mask</span>
+        <span class="n">masked_stft</span> <span class="o">=</span> <span class="n">masked_abs</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phase</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="o">=</span> <span class="n">masked_stft</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_copy_with_stft_data</span><span class="p">(</span><span class="n">masked_stft</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.ipd_ild_features"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.ipd_ild_features">[docs]</a>    <span class="k">def</span> <span class="nf">ipd_ild_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ch_one</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ch_two</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes interphase difference (IPD) and interlevel difference (ILD) for a </span>
+<span class="sd">        stereo spectrogram. If more than two channels, this by default computes IPD/ILD</span>
+<span class="sd">        between the first two channels. This can be specified by the arguments ch_one</span>
+<span class="sd">        and ch_two. If only one channel, this raises an error.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            ch_one (``int``): index of first channel to compute IPD/ILD.</span>
+<span class="sd">            ch_two (``int``): index of second channel to compute IPD/ILD.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            ipd (``np.ndarray``): Interphase difference between selected channels</span>
+<span class="sd">            ild (``np.ndarray``): Interlevel difference between selected channels</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s2">&quot;Cannot compute ipd/ild features without stft_data!&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mono</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s2">&quot;Cannot compute ipd/ild features on mono input!&quot;</span><span class="p">)</span>
+
+        <span class="n">stft_ch_one</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_stft_channel</span><span class="p">(</span><span class="n">ch_one</span><span class="p">)</span>
+        <span class="n">stft_ch_two</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_stft_channel</span><span class="p">(</span><span class="n">ch_two</span><span class="p">)</span>
+
+        <span class="n">ild</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">stft_ch_one</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">stft_ch_two</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-4</span><span class="p">)</span>
+        <span class="n">ild</span> <span class="o">=</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">ild</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+
+        <span class="n">frequencies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_vector</span>
+        <span class="n">ipd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">stft_ch_two</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">stft_ch_one</span><span class="p">))</span>
+        <span class="n">ipd</span> <span class="o">/=</span> <span class="p">(</span><span class="n">frequencies</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">ipd</span> <span class="o">=</span> <span class="n">ipd</span> <span class="o">%</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+
+        <span class="k">return</span> <span class="n">ipd</span><span class="p">,</span> <span class="n">ild</span></div>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#                  Utilities</span>
+    <span class="c1">##################################################</span>
+
+<div class="viewcode-block" id="AudioSignal.concat"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.concat">[docs]</a>    <span class="k">def</span> <span class="nf">concat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Concatenate two :class:`AudioSignal` objects (by concatenating :attr:`audio_data`).</span>
+
+<span class="sd">        Puts ``other.audio_data`` after :attr:`audio_data`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AudioSignalException: If ``self.sample_rate != other.sample_rate``,</span>
+<span class="sd">                ``self.num_channels != other.num_channels``, or ``!self.active_region_is_default``</span>
+<span class="sd">                is ``False``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            other (:class:`AudioSignal`): :class:`AudioSignal` to concatenate with the current one.</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_audio</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">audio_data</span><span class="p">),</span>
+                                         <span class="n">axis</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LEN_INDEX</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.truncate_samples"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.truncate_samples">[docs]</a>    <span class="k">def</span> <span class="nf">truncate_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Truncates the signal leaving only the first ``n_samples`` samples.</span>
+<span class="sd">        This can only be done if ``self.active_region_is_default`` is True. If</span>
+<span class="sd">        ``n_samples &gt; self.signal_length``, then `n_samples = self.signal_length` </span>
+<span class="sd">        (no truncation happens).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AudioSignalException: If ``self.active_region_is_default`` is ``False``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_samples: (int) number of samples that will be left.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_region_is_default</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot truncate while active region is not set as default!&#39;</span><span class="p">)</span>
+
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span><span class="p">:</span>
+            <span class="n">n_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span> <span class="n">n_samples</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="AudioSignal.truncate_seconds"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.truncate_seconds">[docs]</a>    <span class="k">def</span> <span class="nf">truncate_seconds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_seconds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Truncates the signal leaving only the first n_seconds.</span>
+<span class="sd">        This can only be done if self.active_region_is_default is True.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_seconds: (float) number of seconds to truncate :attr:`audio_data`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_seconds</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">truncate_samples</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.crop_signal"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.crop_signal">[docs]</a>    <span class="k">def</span> <span class="nf">crop_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get rid of samples before and after the signal on all channels. Contracts the length</span>
+<span class="sd">        of :attr:`audio_data` by before + after. Useful to get rid of zero padding after the fact.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            before: (int) number of samples to remove at beginning of self.audio_data</span>
+<span class="sd">            after: (int) number of samples to remove at end of self.audio_data</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_region_is_default</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot crop signal while active region &#39;</span>
+                                       <span class="s1">&#39;is not set as default!&#39;</span><span class="p">)</span>
+        <span class="n">num_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">[:,</span> <span class="n">before</span><span class="p">:</span><span class="n">num_samples</span> <span class="o">-</span> <span class="n">after</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_active_region_to_default</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="AudioSignal.zero_pad"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.zero_pad">[docs]</a>    <span class="k">def</span> <span class="nf">zero_pad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Adds zeros before and after the signal to all channels.</span>
+<span class="sd">        Extends the length of self.audio_data by before + after.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: If `self.active_region_is_default`` is ``False``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            before: (int) number of zeros to be put before the current contents of self.audio_data</span>
+<span class="sd">            after: (int) number of zeros to be put after the current contents fo self.audio_data</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_region_is_default</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot zero-pad while active region is not set as default!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)),</span> <span class="s1">&#39;constant&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.add"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds two audio signal objects.</span>
+
+<span class="sd">        This does element-wise addition on the :attr:`audio_data` array.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AudioSignalException: If ``self.sample_rate != other.sample_rate``,</span>
+<span class="sd">                ``self.num_channels != other.num_channels``, or</span>
+<span class="sd">                ``self.active_region_is_default`` is ``False``.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            other (:class:`AudioSignal`): Other :class:`AudioSignal` to add.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:class:`AudioSignal`): New :class:`AudioSignal` object with the sum of</span>
+<span class="sd">            ``self`` and ``other``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="c1"># this is so that sum(list of audio_signals) works.</span>
+            <span class="c1"># when sum is called on a list it&#39;s evaluated as 0 + elem1 + elem2 + ...</span>
+            <span class="c1"># so the 0 case needs to be taken care of (by doing nothing)</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_audio_arithmetic</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+        <span class="n">new_signal</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_signal</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">audio_data</span>
+
+        <span class="k">return</span> <span class="n">new_signal</span></div>
+
+<div class="viewcode-block" id="AudioSignal.subtract"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.subtract">[docs]</a>    <span class="k">def</span> <span class="nf">subtract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Subtracts two audio signal objects.</span>
+
+<span class="sd">        This does element-wise subtraction on the :attr:`audio_data` array.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AudioSignalException: If ``self.sample_rate != other.sample_rate``,</span>
+<span class="sd">                ``self.num_channels != other.num_channels``, or</span>
+<span class="sd">                ``self.active_region_is_default`` is ``False``.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            other (:class:`AudioSignal`): Other :class:`AudioSignal` to subtract.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:class:`AudioSignal`): New :class:`AudioSignal` object with the difference</span>
+<span class="sd">            between ``self`` and ``other``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_audio_arithmetic</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+        <span class="n">other_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        <span class="n">other_copy</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other_copy</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.make_copy_with_audio_data"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.make_copy_with_audio_data">[docs]</a>    <span class="k">def</span> <span class="nf">make_copy_with_audio_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">audio_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Makes a copy of this :class:`AudioSignal` object with :attr:`audio_data` initialized to</span>
+<span class="sd">        the input :param:`audio_data` numpy array. The :attr:`stft_data` of the new :class:`AudioSignal`</span>
+<span class="sd">        object is ``None``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            audio_data (:obj:`np.ndarray`): Audio data to be put into the new :class:`AudioSignal` object.</span>
+<span class="sd">            verbose (bool): If ``True`` prints warnings. If ``False``, outputs nothing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:class:`AudioSignal`): A copy of this :class:`AudioSignal` object with :attr:`audio_data`</span>
+<span class="sd">            initialized to the input :param:`audio_data` numpy array.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_region_is_default</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Making a copy when active region is not default.&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">audio_data</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Shape of new audio_data does not match current audio_data.&#39;</span><span class="p">)</span>
+
+        <span class="n">new_signal</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_signal</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">audio_data</span>
+        <span class="n">new_signal</span><span class="o">.</span><span class="n">stft_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">new_signal</span></div>
+
+<div class="viewcode-block" id="AudioSignal.make_copy_with_stft_data"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.make_copy_with_stft_data">[docs]</a>    <span class="k">def</span> <span class="nf">make_copy_with_stft_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stft_data</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Makes a copy of this :class:`AudioSignal` object with :attr:`stft_data` initialized to the</span>
+<span class="sd">        input :param:`stft_data` numpy array. The :attr:`audio_data` of the new :class:`AudioSignal`</span>
+<span class="sd">        object is ``None``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            stft_data (:obj:`np.ndarray`): STFT data to be put into the new :class:`AudioSignal` object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:class:`AudioSignal`): A copy of this :class:`AudioSignal` object with :attr:`stft_data`</span>
+<span class="sd">            initialized to the input :param:`stft_data` numpy array.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_region_is_default</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Making a copy when active region is not default.&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Shape of new stft_data does not match current stft_data.&#39;</span><span class="p">)</span>
+
+        <span class="n">new_signal</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_signal</span><span class="o">.</span><span class="n">stft_data</span> <span class="o">=</span> <span class="n">stft_data</span>
+        <span class="n">new_signal</span><span class="o">.</span><span class="n">original_signal_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_signal_length</span>
+        <span class="n">new_signal</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">new_signal</span></div>
+
+<div class="viewcode-block" id="AudioSignal.rms"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.rms">[docs]</a>    <span class="k">def</span> <span class="nf">rms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">win_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hop_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calculates the root-mean-square of :attr:`audio_data`.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (float): Root-mean-square of :attr:`audio_data`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">win_len</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hop_len</span> <span class="o">=</span> <span class="n">win_len</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">hop_len</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hop_len</span>
+            <span class="n">rms_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">arr</span><span class="p">:</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">rms</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">frame_length</span><span class="o">=</span><span class="n">win_len</span><span class="p">,</span>
+                                                       <span class="n">hop_length</span><span class="o">=</span><span class="n">hop_len</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rms_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">arr</span><span class="p">)))</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channels</span><span class="p">():</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rms_func</span><span class="p">(</span><span class="n">ch</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">result</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.peak_normalize"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.peak_normalize">[docs]</a>    <span class="k">def</span> <span class="nf">peak_normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Peak normalizes the audio signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_gain</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">max</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="AudioSignal.apply_gain"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.apply_gain">[docs]</a>    <span class="k">def</span> <span class="nf">apply_gain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply a gain to :attr:`audio_data`</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value (float): amount to multiply self.audio_data by</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:class:`AudioSignal`): This :class:`AudioSignal` object with the gain applied.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Can only multiply/divide by a scalar!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">*</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="AudioSignal.resample"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.resample">[docs]</a>    <span class="k">def</span> <span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_sample_rate</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resample the data in :attr:`audio_data` to the new sample rate provided by</span>
+<span class="sd">        :param:`new_sample_rate`. If the :param:`new_sample_rate` is the same as :attr:`sample_rate`</span>
+<span class="sd">        then nothing happens.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            new_sample_rate (int): The new sample rate of :attr:`audio_data`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">new_sample_rate</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Cannot resample to the same sample rate.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">resampled_signal</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channels</span><span class="p">():</span>
+            <span class="n">resampled_channel</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span> <span class="n">new_sample_rate</span><span class="p">)</span>
+            <span class="n">resampled_signal</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">resampled_channel</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">resampled_signal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_signal_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_rate</span> <span class="o">=</span> <span class="n">new_sample_rate</span></div>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#              Channel Utilities</span>
+    <span class="c1">##################################################</span>
+
+    <span class="k">def</span> <span class="nf">_verify_get_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Cannot get channel </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1"> when this object only has </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="s1">&#39; channels! (0-based)&#39;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Cannot get channel </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">. This will cause unexpected results.&#39;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="AudioSignal.get_channel"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.get_channel">[docs]</a>    <span class="k">def</span> <span class="nf">get_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets audio data of n-th channel from :attr:`audio_data` as a 1D :obj:`np.ndarray`</span>
+<span class="sd">        of shape ``(n_samples,)``.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            n (int): index of channel to get. **0-based**</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`get_channels`: Generator for looping through channels of :attr:`audio_data`.</span>
+<span class="sd">            * :func:`get_stft_channel`: Gets stft data from a specific channel.</span>
+<span class="sd">            * :func:`get_stft_channels`: Generator for looping through channels from</span>
+<span class="sd">            :attr:`stft_data`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`: If not ``0 &lt;= n &lt; self.num_channels``.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`np.array`): The audio data in the n-th channel of the signal, 1D</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_get_channel</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asfortranarray</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">_get_axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">CHAN_INDEX</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="AudioSignal.get_channels"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.get_channels">[docs]</a>    <span class="k">def</span> <span class="nf">get_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generator that will loop through channels of :attr:`audio_data`.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`get_channel`: Gets audio data from a specific channel.</span>
+<span class="sd">            * :func:`get_stft_channel`: Gets stft data from a specific channel.</span>
+<span class="sd">            * :func:`get_stft_channels`: Generator to loop through channels of :attr:`stft_data`.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            (:obj:`np.array`): The audio data in the next channel of this signal as a</span>
+<span class="sd">            1D ``np.ndarray``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channel</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.get_stft_channel"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.get_stft_channel">[docs]</a>    <span class="k">def</span> <span class="nf">get_stft_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns STFT data of n-th channel from :attr:`stft_data` as a 2D ``np.ndarray``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: (int) index of stft channel to get. **0-based**</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`get_stft_channels`: Generator to loop through channels from :attr:`stft_data`.</span>
+<span class="sd">            * :func:`get_channel`: Gets audio data from a specific channel.</span>
+<span class="sd">            * :func:`get_channels`: Generator to loop through channels of :attr:`audio_data`.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            :class:`AudioSignalException`: If not ``0 &lt;= n &lt; self.num_channels``.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`np.array`): the STFT data in the n-th channel of the signal, 2D</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot get STFT data before STFT is calculated!&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_get_channel</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">_get_axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft_data</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.get_stft_channels"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.get_stft_channels">[docs]</a>    <span class="k">def</span> <span class="nf">get_stft_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generator that will loop through channels of :attr:`stft_data`.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            * :func:`get_stft_channel`: Gets stft data from a specific channel.</span>
+<span class="sd">            * :func:`get_channel`: Gets audio data from a specific channel.</span>
+<span class="sd">            * :func:`get_channels`: Generator to loop through channels of :attr:`audio_data`.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            (:obj:`np.array`): The STFT data in the next channel of this signal as a</span>
+<span class="sd">            2D ``np.ndarray``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_stft_channel</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.make_audio_signal_from_channel"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.make_audio_signal_from_channel">[docs]</a>    <span class="k">def</span> <span class="nf">make_audio_signal_from_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Makes a new :class:`AudioSignal` object from with data from channel ``n``.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            n (int): index of channel to make a new signal from. **0-based**</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:class:`AudioSignal`) new :class:`AudioSignal` object with only data from</span>
+<span class="sd">            channel ``n``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_signal</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">new_signal</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channel</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_signal</span></div>
+
+<div class="viewcode-block" id="AudioSignal.get_power_spectrogram_channel"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.get_power_spectrogram_channel">[docs]</a>    <span class="k">def</span> <span class="nf">get_power_spectrogram_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the n-th channel from ``self.power_spectrogram_data``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: If not ``0 &lt;= n &lt; self.num_channels``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: (int) index of power spectrogram channel to get **0-based**</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`np.array`): the power spectrogram data in the n-th channel of the signal, 1D</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_get_channel</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="c1"># np.array helps with duck typing</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">_get_axis</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">power_spectrogram_data</span><span class="p">),</span>
+                               <span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.get_magnitude_spectrogram_channel"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.get_magnitude_spectrogram_channel">[docs]</a>    <span class="k">def</span> <span class="nf">get_magnitude_spectrogram_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Returns the n-th channel from ``self.magnitude_spectrogram_data``.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">           Exception: If not ``0 &lt;= n &lt; self.num_channels``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: (int) index of magnitude spectrogram channel to get **0-based**</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`np.array`): the magnitude spectrogram data in the n-th channel of the signal, 1D</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_get_channel</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+        <span class="c1"># np.array helps with duck typing</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">_get_axis</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram_data</span><span class="p">),</span>
+                               <span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.to_mono"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.to_mono">[docs]</a>    <span class="k">def</span> <span class="nf">to_mono</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">keep_dims</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Converts :attr:`audio_data` to mono by averaging every sample.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            overwrite (bool): If ``True`` this function will overwrite :attr:`audio_data`.</span>
+<span class="sd">            keep_dims (bool): If ``False`` this function will return a 1D array,</span>
+<span class="sd">                else will return array with shape `(1, n_samples)`.</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            If ``overwrite=True`` (default) this will overwrite any data in :attr:`audio_data`!</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (:obj:`AudioSignal`): Mono-ed version of AudioSignal, either in place or not.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mono</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">CHAN_INDEX</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="n">keep_dims</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">mono</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mono_signal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_copy_with_audio_data</span><span class="p">(</span><span class="n">mono</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mono_signal</span></div>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#                 Utility hooks                  #</span>
+    <span class="c1">##################################################</span>
+
+<div class="viewcode-block" id="AudioSignal.play"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.play">[docs]</a>    <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plays this audio signal, using `nussl.play_utils.play`.</span>
+
+<span class="sd">        Plays an audio signal if ffplay from the ffmpeg suite of tools is installed.</span>
+<span class="sd">        Otherwise, will fail. The audio signal is written to a temporary file</span>
+<span class="sd">        and then played with ffplay.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># lazy load</span>
+        <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">play_utils</span>
+        <span class="n">play_utils</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AudioSignal.embed_audio"><a class="viewcode-back" href="../../../core.html#nussl.core.AudioSignal.embed_audio">[docs]</a>    <span class="k">def</span> <span class="nf">embed_audio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;.mp3&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Embeds the audio signal into a notebook, using `nussl.play_utils.embed_audio`.</span>
+<span class="sd">        </span>
+<span class="sd">        Write a numpy array to a temporary mp3 file using ffmpy, then embeds the mp3 </span>
+<span class="sd">        into the notebook.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">            ext (str): What extension to use when embedding. &#39;.mp3&#39; is more lightweight </span>
+<span class="sd">            leading to smaller notebook sizes.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; import nussl</span>
+<span class="sd">            &gt;&gt;&gt; audio_file = nussl.efz_utils.download_audio_file(&#39;schoolboy_fascination_excerpt.wav&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; audio_signal = nussl.AudioSignal(audio_file)</span>
+<span class="sd">            &gt;&gt;&gt; audio_signal.embed_audio()</span>
+
+<span class="sd">        This will show a little audio player where you can play the audio inline in </span>
+<span class="sd">        the notebook.        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># lazy load</span>
+        <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">play_utils</span>
+        <span class="k">return</span> <span class="n">play_utils</span><span class="o">.</span><span class="n">embed_audio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="n">display</span><span class="p">)</span></div>
+
+    <span class="c1">##################################################</span>
+    <span class="c1">#              Operator overloading              #</span>
+    <span class="c1">##################################################</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_audio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">num_channels</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot do operation with two signals that have &#39;</span>
+                                       <span class="s1">&#39;a different number of channels!&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot do operation with two signals that have &#39;</span>
+                                       <span class="s1">&#39;different sample rates!&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_verify_audio_arithmetic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_audio</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">signal_length</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Cannot do arithmetic with signals of different length!&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">+</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span> <span class="o">-</span> <span class="n">other</span>
+
+    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Can only multiply/divide by a scalar!&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_copy_with_audio_data</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="n">value</span><span class="p">),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">AudioSignalException</span><span class="p">(</span><span class="s1">&#39;Can only multiply/divide by a scalar!&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_copy_with_audio_data</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)),</span>
+                                              <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__div__</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__itruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idiv__</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_gain</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__idiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_gain</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_length</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span></div>
+
+
+<span class="k">class</span> <span class="nc">AudioSignalException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exception class for :class:`AudioSignal`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

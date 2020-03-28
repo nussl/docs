@@ -1,0 +1,663 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.ml.networks.modules &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.ml.networks.modules</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.ml.networks.modules</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">librosa</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">torch.utils.checkpoint</span> <span class="kn">import</span> <span class="n">checkpoint</span>
+
+<span class="kn">from</span> <span class="nn">..unfold</span> <span class="kn">import</span> <span class="n">GaussianMixtureTorch</span>
+
+<div class="viewcode-block" id="AmplitudeToDB"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.AmplitudeToDB">[docs]</a><span class="k">class</span> <span class="nc">AmplitudeToDB</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a magnitude spectrogram and converts it to a log</span>
+<span class="sd">    amplitude spectrogram in decibels.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (torch.Tensor): Magnitude spectrogram to convert to</span>
+<span class="sd">        log spectrogram.</span>
+<span class="sd">        ref (float): reference value. Defaults to 1.0.</span>
+<span class="sd">        amin (float): lowest possible value for numerical stability.</span>
+<span class="sd">        Defaults to 1e-8.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        [type]: [description]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AmplitudeToDB.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.AmplitudeToDB.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">amin</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">amin</span> <span class="o">=</span> <span class="n">amin</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">amin</span><span class="p">,</span> <span class="n">ref</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">amin</span><span class="p">))</span> <span class="o">-</span> <span class="n">ref</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div></div>
+
+
+<div class="viewcode-block" id="BatchNorm"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.BatchNorm">[docs]</a><span class="k">class</span> <span class="nc">BatchNorm</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies a batch norm layer. Defaults to using only 1 feature, commonly</span>
+<span class="sd">    used at the very beginning of the network to normalize the input spectrogram.</span>
+
+<span class="sd">    Data comes and goes as (nb, nt, nf, nc). Inside this module, the data undergoes</span>
+<span class="sd">    the following procedure:</span>
+
+<span class="sd">    1. It is first reshaped to (nb, nf, nt, nc)</span>
+<span class="sd">    2. Data is reshaped to (nb, nf, nt * nc).</span>
+<span class="sd">    3. ``BatchNorm1d`` is applied with ``num_features`` to data.</span>
+<span class="sd">    4. Data is reshaped back to (nb, nt, nf, nc) and returned.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        num_features (int): num_features argument to BatchNorm1d, defaults to 1.</span>
+<span class="sd">        **kwargs (dict): additional keyword arguments that can be passed to BatchNorm2d.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: modified input data tensor with batch norm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_features</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BatchNorm</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_features</span> <span class="o">=</span> <span class="n">num_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;batch_norm&#39;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_features</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+<div class="viewcode-block" id="BatchNorm.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.BatchNorm.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_features</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">new_shape</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_norm</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div></div>
+
+
+<div class="viewcode-block" id="InstanceNorm"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.InstanceNorm">[docs]</a><span class="k">class</span> <span class="nc">InstanceNorm</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies an instance norm layer. Defaults to using only 1 feature, commonly</span>
+<span class="sd">    used at the very beginning of the network to normalize the input spectrogram.</span>
+
+<span class="sd">    Data comes and goes as (nb, nt, nf, nc). Inside this module, the data undergoes</span>
+<span class="sd">    the following procedure:</span>
+
+<span class="sd">    1. It is first reshaped to (nb, nf, nt, nc)</span>
+<span class="sd">    2. Data is reshaped to (nb, nf, nt * nc).</span>
+<span class="sd">    3. ``InstanceNorm1d`` is applied with ``num_features`` to data.</span>
+<span class="sd">    4. Data is reshaped back to (nb, nt, nf, nc) and returned.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        use_instance_norm (bool): Skip normalization or not.</span>
+<span class="sd">        num_features (int): num_features argument to InstanceNorm1d, defaults to 1.</span>
+<span class="sd">        **kwargs (dict): additional keyword arguments that are passed to InstanceNorm2d.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        torch.Tensor: modified input data tensor with instance norm applied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_features</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">InstanceNorm</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_features</span> <span class="o">=</span> <span class="n">num_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;instance_norm&#39;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">InstanceNorm1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_features</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+<div class="viewcode-block" id="InstanceNorm.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.InstanceNorm.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">new_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_features</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">new_shape</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance_norm</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div></div>
+
+
+<div class="viewcode-block" id="MelProjection"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.MelProjection">[docs]</a><span class="k">class</span> <span class="nc">MelProjection</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    MelProjection takes as input a time-frequency representation (e.g. a spectrogram, or a mask) and outputs a mel</span>
+<span class="sd">    project that can be learned or fixed. The initialization uses librosa to get a mel filterbank. Direction</span>
+<span class="sd">    controls whether it is a forward transform or the inverse transform (e.g. back to spectrogram).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_rate: (int) Sample rate of audio for computing the mel filters.</span>
+<span class="sd">        num_frequencies: (int) Number of frequency bins in input spectrogram.</span>
+<span class="sd">        num_mels: (int) Number of mel bins in output mel spectrogram. if num_mels &lt; 0, this does nothing</span>
+<span class="sd">            other than clamping the output if clamp is True.</span>
+<span class="sd">        direction: (str) Which direction to go in (either &#39;forward&#39; - to mel, or &#39;backward&#39; - to frequencies).</span>
+<span class="sd">            Defaults to &#39;forward&#39;.</span>
+<span class="sd">        clamp: (bool) Whether to clamp the output values of the transform between 0.0 and 1.0. Used for transforming</span>
+<span class="sd">            a mask in and out of the mel-domain. Defaults to False.</span>
+<span class="sd">        trainable: (bool) Whether the mel transform can be adjusted by the optimizer. Defaults to False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">,</span> <span class="n">num_frequencies</span><span class="p">,</span> <span class="n">num_mels</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;forward&#39;</span><span class="p">,</span>
+                 <span class="n">clamp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MelProjection</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_mels</span> <span class="o">=</span> <span class="n">num_mels</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;backward&#39;</span><span class="p">,</span> <span class="s1">&#39;forward&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;direction must be one of [&#39;backward&#39;, &#39;forward&#39;]!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="n">direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clamp</span> <span class="o">=</span> <span class="n">clamp</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_mels</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">num_frequencies</span><span class="p">,</span> <span class="n">num_mels</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;forward&#39;</span> <span class="k">else</span>
+                <span class="p">(</span><span class="n">num_mels</span><span class="p">,</span> <span class="n">num_frequencies</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;transform&#39;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">))</span>
+
+            <span class="n">mel_filters</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">mel</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">num_frequencies</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">num_mels</span><span class="p">)</span>
+            <span class="n">mel_filters</span> <span class="o">=</span> <span class="p">(</span><span class="n">mel_filters</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="p">(</span><span class="n">mel_filters</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">filter_bank</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">mel_filters</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;forward&#39;</span>
+                <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">pinv</span><span class="p">(</span><span class="n">mel_filters</span><span class="p">)</span>
+            <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s1">&#39;bias&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;weight&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">filter_bank</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+                <span class="n">param</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="n">trainable</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MelProjection.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.MelProjection.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data: Representation - shape: </span>
+<span class="sd">              (batch_size, sequence_length, num_frequencies or num_mels, num_sources)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Mel-spectrogram or time-frequency representation of shape:</span>
+<span class="sd">              (batch_size, sequence_length, num_mels or num_frequencies, num_sources).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_mels</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clamp</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Embedding"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.Embedding">[docs]</a><span class="k">class</span> <span class="nc">Embedding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Maps output from an audio representation module (e.g. RecurrentStack, </span>
+<span class="sd">    DilatedConvolutionalStack) to an embedding space. The output shape is </span>
+<span class="sd">    (batch_size, sequence_length, num_features, embedding_size). The embeddings can</span>
+<span class="sd">    be passed through an activation function. If activation is &#39;softmax&#39; or </span>
+<span class="sd">    &#39;sigmoid&#39;, and embedding_size is equal to the number of sources, this module </span>
+<span class="sd">    can be used to implement a mask inference network (or a mask inference</span>
+<span class="sd">    head in a Chimera network setup).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        num_features (int): Number of features being mapped for each frame. </span>
+<span class="sd">            Either num_frequencies, or if used with MelProjection, num_mels if using </span>
+<span class="sd">            RecurrentStack. Should be 1 if using DilatedConvolutionalStack. </span>
+
+<span class="sd">        hidden_size (int): Size of output from RecurrentStack (hidden_size) or </span>
+<span class="sd">            DilatedConvolutionalStack (num_filters). If RecurrentStack is bidirectional, </span>
+<span class="sd">            this should be set to 2 * hidden_size.</span>
+<span class="sd">        </span>
+<span class="sd">        embedding_size (int): Dimensionality of embedding.</span>
+<span class="sd">        </span>
+<span class="sd">        activation (list of str): Activation functions to be applied. Options </span>
+<span class="sd">            are &#39;sigmoid&#39;, &#39;tanh&#39;, &#39;softmax&#39;, &#39;relu&#39;. Unit normalization can be applied by </span>
+<span class="sd">            adding &#39;unit_norm&#39; in list (e.g. [&#39;sigmoid&#39;, unit_norm&#39;]).</span>
+
+<span class="sd">        dim_to_embed (int): Which dimension of the input to apply the embedding to.</span>
+<span class="sd">            Defaults to -1 (the last dimension).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_features</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">embedding_size</span><span class="p">,</span> <span class="n">activation</span><span class="p">,</span>
+                 <span class="n">num_audio_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim_to_embed</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Embedding</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span>
+            <span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_features</span> <span class="o">*</span> <span class="n">num_audio_channels</span> <span class="o">*</span> <span class="n">embedding_size</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_features</span> <span class="o">=</span> <span class="n">num_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_audio_channels</span> <span class="o">=</span> <span class="n">num_audio_channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">activation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span> <span class="o">=</span> <span class="n">embedding_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim_to_embed</span> <span class="o">=</span> <span class="n">dim_to_embed</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;bias&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="s1">&#39;weight&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">xavier_normal_</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Embedding.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.Embedding.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data: output from RecurrentStack or ConvolutionalStack. Shape is:</span>
+<span class="sd">              (num_batch, ..., hidden_size or num_filters)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An embedding (with an optional activation) for each point in the </span>
+<span class="sd">              representation of shape (num_batch, ..., embedding_size).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim_to_embed</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim_to_embed</span><span class="p">)</span>
+
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_audio_channels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_size</span><span class="p">,)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;sigmoid&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;tanh&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;relu&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;softmax&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;unit_norm&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span></div></div>
+
+
+<div class="viewcode-block" id="Mask"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.Mask">[docs]</a><span class="k">class</span> <span class="nc">Mask</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a mask and applies it to a representation. Mask and representation must match</span>
+<span class="sd">    in their first 3 dimensions (nb, nt, nf). The last</span>
+<span class="sd">    dimension of the representation is unsqueezed to match the mask shape. So if there</span>
+<span class="sd">    are ``ns`` sources to separate, the mask shape will be (nb, nt, nf, ns), the </span>
+<span class="sd">    representation shape will be (nb, nt, nf).</span>
+
+<span class="sd">    Representation gets unsqueezed to (nb, nt, nf, 1). Multiplying with the mask</span>
+<span class="sd">    broadcasts, resulting in (nb, nt, nf, ns) output corresponding to each separated</span>
+<span class="sd">    source from the representation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Mask</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Mask.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.Mask.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">representation</span><span class="p">):</span>
+        <span class="c1"># add a source dimension</span>
+        <span class="n">representation</span> <span class="o">=</span> <span class="n">representation</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mask</span> <span class="o">*</span> <span class="n">representation</span></div></div>
+
+
+<div class="viewcode-block" id="RecurrentStack"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.RecurrentStack">[docs]</a><span class="k">class</span> <span class="nc">RecurrentStack</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a stack of RNNs used to process an audio sequence represented as </span>
+<span class="sd">    (sequence_length, num_features). With bidirectional = True, hidden_size = 600, </span>
+<span class="sd">    num_layers = 4, rnn_type=&#39;lstm&#39;, and dropout = .3, this becomes the </span>
+<span class="sd">    audio processor used in deep clustering networks, deep attractor networks, etc. </span>
+<span class="sd">    Note that batch_first is set to True here.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        num_features: (int) Number of features being mapped for each frame. </span>
+<span class="sd">            Either num_frequencies, or if used with MelProjection, num_mels.</span>
+<span class="sd">        hidden_size: (int) Hidden size of recurrent stack for each layer.</span>
+<span class="sd">        num_layers: (int) Number of layers in stack.</span>
+<span class="sd">        bidirectional: (int) True makes this a BiLSTM or a BiGRU. Note that this </span>
+<span class="sd">            doubles the hidden size.</span>
+<span class="sd">        dropout: (float) Dropout between layers.</span>
+<span class="sd">        rnn_type: (str) LSTM (&#39;lstm&#39;) or GRU (&#39;gru&#39;).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_features</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span> <span class="n">dropout</span><span class="p">,</span>
+                 <span class="n">rnn_type</span><span class="o">=</span><span class="s1">&#39;lstm&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RecurrentStack</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">rnn_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;lstm&#39;</span><span class="p">,</span> <span class="s1">&#39;gru&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rnn_type must be one of [&#39;lstm&#39;, &#39;gru&#39;]!&quot;</span><span class="p">)</span>
+
+        <span class="n">RNNClass</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LSTM</span> <span class="k">if</span> <span class="n">rnn_type</span> <span class="o">==</span> <span class="s1">&#39;lstm&#39;</span> <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">GRU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span>
+            <span class="s1">&#39;rnn&#39;</span><span class="p">,</span> <span class="n">RNNClass</span><span class="p">(</span>
+                <span class="n">num_features</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">batch_first</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">bidirectional</span><span class="o">=</span><span class="n">bidirectional</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s1">&#39;bias&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="s1">&#39;weight&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">xavier_normal_</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">names</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">_all_weights</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">nm</span><span class="p">:</span> <span class="s2">&quot;bias&quot;</span> <span class="ow">in</span> <span class="n">nm</span><span class="p">,</span> <span class="n">names</span><span class="p">):</span>
+                <span class="n">bias</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="n">bias</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">n</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">n</span> <span class="o">//</span> <span class="mi">2</span>
+                <span class="n">bias</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span><span class="o">.</span><span class="n">fill_</span><span class="p">(</span><span class="mf">1.</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RecurrentStack.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.RecurrentStack.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data: Audio representation to be processed. Should be of shape:</span>
+<span class="sd">            (num_batch, sequence_length, ...).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Outputs the features after processing of the RNN. Shape is:</span>
+<span class="sd">            (num_batch, sequence_length, hidden_size or hidden_size*2 if </span>
+<span class="sd">            bidirectional=True)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="o">.</span><span class="n">flatten_parameters</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rnn</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span></div></div>
+
+
+<div class="viewcode-block" id="ConvolutionalStack2D"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.ConvolutionalStack2D">[docs]</a><span class="k">class</span> <span class="nc">ConvolutionalStack2D</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements a stack of dilated convolutional layers for source separation from </span>
+<span class="sd">    the following papers:</span>
+
+<span class="sd">        Mobin, Shariq, Brian Cheung, and Bruno Olshausen. &quot;Convolutional vs. recurrent </span>
+<span class="sd">        neural networks for audio source separation.&quot; </span>
+<span class="sd">        arXiv preprint arXiv:1803.08629 (2018). https://arxiv.org/pdf/1803.08629.pdf</span>
+
+<span class="sd">        Yu, Fisher, Vladlen Koltun, and Thomas Funkhouser. &quot;Dilated residual networks.&quot; </span>
+<span class="sd">        Proceedings of the IEEE conference on computer vision and pattern recognition. </span>
+<span class="sd">        2017. https://arxiv.org/abs/1705.09914</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        in_channels (int): Number of channels in input</span>
+<span class="sd">        channels (list of int): Number of channels for each layer</span>
+<span class="sd">        dilations (list of ints or int tuples): Dilation rate for each layer. If </span>
+<span class="sd">            int, it is same in both height and width. If tuple, tuple is defined as</span>
+<span class="sd">            (height, width). </span>
+<span class="sd">        filter_shapes (list of ints or int tuples): Filter shape for each layer. If </span>
+<span class="sd">            int, it is same in both height and width. If tuple, tuple is defined as</span>
+<span class="sd">            (height, width).</span>
+<span class="sd">        residuals (list of bool): Whether or not to keep a residual connection at</span>
+<span class="sd">            each layer.</span>
+<span class="sd">        batch_norm (bool): Whether to use BatchNorm or not at each layer (default: True)</span>
+<span class="sd">        use_checkpointing (bool): Whether to use torch&#39;s checkpointing functionality </span>
+<span class="sd">            to reduce memory usage.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError -- All the input lists must be the same length.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">dilations</span><span class="p">,</span> <span class="n">filter_shapes</span><span class="p">,</span> <span class="n">residuals</span><span class="p">,</span>
+                 <span class="n">batch_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">use_checkpointing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="n">dilations</span><span class="p">,</span> <span class="n">filter_shapes</span><span class="p">,</span> <span class="n">residuals</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;All lists (channels, dilations, filters, residuals) should have&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;the same length!&quot;</span>
+                <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">d</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dilations</span><span class="p">]):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;You specified a dilation != 1. Input size and output size are &quot;</span>
+                <span class="s2">&quot;not guaranteed to be the same! This is due to the lacking of &quot;</span>
+                <span class="s2">&quot;padding = &#39;same&#39; in PyTorch.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dilations</span> <span class="o">=</span> <span class="n">dilations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_shapes</span> <span class="o">=</span> <span class="n">filter_shapes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">residuals</span> <span class="o">=</span> <span class="n">residuals</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_norm</span> <span class="o">=</span> <span class="n">batch_norm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">in_channels</span> <span class="o">=</span> <span class="n">in_channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_checkpointing</span> <span class="o">=</span> <span class="n">use_checkpointing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_make_layer</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_make_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="n">convolution</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
+            <span class="n">in_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_channels</span><span class="p">,</span>
+            <span class="n">out_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">kernel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">filter_shapes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">dilation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dilations</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">filter_shapes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">layer</span> <span class="o">=</span> <span class="n">convolution</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;layer</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">layer</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">layer</span>
+
+        <span class="n">layer</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">()</span>
+        <span class="n">layer</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;conv&#39;</span><span class="p">,</span> <span class="n">convolution</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_norm</span><span class="p">:</span>
+            <span class="n">batch_norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">layer</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;batch_norm&#39;</span><span class="p">,</span> <span class="n">batch_norm</span><span class="p">)</span>
+        <span class="n">layer</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s1">&#39;relu&#39;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">layer</span>
+
+    <span class="k">def</span> <span class="nf">layer_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">previous_layer</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_checkpointing</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">checkpoint</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">residuals</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">previous_layer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">+=</span> <span class="n">previous_layer</span>
+            <span class="n">previous_layer</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">previous_layer</span>
+
+<div class="viewcode-block" id="ConvolutionalStack2D.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.modules.ConvolutionalStack2D.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; </span>
+<span class="sd">        Data comes in as: [num_batch, sequence_length, num_frequencies, num_audio_channels]</span>
+<span class="sd">        We reshape it in the forward pass so that everything works to:</span>
+<span class="sd">          [num_batch, num_audio_channels, sequence_length, num_frequencies]</span>
+<span class="sd">        After this input is processed, the shape is then:</span>
+<span class="sd">          [num_batch, num_output_channels, sequence_length, num_frequencies]</span>
+<span class="sd">        We transpose again to make the shape:</span>
+<span class="sd">          [num_batch, sequence_length, num_frequencies, num_output_channels]</span>
+<span class="sd">        So it can be passed to an Embedding module.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">previous_layer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_layers</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">previous_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_function</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">previous_layer</span><span class="p">,</span> <span class="n">i</span>
+            <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

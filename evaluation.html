@@ -1,0 +1,703 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Evaluation &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Machine Learning" href="ml.html" />
+    <link rel="prev" title="Datasets" href="datasets.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/examples.html">Examples</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Evaluation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#evaluation-base">Evaluation base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bss-evaluation-base">BSS Evaluation base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scale-invariant-bsseval">Scale invariant BSSEval</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bssevalv4-museval">BSSEvalV4 (museval)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#precision-and-recall-on-masks">Precision and recall on masks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ml.html">Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="separation.html">Separation algorithms</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="api.html">API Documentation</a> &raquo;</li>
+        
+      <li>Evaluation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/evaluation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<span class="target" id="module-nussl.evaluation"></span><div class="section" id="evaluation">
+<h1>Evaluation<a class="headerlink" href="#evaluation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="evaluation-base">
+<h2>Evaluation base<a class="headerlink" href="#evaluation-base" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.evaluation.EvaluationBase">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">EvaluationBase</code><span class="sig-paren">(</span><em class="sig-param">true_sources_list</em>, <em class="sig-param">estimated_sources_list</em>, <em class="sig-param">source_labels=None</em>, <em class="sig-param">compute_permutation=False</em>, <em class="sig-param">best_permutation_key=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/evaluation_base.html#EvaluationBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.EvaluationBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all Evaluation classes for source separation algorithms in nussl.
+Contains common functions for all evaluation techniques. This class should not be
+instantiated directly.</p>
+<p>Both <code class="docutils literal notranslate"><span class="pre">true_sources_list</span></code> and <code class="docutils literal notranslate"><span class="pre">estimated_sources_list</span></code> get validated
+using the private method <code class="xref py py-func docutils literal notranslate"><span class="pre">_verify_input_list()</span></code>. If your evaluation
+needs to verify that input is set correctly (recommended) overwrite that method
+to add checking.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true_sources_list</strong> (<em>list</em>) – List of objects that contain one ground truth source per object.
+In some instances (such as the <code class="xref py py-class docutils literal notranslate"><span class="pre">BSSEval</span></code> objects) this list is filled with
+<code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignals</span></code> but in other cases it is populated with
+<code class="xref py py-class docutils literal notranslate"><span class="pre">MaskBase</span></code> -derived objects (i.e., either a <code class="xref py py-class docutils literal notranslate"><span class="pre">BinaryMask</span></code> or
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SoftMask</span></code> object).</p></li>
+<li><p><strong>estimated_sources_list</strong> (<em>list</em>) – List of objects that contain source estimations from a source
+separation algorithm. List should be populated with the same type of objects and in the
+same order as <a href="#id1"><span class="problematic" id="id2">:param:`true_sources_list`</span></a>.</p></li>
+<li><p><strong>source_labels</strong> (<em>list</em>) – List of strings that are labels for each source to be used as keys for
+the scores. Default value is <cite>None</cite> and in that case labels use the file_name attribute.
+If that is also <cite>None</cite>, then the source labels are <cite>Source 0</cite>, <cite>Source 1</cite>, etc.</p></li>
+<li><p><strong>compute_permutation</strong> (<em>bool</em>) – Whether or not to evaluate in a permutation-invariant
+fashion, where the estimates are permuted to match the true sources. Only the
+best permutation according to <code class="docutils literal notranslate"><span class="pre">best_permutation_key</span></code> is returned to the
+scores dict. Defaults to False.</p></li>
+<li><p><strong>best_permutation_key</strong> (<em>str</em>) – Which metric to use to decide which permutation of
+the sources was best.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – Any additional keyword arguments are passed on to <code class="docutils literal notranslate"><span class="pre">evaluate_helper</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.EvaluationBase.evaluate" title="nussl.evaluation.EvaluationBase.evaluate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate</span></code></a>()</p></td>
+<td><p>This function encapsulates the main functionality of all evaluation classes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.evaluation.EvaluationBase.evaluate_helper" title="nussl.evaluation.EvaluationBase.evaluate_helper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_helper</span></code></a>(references, estimates, **kwargs)</p></td>
+<td><p>This function should be implemented by each class that inherits this class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.EvaluationBase.get_candidates" title="nussl.evaluation.EvaluationBase.get_candidates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_candidates</span></code></a>()</p></td>
+<td><p>This gets all the possible candidates for evaluation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.evaluation.EvaluationBase.preprocess" title="nussl.evaluation.EvaluationBase.preprocess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess</span></code></a>()</p></td>
+<td><p>Takes the objects contained in <cite>true_sources_list</cite> and <cite>estimated_sources_list</cite> and processes them into numpy arrays that have shape (…, n_channels, n_sources).</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.EvaluationBase.scores" title="nussl.evaluation.EvaluationBase.scores"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scores</span></code></a></p></td>
+<td><p>A dictionary that stores all scores from the evaluation method.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.evaluation.EvaluationBase.evaluate">
+<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/evaluation_base.html#EvaluationBase.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.EvaluationBase.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function encapsulates the main functionality of all evaluation classes.
+It performs the following steps, some of which must be implemented in subclasses
+of EvaluationBase.</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Preprocesses the data somehow into numpy arrays that get passed into your
+evaluation function.</p></li>
+<li><p>Gets all possible candidates that will be evaluated in your evaluation function.</p></li>
+<li><p>For each candidate, runs the evaluation function (must be implemented in subclass).</p></li>
+<li><p>Finds the results from the best candidate.</p></li>
+<li><p>Returns a dictionary containing those results.</p></li>
+</ol>
+</div></blockquote>
+<p>Steps 1 and 3 must be implemented by the subclass while the others are implemented
+by EvaluationBase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A dictionary containing the scores for each source for the best candidate.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.evaluation.EvaluationBase.evaluate_helper">
+<code class="sig-name descname">evaluate_helper</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/evaluation_base.html#EvaluationBase.evaluate_helper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.EvaluationBase.evaluate_helper" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function should be implemented by each class that inherits this
+class. The function should take in a numpy array containing the references and
+one for the estimates and compute evaluation measures between the two arrays.
+The results should be stored in a list of dictionaries. For example, a
+BSSEval evaluator may return a dictionary as follows, for a single estimate:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>               #or windows or both
+[   {          #ch0  ch1   # results for first estimate
+        &quot;SDR&quot;: [5.6, 5.2], # metric
+        &quot;SIR&quot;: [9.2, 8.9], # metric
+        &quot;SAR&quot;: [4.1, 4.3]  # metric
+    },
+    ...                    # more results for other estimates
+]
+</pre></div>
+</div>
+<p>Each metric should be a key in the dictionary pointing to a value which is a
+list. The list will contain the metrics for however the algorithm was implemented
+(e.g. there might be two value, one for each channel in a stereo mix, or there
+might be a sequence, one for each window that was evaluated.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>references</strong> (<em>np.ndarray</em>) – References kept in a numpy array. Should have shape
+(…, n_channels, n_sources).</p></li>
+<li><p><strong>estimates</strong> (<em>np.ndarray</em>) – Estimates kept in whatever format you want. Should have
+shape (…, n_channels, n_sources).</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Keyword arguments with any additional arguments to be used in
+the function (e.g. window_size, hop_length).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of dictionary containing the measures corresponding to each estimate
+and reference.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.evaluation.EvaluationBase.get_candidates">
+<code class="sig-name descname">get_candidates</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/evaluation_base.html#EvaluationBase.get_candidates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.EvaluationBase.get_candidates" title="Permalink to this definition">¶</a></dt>
+<dd><p>This gets all the possible candidates for evaluation. If <cite>compute_permutation</cite>
+is False, then the estimates and the references are assumed to be in the same
+order. The first N estimates will be compared to the first N references, where
+N is min(len(estimates), len(references)).</p>
+<p>If <cite>compute_permutation</cite> is True, and <cite>len(estimates) == len(references)</cite>, then
+every possible ordering of the estimates will be tried to match to the references.
+So if there are 3 references and 3 estimates, a total of 3! = 6 candidates will
+be generated.</p>
+<p>If <cite>compute_permutation</cite> is True and <cite>len(estimates) &gt; len(references)</cite>, then
+every combination of size <cite>len(references)</cite> estimates will be tried as well
+as their permutations. If there are 2 references and 4 estimates, then
+(4 choose 2) = 6 combos will be tried. For each of those pairs of 2, there will
+be 2! = 2 permutations. So a total of 12 candidates will be generated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Two lists of combinations and permutations that should be tried. Each element
+of the list contains the indices that are used to find the sources that
+are compared to each other.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.evaluation.EvaluationBase.preprocess">
+<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/evaluation_base.html#EvaluationBase.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.EvaluationBase.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the objects contained in <cite>true_sources_list</cite> and <cite>estimated_sources_list</cite>
+and processes them into numpy arrays that have shape
+(…, n_channels, n_sources).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>references, estimates in that order as np.ndarrays.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Make sure to return the preprocessed data in the order
+(references, estimates)!</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.evaluation.EvaluationBase.scores">
+<em class="property">property </em><code class="sig-name descname">scores</code><a class="headerlink" href="#nussl.evaluation.EvaluationBase.scores" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary that stores all scores from the evaluation method. Gets populated when
+<a class="reference internal" href="#nussl.evaluation.EvaluationBase.evaluate" title="nussl.evaluation.EvaluationBase.evaluate"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate()</span></code></a> gets run.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="bss-evaluation-base">
+<h2>BSS Evaluation base<a class="headerlink" href="#bss-evaluation-base" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.evaluation.BSSEvaluationBase">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">BSSEvaluationBase</code><span class="sig-paren">(</span><em class="sig-param">true_sources_list</em>, <em class="sig-param">estimated_sources_list</em>, <em class="sig-param">source_labels=None</em>, <em class="sig-param">compute_permutation=False</em>, <em class="sig-param">best_permutation_key='SDR'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvaluationBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvaluationBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all evaluation classes that are based on BSSEval metrics. This
+contains some useful verification functions, preprocessing functions that are
+used in many separation-based evaluation. Specific evaluation metrics are
+thin wrappers around this base class, basically only implementing the
+<code class="docutils literal notranslate"><span class="pre">self.evaluate_helper</span></code> function.</p>
+<p>Both <code class="docutils literal notranslate"><span class="pre">true_sources_list</span></code> and <code class="docutils literal notranslate"><span class="pre">estimated_sources_list</span></code> get validated
+using the private method <code class="xref py py-func docutils literal notranslate"><span class="pre">_verify_input_list()</span></code>. If your evaluation
+needs to verify that input is set correctly (recommended) overwrite that method
+to add checking.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true_sources_list</strong> (<em>list</em>) – List of objects that contain one ground truth source per object.
+In some instances (such as the <code class="xref py py-class docutils literal notranslate"><span class="pre">BSSEval</span></code> objects) this list is filled with
+<code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignals</span></code> but in other cases it is populated with
+<code class="xref py py-class docutils literal notranslate"><span class="pre">MaskBase</span></code> -derived objects (i.e., either a <code class="xref py py-class docutils literal notranslate"><span class="pre">BinaryMask</span></code> or
+<code class="xref py py-class docutils literal notranslate"><span class="pre">SoftMask</span></code> object).</p></li>
+<li><p><strong>estimated_sources_list</strong> (<em>list</em>) – List of objects that contain source estimations from a source
+separation algorithm. List should be populated with the same type of objects and in the
+same order as <a href="#id3"><span class="problematic" id="id4">:param:`true_sources_list`</span></a>.</p></li>
+<li><p><strong>source_labels</strong> (<em>list</em>) – List of strings that are labels for each source to be used as keys for
+the scores. Default value is <cite>None</cite> and in that case labels use the file_name attribute.
+If that is also <cite>None</cite>, then the source labels are <cite>Source 0</cite>, <cite>Source 1</cite>, etc.</p></li>
+<li><p><strong>compute_permutation</strong> (<em>bool</em>) – Whether or not to evaluate in a permutation-invariant
+fashion, where the estimates are permuted to match the true sources. Only the
+best permutation according to <code class="docutils literal notranslate"><span class="pre">best_permutation_key</span></code> is returned to the
+scores dict. Defaults to False.</p></li>
+<li><p><strong>best_permutation_key</strong> (<em>str</em>) – Which metric to use to decide which permutation of
+the sources was best.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – Any additional arguments are passed on to evaluate_helper.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.BSSEvaluationBase.preprocess" title="nussl.evaluation.BSSEvaluationBase.preprocess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess</span></code></a>()</p></td>
+<td><p>Implements preprocess by stacking the audio_data inside each AudioSignal object in both self.true_sources_list and self.estimated_sources_list.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.evaluation.BSSEvaluationBase.preprocess">
+<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvaluationBase.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvaluationBase.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements preprocess by stacking the audio_data inside each AudioSignal
+object in both self.true_sources_list and self.estimated_sources_list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Tuple containing reference and estimate arrays.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="scale-invariant-bsseval">
+<h2>Scale invariant BSSEval<a class="headerlink" href="#scale-invariant-bsseval" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.evaluation.BSSEvalScale">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">BSSEvalScale</code><span class="sig-paren">(</span><em class="sig-param">true_sources_list</em>, <em class="sig-param">estimated_sources_list</em>, <em class="sig-param">source_labels=None</em>, <em class="sig-param">compute_permutation=False</em>, <em class="sig-param">best_permutation_key='SDR'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvalScale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvalScale" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.BSSEvalScale.evaluate_helper" title="nussl.evaluation.BSSEvalScale.evaluate_helper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_helper</span></code></a>(references, estimates[, scaling])</p></td>
+<td><p>Implements evaluation using scale-invariant BSSEval metrics [1].</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.evaluation.BSSEvalScale.preprocess" title="nussl.evaluation.BSSEvalScale.preprocess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess</span></code></a>()</p></td>
+<td><p>Scale invariant metrics expects zero-mean centered references and sources.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.evaluation.BSSEvalScale.evaluate_helper">
+<code class="sig-name descname">evaluate_helper</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">scaling=True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvalScale.evaluate_helper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvalScale.evaluate_helper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements evaluation using scale-invariant BSSEval metrics [1].</p>
+<p>[1] Le Roux, J., Wisdom, S., Erdogan, H., &amp; Hershey, J. R.
+(2019, May). SDR–half-baked or well done?. In ICASSP 2019-2019 IEEE
+International Conference on Acoustics, Speech and Signal
+Processing (ICASSP) (pp. 626-630). IEEE.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.evaluation.BSSEvalScale.preprocess">
+<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvalScale.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvalScale.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scale invariant metrics expects zero-mean centered references and sources.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.evaluation.scale_bss_eval">
+<code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">scale_bss_eval</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">idx</em>, <em class="sig-param">scaling=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#scale_bss_eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.scale_bss_eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes SDR, SIR, SAR for references[idx] relative to the
+chosen estimates. This only works for mono audio. Each
+channel should be done independently when calling this
+function. Lovingly borrowed from Gordon Wichern and
+Jonathan Le Roux at Mitsubishi Electric Research Labs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>references</strong> (<em>np.ndarray</em>) – object containing the</p></li>
+<li><p><strong>data. Of shape</strong> (<em>estimates</em>) – </p></li>
+<li><p><strong>estimates</strong> (<em>np.ndarray</em>) – object containing the</p></li>
+<li><p><strong>data. Of shape</strong> – </p></li>
+<li><p><strong>idx</strong> (<em>int</em>) – Which estimates to compute metrics for.</p></li>
+<li><p><strong>scaling</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use scale-invariant (True) or</p></li>
+<li><p><strong>scale-dependent</strong> (<em>False</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>SDR, SIR, SAR if inputs are numpy arrays.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="bssevalv4-museval">
+<h2>BSSEvalV4 (museval)<a class="headerlink" href="#bssevalv4-museval" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.evaluation.BSSEvalV4">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">BSSEvalV4</code><span class="sig-paren">(</span><em class="sig-param">true_sources_list</em>, <em class="sig-param">estimated_sources_list</em>, <em class="sig-param">source_labels=None</em>, <em class="sig-param">compute_permutation=False</em>, <em class="sig-param">best_permutation_key='SDR'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvalV4"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvalV4" title="Permalink to this definition">¶</a></dt>
+<dd><p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.BSSEvalV4.evaluate_helper" title="nussl.evaluation.BSSEvalV4.evaluate_helper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_helper</span></code></a>(references, estimates, **kwargs)</p></td>
+<td><p>Implements evaluation using museval.metrics.bss_eval</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="nussl.evaluation.BSSEvalV4.evaluate_helper">
+<code class="sig-name descname">evaluate_helper</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvalV4.evaluate_helper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvalV4.evaluate_helper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements evaluation using museval.metrics.bss_eval</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="precision-and-recall-on-masks">
+<h2>Precision and recall on masks<a class="headerlink" href="#precision-and-recall-on-masks" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="nussl.evaluation.PrecisionRecallFScore">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">PrecisionRecallFScore</code><span class="sig-paren">(</span><em class="sig-param">true_sources_list</em>, <em class="sig-param">estimated_sources_list</em>, <em class="sig-param">source_labels=None</em>, <em class="sig-param">compute_permutation=False</em>, <em class="sig-param">best_permutation_key='F1-Score'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/precision_recall_fscore.html#PrecisionRecallFScore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.PrecisionRecallFScore" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class provides common statistical metrics for determining how well a source separation algorithm in nussl was
+able to create a binary mask compared to a known binary mask. The metrics used here are
+<a class="reference external" href="https://en.wikipedia.org/wiki/Precision_and_recall">Precision, Recall</a>,
+<a class="reference external" href="https://en.wikipedia.org/wiki/F1_score">F-Score</a> (sometimes called F-measure or F1-score), and Accuracy
+(though this is not reflected in the name of the class, it is simply   <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">correct</span> <span class="pre">/</span> <span class="pre">total</span></code>).</p>
+<p class="rubric">Notes</p>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.PrecisionRecallFScore.evaluate_helper" title="nussl.evaluation.PrecisionRecallFScore.evaluate_helper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_helper</span></code></a>(references, estimates, **kwargs)</p></td>
+<td><p>Determines the precision, recall, f-score, and accuracy of each <span class="xref std std-ref">binary_mask</span> object in <code class="docutils literal notranslate"><span class="pre">true_sources_mask_list</span></code> and <code class="docutils literal notranslate"><span class="pre">estimated_sources_mask_list</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.evaluation.PrecisionRecallFScore.preprocess" title="nussl.evaluation.PrecisionRecallFScore.preprocess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess</span></code></a>()</p></td>
+<td><p>Takes the objects contained in <cite>true_sources_list</cite> and <cite>estimated_sources_list</cite> and processes them into numpy arrays that have shape (…, n_channels, n_sources).</p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PrecisionRecallFScore</span></code> can only be run using <span class="xref std std-ref">binary_mask</span> objects. The constructor expects a list of</p></li>
+</ul>
+<p><span class="xref std std-ref">binary_mask</span> objects for both the ground truth sources and the estimated sources.
+* <code class="docutils literal notranslate"><span class="pre">PrecisionRecallFScore</span></code> does not calculate the correct permutation of the estimated and ground truth sources;
+they are expected to be in the correct order when they are passed into <code class="docutils literal notranslate"><span class="pre">PrecisionRecallFScore</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>true_sources_mask_list</strong> (<em>list</em>) – List of <span class="xref std std-ref">binary_mask</span> objects representing the ground truth sources.</p></li>
+<li><p><strong>estimated_sources_mask_list</strong> (<em>list</em>) – List of <span class="xref std std-ref">binary_mask</span> objects representing the estimates from a source
+separation object</p></li>
+<li><p><strong>source_labels</strong> (<em>list</em><em>) </em><em>(</em><em>Optional</em>) – List of <code class="docutils literal notranslate"><span class="pre">str</span></code> with labels for each source. If no labels are provided, sources
+will be labeled <code class="docutils literal notranslate"><span class="pre">Source</span> <span class="pre">0,</span> <span class="pre">Source</span> <span class="pre">1,</span> <span class="pre">...</span></code> etc.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="nussl.evaluation.PrecisionRecallFScore.evaluate_helper">
+<code class="sig-name descname">evaluate_helper</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/precision_recall_fscore.html#PrecisionRecallFScore.evaluate_helper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.PrecisionRecallFScore.evaluate_helper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines the precision, recall, f-score, and accuracy of each <span class="xref std std-ref">binary_mask</span> object in
+<code class="docutils literal notranslate"><span class="pre">true_sources_mask_list</span></code> and <code class="docutils literal notranslate"><span class="pre">estimated_sources_mask_list</span></code>. Returns a list of results that is
+formatted like so:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span><span class="s1">&#39;Accuracy&#39;</span><span class="p">:</span> <span class="mf">0.83</span><span class="p">,</span>
+    <span class="s1">&#39;Precision&#39;</span><span class="p">:</span> <span class="mf">0.78</span><span class="p">,</span>
+    <span class="s1">&#39;Recall&#39;</span><span class="p">:</span> <span class="mf">0.81</span><span class="p">,</span>
+    <span class="s1">&#39;F1-Score&#39;</span><span class="p">:</span> <span class="mf">0.77</span> <span class="p">},</span>
+
+    <span class="p">{</span><span class="s1">&#39;Accuracy&#39;</span><span class="p">:</span> <span class="mf">0.22</span><span class="p">,</span>
+    <span class="s1">&#39;Precision&#39;</span><span class="p">:</span> <span class="mf">0.12</span><span class="p">,</span>
+    <span class="s1">&#39;Recall&#39;</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+    <span class="s1">&#39;F1-Score&#39;</span><span class="p">:</span> <span class="mf">0.19</span> <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A list of scores that contains accuracy, precision, recall, and F1-score
+of between the list of <span class="xref std std-ref">binary_mask</span> objects in both <code class="docutils literal notranslate"><span class="pre">true_sources_mask_list</span></code>
+and <code class="docutils literal notranslate"><span class="pre">estimated_sources_mask_list</span></code>.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>self.scores (dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.evaluation.PrecisionRecallFScore.preprocess">
+<code class="sig-name descname">preprocess</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/precision_recall_fscore.html#PrecisionRecallFScore.preprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.PrecisionRecallFScore.preprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the objects contained in <cite>true_sources_list</cite> and <cite>estimated_sources_list</cite>
+and processes them into numpy arrays that have shape
+(…, n_channels, n_sources).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>references, estimates in that order as np.ndarrays.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Make sure to return the preprocessed data in the order
+(references, estimates)!</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ml.html" class="btn btn-neutral float-right" title="Machine Learning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="datasets.html" class="btn btn-neutral float-left" title="Datasets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
