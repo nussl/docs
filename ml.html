@@ -99,6 +99,7 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Machine Learning</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#separationmodel">SeparationModel</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.networks.modules">Building blocks for SeparationModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.networks.builders">Helpers for common deep networks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.train">Training</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#id1">Training</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-nussl.ml.train.loss">Loss functions</a></li>
@@ -783,6 +784,158 @@ bidirectional=True)</p>
 </dd></dl>
 
 <span class="target" id="module-nussl.ml.cluster"></span></div>
+<div class="section" id="module-nussl.ml.networks.builders">
+<span id="helpers-for-common-deep-networks"></span><h2>Helpers for common deep networks<a class="headerlink" href="#module-nussl.ml.networks.builders" title="Permalink to this headline">¶</a></h2>
+<p>Functions that make it easy to build commonly used source separation architectures.
+Currently contains mask inference, deep clustering, and chimera networks that are
+based on recurrent neural networks. These functions are a good place to start when
+creating your own network toplogies. Since there can be dependencies between layers
+depending on input size, it’s good to work this out in a function like those below.</p>
+<p><strong>Functions</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_chimera" title="nussl.ml.networks.builders.build_recurrent_chimera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_chimera</span></code></a>(num_features, …[, …])</p></td>
+<td><p>Builds a config for a Chimera network that can be passed to SeparationModel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_dpcl" title="nussl.ml.networks.builders.build_recurrent_dpcl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_dpcl</span></code></a>(num_features, …[, …])</p></td>
+<td><p>Builds a config for a deep clustering network that can be passed to SeparationModel.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_mask_inference" title="nussl.ml.networks.builders.build_recurrent_mask_inference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_mask_inference</span></code></a>(num_features, …)</p></td>
+<td><p>Builds a config for a mask inference network that can be passed to SeparationModel.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="nussl.ml.networks.builders.build_recurrent_chimera">
+<code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_recurrent_chimera</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">embedding_size</em>, <em class="sig-param">embedding_activation</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">mask_activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">normalization_class='BatchNorm'</em>, <em class="sig-param">mix_key='mix_magnitude'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_recurrent_chimera"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_recurrent_chimera" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a config for a Chimera network that can be passed to SeparationModel.
+Chimera networks are so-called because they have two “heads” which can be trained
+via different loss functions. In traditional Chimera, one head is trained using a
+deep clustering loss while the other is trained with a mask inference loss.
+This Chimera network uses a recurrent neural network (RNN) to process the input
+representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_features</strong> (<em>int</em>) – Number of features in the input spectrogram (usually means
+window length of STFT // 2 + 1.)</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – Hidden size of the RNN.</p></li>
+<li><p><strong>num_layers</strong> (<em>int</em>) – Number of layers in the RNN.</p></li>
+<li><p><strong>bidirectional</strong> (<em>int</em>) – Whether the RNN is bidirectional.</p></li>
+<li><p><strong>dropout</strong> (<em>float</em>) – Amount of dropout to be used between layers of RNN.</p></li>
+<li><p><strong>embedding_size</strong> (<em>int</em>) – Embedding dimensionality of the deep clustering network.</p></li>
+<li><p><strong>embedding_activation</strong> (<em>list of str</em>) – Activation of the embedding (‘sigmoid’, ‘softmax’, etc.).
+See <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules.Embedding</span></code>.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to create masks for.</p></li>
+<li><p><strong>mask_activation</strong> (<em>list of str</em>) – Activation of the mask (‘sigmoid’, ‘softmax’, etc.).
+See <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules.Embedding</span></code>.</p></li>
+<li><p><strong>num_audio_channels</strong> (<em>int</em>) – Number of audio channels in input (e.g. mono or stereo).
+Defaults to 1.</p></li>
+<li><p><strong>rnn_type</strong> (<em>str</em><em>, </em><em>optional</em>) – RNN type, either ‘lstm’ or ‘gru’. Defaults to ‘lstm’.
+normalization_class (str, optional): Type of normalization to apply, either</p></li>
+<li><p><strong>or 'BatchNorm'. Defaults to 'BatchNorm'.</strong> (<em>'InstanceNorm'</em>) – </p></li>
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the input dictionary that contains
+the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A recurrent Chimera network configuration that can be passed to</dt><dd><p>SeparationModel.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.networks.builders.build_recurrent_dpcl">
+<code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_recurrent_dpcl</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">embedding_size</em>, <em class="sig-param">embedding_activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">normalization_class='BatchNorm'</em>, <em class="sig-param">mix_key='mix_magnitude'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_recurrent_dpcl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_recurrent_dpcl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a config for a deep clustering network that can be passed to
+SeparationModel. This deep clustering network uses a recurrent neural network (RNN)
+to process the input representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_features</strong> (<em>int</em>) – Number of features in the input spectrogram (usually means
+window length of STFT // 2 + 1.)</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – Hidden size of the RNN.</p></li>
+<li><p><strong>num_layers</strong> (<em>int</em>) – Number of layers in the RNN.</p></li>
+<li><p><strong>bidirectional</strong> (<em>int</em>) – Whether the RNN is bidirectional.</p></li>
+<li><p><strong>dropout</strong> (<em>float</em>) – Amount of dropout to be used between layers of RNN.</p></li>
+<li><p><strong>embedding_size</strong> (<em>int</em>) – Embedding dimensionality of the deep clustering network.</p></li>
+<li><p><strong>embedding_activation</strong> (<em>list of str</em>) – Activation of the embedding (‘sigmoid’, ‘softmax’, etc.).
+See <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules.Embedding</span></code>.</p></li>
+<li><p><strong>num_audio_channels</strong> (<em>int</em>) – Number of audio channels in input (e.g. mono or stereo).
+Defaults to 1.</p></li>
+<li><p><strong>rnn_type</strong> (<em>str</em><em>, </em><em>optional</em>) – RNN type, either ‘lstm’ or ‘gru’. Defaults to ‘lstm’.</p></li>
+<li><p><strong>normalization_class</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of normalization to apply, either
+‘InstanceNorm’ or ‘BatchNorm’. Defaults to ‘BatchNorm’.</p></li>
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the input dictionary that contains
+the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A recurrent deep clustering network configuration that can be passed to</dt><dd><p>SeparationModel.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.networks.builders.build_recurrent_mask_inference">
+<code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_recurrent_mask_inference</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">mask_activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">normalization_class='BatchNorm'</em>, <em class="sig-param">mix_key='mix_magnitude'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_recurrent_mask_inference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_recurrent_mask_inference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a config for a mask inference network that can be passed to
+SeparationModel. This mask inference network uses a recurrent neural network (RNN)
+to process the input representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_features</strong> (<em>int</em>) – Number of features in the input spectrogram (usually means
+window length of STFT // 2 + 1.)</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – Hidden size of the RNN.</p></li>
+<li><p><strong>num_layers</strong> (<em>int</em>) – Number of layers in the RNN.</p></li>
+<li><p><strong>bidirectional</strong> (<em>int</em>) – Whether the RNN is bidirectional.</p></li>
+<li><p><strong>dropout</strong> (<em>float</em>) – Amount of dropout to be used between layers of RNN.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to create masks for.</p></li>
+<li><p><strong>mask_activation</strong> (<em>list of str</em>) – Activation of the mask (‘sigmoid’, ‘softmax’, etc.).
+See <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules.Embedding</span></code>.</p></li>
+<li><p><strong>num_audio_channels</strong> (<em>int</em>) – Number of audio channels in input (e.g. mono or stereo).
+Defaults to 1.</p></li>
+<li><p><strong>rnn_type</strong> (<em>str</em><em>, </em><em>optional</em>) – RNN type, either ‘lstm’ or ‘gru’. Defaults to ‘lstm’.</p></li>
+<li><p><strong>normalization_class</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of normalization to apply, either
+‘InstanceNorm’ or ‘BatchNorm’. Defaults to ‘BatchNorm’.</p></li>
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the input dictionary that contains
+the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A recurrent mask inference network configuration that can be passed to</dt><dd><p>SeparationModel.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="module-nussl.ml.train">
 <span id="training"></span><h2>Training<a class="headerlink" href="#module-nussl.ml.train" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="id1">
