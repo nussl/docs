@@ -1,0 +1,492 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>nussl.ml.networks.builders &mdash; nussl 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/theme_overrides.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home"> nussl
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../getting_started.html">Getting Started</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/examples.html">Examples</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API Documentation</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contribution Guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">nussl</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>nussl.ml.networks.builders</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for nussl.ml.networks.builders</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions that make it easy to build commonly used source separation architectures.</span>
+<span class="sd">Currently contains mask inference, deep clustering, and chimera networks that are</span>
+<span class="sd">based on recurrent neural networks. These functions are a good place to start when</span>
+<span class="sd">creating your own network toplogies. Since there can be dependencies between layers</span>
+<span class="sd">depending on input size, it&#39;s good to work this out in a function like those below.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="build_recurrent_mask_inference"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.builders.build_recurrent_mask_inference">[docs]</a><span class="k">def</span> <span class="nf">build_recurrent_mask_inference</span><span class="p">(</span><span class="n">num_features</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span>
+                                   <span class="n">dropout</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">,</span> <span class="n">mask_activation</span><span class="p">,</span> <span class="n">num_audio_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                   <span class="n">rnn_type</span><span class="o">=</span><span class="s1">&#39;lstm&#39;</span><span class="p">,</span> <span class="n">normalization_class</span><span class="o">=</span><span class="s1">&#39;BatchNorm&#39;</span><span class="p">,</span>
+                                   <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a config for a mask inference network that can be passed to </span>
+<span class="sd">    SeparationModel. This mask inference network uses a recurrent neural network (RNN)</span>
+<span class="sd">    to process the input representation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        num_features (int): Number of features in the input spectrogram (usually means</span>
+<span class="sd">          window length of STFT // 2 + 1.)</span>
+<span class="sd">        hidden_size (int): Hidden size of the RNN.</span>
+<span class="sd">        num_layers (int): Number of layers in the RNN.</span>
+<span class="sd">        bidirectional (int): Whether the RNN is bidirectional.</span>
+<span class="sd">        dropout (float): Amount of dropout to be used between layers of RNN.</span>
+<span class="sd">        num_sources (int): Number of sources to create masks for. </span>
+<span class="sd">        mask_activation (list of str): Activation of the mask (&#39;sigmoid&#39;, &#39;softmax&#39;, etc.). </span>
+<span class="sd">          See ``nussl.ml.networks.modules.Embedding``. </span>
+<span class="sd">        num_audio_channels (int): Number of audio channels in input (e.g. mono or stereo).</span>
+<span class="sd">          Defaults to 1.</span>
+<span class="sd">        rnn_type (str, optional): RNN type, either &#39;lstm&#39; or &#39;gru&#39;. Defaults to &#39;lstm&#39;.</span>
+<span class="sd">        normalization_class (str, optional): Type of normalization to apply, either</span>
+<span class="sd">          &#39;InstanceNorm&#39; or &#39;BatchNorm&#39;. Defaults to &#39;BatchNorm&#39;.</span>
+<span class="sd">        mix_key (str, optional): The key to look for in the input dictionary that contains</span>
+<span class="sd">          the mixture spectrogram. Defaults to &#39;mix_magnitude&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A recurrent mask inference network configuration that can be passed to</span>
+<span class="sd">          SeparationModel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># define the building blocks</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">mix_key</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s1">&#39;log_spectrogram&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;AmplitudeToDB&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;normalization&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="n">normalization_class</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;recurrent_stack&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;RecurrentStack&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_features&#39;</span><span class="p">:</span> <span class="n">num_features</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_size&#39;</span><span class="p">:</span> <span class="n">hidden_size</span><span class="p">,</span>
+                <span class="s1">&#39;num_layers&#39;</span><span class="p">:</span> <span class="n">num_layers</span><span class="p">,</span>
+                <span class="s1">&#39;bidirectional&#39;</span><span class="p">:</span> <span class="n">bidirectional</span><span class="p">,</span>
+                <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="n">dropout</span><span class="p">,</span>
+                <span class="s1">&#39;rnn_type&#39;</span><span class="p">:</span> <span class="n">rnn_type</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;mask&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;Embedding&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_features&#39;</span><span class="p">:</span> <span class="n">num_features</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_size&#39;</span><span class="p">:</span> <span class="n">hidden_size</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="n">hidden_size</span><span class="p">,</span>
+                <span class="s1">&#39;embedding_size&#39;</span><span class="p">:</span> <span class="n">num_sources</span><span class="p">,</span>
+                <span class="s1">&#39;activation&#39;</span><span class="p">:</span> <span class="n">mask_activation</span><span class="p">,</span>
+                <span class="s1">&#39;num_audio_channels&#39;</span><span class="p">:</span> <span class="n">num_audio_channels</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;Mask&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="c1"># define the topology</span>
+    <span class="n">connections</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="s1">&#39;log_spectrogram&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">mix_key</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;normalization&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;log_spectrogram&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;recurrent_stack&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;normalization&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;recurrent_stack&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">,</span> <span class="n">mix_key</span><span class="p">]]</span>
+    <span class="p">]</span>
+
+    <span class="c1"># define the outputs</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+
+    <span class="c1"># put it together</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="n">modules</span><span class="p">,</span>
+        <span class="s1">&#39;connections&#39;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span>
+        <span class="s1">&#39;output&#39;</span><span class="p">:</span> <span class="n">output</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="build_recurrent_dpcl"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.builders.build_recurrent_dpcl">[docs]</a><span class="k">def</span> <span class="nf">build_recurrent_dpcl</span><span class="p">(</span><span class="n">num_features</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span>
+                         <span class="n">dropout</span><span class="p">,</span> <span class="n">embedding_size</span><span class="p">,</span> <span class="n">embedding_activation</span><span class="p">,</span> <span class="n">num_audio_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                         <span class="n">rnn_type</span><span class="o">=</span><span class="s1">&#39;lstm&#39;</span><span class="p">,</span>
+                         <span class="n">normalization_class</span><span class="o">=</span><span class="s1">&#39;BatchNorm&#39;</span><span class="p">,</span> <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a config for a deep clustering network that can be passed to </span>
+<span class="sd">    SeparationModel. This deep clustering network uses a recurrent neural network (RNN)</span>
+<span class="sd">    to process the input representation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        num_features (int): Number of features in the input spectrogram (usually means</span>
+<span class="sd">          window length of STFT // 2 + 1.)</span>
+<span class="sd">        hidden_size (int): Hidden size of the RNN.</span>
+<span class="sd">        num_layers (int): Number of layers in the RNN.</span>
+<span class="sd">        bidirectional (int): Whether the RNN is bidirectional.</span>
+<span class="sd">        dropout (float): Amount of dropout to be used between layers of RNN.</span>
+<span class="sd">        embedding_size (int): Embedding dimensionality of the deep clustering network. </span>
+<span class="sd">        embedding_activation (list of str): Activation of the embedding (&#39;sigmoid&#39;, &#39;softmax&#39;, etc.). </span>
+<span class="sd">          See ``nussl.ml.networks.modules.Embedding``. </span>
+<span class="sd">        num_audio_channels (int): Number of audio channels in input (e.g. mono or stereo).</span>
+<span class="sd">          Defaults to 1.</span>
+<span class="sd">        rnn_type (str, optional): RNN type, either &#39;lstm&#39; or &#39;gru&#39;. Defaults to &#39;lstm&#39;.</span>
+<span class="sd">        normalization_class (str, optional): Type of normalization to apply, either</span>
+<span class="sd">          &#39;InstanceNorm&#39; or &#39;BatchNorm&#39;. Defaults to &#39;BatchNorm&#39;.</span>
+<span class="sd">        mix_key (str, optional): The key to look for in the input dictionary that contains</span>
+<span class="sd">          the mixture spectrogram. Defaults to &#39;mix_magnitude&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A recurrent deep clustering network configuration that can be passed to</span>
+<span class="sd">          SeparationModel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># define the building blocks</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">mix_key</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s1">&#39;log_spectrogram&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;AmplitudeToDB&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;normalization&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="n">normalization_class</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;recurrent_stack&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;RecurrentStack&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_features&#39;</span><span class="p">:</span> <span class="n">num_features</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_size&#39;</span><span class="p">:</span> <span class="n">hidden_size</span><span class="p">,</span>
+                <span class="s1">&#39;num_layers&#39;</span><span class="p">:</span> <span class="n">num_layers</span><span class="p">,</span>
+                <span class="s1">&#39;bidirectional&#39;</span><span class="p">:</span> <span class="n">bidirectional</span><span class="p">,</span>
+                <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="n">dropout</span><span class="p">,</span>
+                <span class="s1">&#39;rnn_type&#39;</span><span class="p">:</span> <span class="n">rnn_type</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;embedding&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;Embedding&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_features&#39;</span><span class="p">:</span> <span class="n">num_features</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_size&#39;</span><span class="p">:</span> <span class="n">hidden_size</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="n">hidden_size</span><span class="p">,</span>
+                <span class="s1">&#39;embedding_size&#39;</span><span class="p">:</span> <span class="n">embedding_size</span><span class="p">,</span>
+                <span class="s1">&#39;activation&#39;</span><span class="p">:</span> <span class="n">embedding_activation</span><span class="p">,</span>
+                <span class="s1">&#39;num_audio_channels&#39;</span><span class="p">:</span> <span class="n">num_audio_channels</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="c1"># define the topology</span>
+    <span class="n">connections</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="s1">&#39;log_spectrogram&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;normalization&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;log_spectrogram&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;recurrent_stack&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;normalization&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;embedding&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;recurrent_stack&#39;</span><span class="p">,</span> <span class="p">]],</span>
+    <span class="p">]</span>
+
+    <span class="c1"># define the outputs</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;embedding&#39;</span><span class="p">]</span>
+
+    <span class="c1"># put it together</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="n">modules</span><span class="p">,</span>
+        <span class="s1">&#39;connections&#39;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span>
+        <span class="s1">&#39;output&#39;</span><span class="p">:</span> <span class="n">output</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="build_recurrent_chimera"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.builders.build_recurrent_chimera">[docs]</a><span class="k">def</span> <span class="nf">build_recurrent_chimera</span><span class="p">(</span><span class="n">num_features</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">bidirectional</span><span class="p">,</span>
+                            <span class="n">dropout</span><span class="p">,</span> <span class="n">embedding_size</span><span class="p">,</span> <span class="n">embedding_activation</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">,</span>
+                            <span class="n">mask_activation</span><span class="p">,</span>
+                            <span class="n">num_audio_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rnn_type</span><span class="o">=</span><span class="s1">&#39;lstm&#39;</span><span class="p">,</span> <span class="n">normalization_class</span><span class="o">=</span><span class="s1">&#39;BatchNorm&#39;</span><span class="p">,</span>
+                            <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds a config for a Chimera network that can be passed to SeparationModel. </span>
+<span class="sd">    Chimera networks are so-called because they have two &quot;heads&quot; which can be trained</span>
+<span class="sd">    via different loss functions. In traditional Chimera, one head is trained using a</span>
+<span class="sd">    deep clustering loss while the other is trained with a mask inference loss. </span>
+<span class="sd">    This Chimera network uses a recurrent neural network (RNN) to process the input </span>
+<span class="sd">    representation.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        num_features (int): Number of features in the input spectrogram (usually means</span>
+<span class="sd">          window length of STFT // 2 + 1.)</span>
+<span class="sd">        hidden_size (int): Hidden size of the RNN.</span>
+<span class="sd">        num_layers (int): Number of layers in the RNN.</span>
+<span class="sd">        bidirectional (int): Whether the RNN is bidirectional.</span>
+<span class="sd">        dropout (float): Amount of dropout to be used between layers of RNN.</span>
+<span class="sd">        embedding_size (int): Embedding dimensionality of the deep clustering network. </span>
+<span class="sd">        embedding_activation (list of str): Activation of the embedding (&#39;sigmoid&#39;, &#39;softmax&#39;, etc.). </span>
+<span class="sd">          See ``nussl.ml.networks.modules.Embedding``. </span>
+<span class="sd">        num_sources (int): Number of sources to create masks for. </span>
+<span class="sd">        mask_activation (list of str): Activation of the mask (&#39;sigmoid&#39;, &#39;softmax&#39;, etc.). </span>
+<span class="sd">          See ``nussl.ml.networks.modules.Embedding``. </span>
+<span class="sd">        num_audio_channels (int): Number of audio channels in input (e.g. mono or stereo).</span>
+<span class="sd">          Defaults to 1.</span>
+<span class="sd">        rnn_type (str, optional): RNN type, either &#39;lstm&#39; or &#39;gru&#39;. Defaults to &#39;lstm&#39;.</span>
+<span class="sd">          normalization_class (str, optional): Type of normalization to apply, either</span>
+<span class="sd">        &#39;InstanceNorm&#39; or &#39;BatchNorm&#39;. Defaults to &#39;BatchNorm&#39;.</span>
+<span class="sd">        mix_key (str, optional): The key to look for in the input dictionary that contains</span>
+<span class="sd">          the mixture spectrogram. Defaults to &#39;mix_magnitude&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: A recurrent Chimera network configuration that can be passed to</span>
+<span class="sd">          SeparationModel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># define the building blocks</span>
+    <span class="n">modules</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">mix_key</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s1">&#39;log_spectrogram&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;AmplitudeToDB&#39;</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;normalization&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="n">normalization_class</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;recurrent_stack&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;RecurrentStack&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_features&#39;</span><span class="p">:</span> <span class="n">num_features</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_size&#39;</span><span class="p">:</span> <span class="n">hidden_size</span><span class="p">,</span>
+                <span class="s1">&#39;num_layers&#39;</span><span class="p">:</span> <span class="n">num_layers</span><span class="p">,</span>
+                <span class="s1">&#39;bidirectional&#39;</span><span class="p">:</span> <span class="n">bidirectional</span><span class="p">,</span>
+                <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="n">dropout</span><span class="p">,</span>
+                <span class="s1">&#39;rnn_type&#39;</span><span class="p">:</span> <span class="n">rnn_type</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;embedding&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;Embedding&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_features&#39;</span><span class="p">:</span> <span class="n">num_features</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_size&#39;</span><span class="p">:</span> <span class="n">hidden_size</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="n">hidden_size</span><span class="p">,</span>
+                <span class="s1">&#39;embedding_size&#39;</span><span class="p">:</span> <span class="n">embedding_size</span><span class="p">,</span>
+                <span class="s1">&#39;activation&#39;</span><span class="p">:</span> <span class="n">embedding_activation</span><span class="p">,</span>
+                <span class="s1">&#39;num_audio_channels&#39;</span><span class="p">:</span> <span class="n">num_audio_channels</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;mask&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;Embedding&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;num_features&#39;</span><span class="p">:</span> <span class="n">num_features</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_size&#39;</span><span class="p">:</span> <span class="n">hidden_size</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="n">hidden_size</span><span class="p">,</span>
+                <span class="s1">&#39;embedding_size&#39;</span><span class="p">:</span> <span class="n">num_sources</span><span class="p">,</span>
+                <span class="s1">&#39;activation&#39;</span><span class="p">:</span> <span class="n">mask_activation</span><span class="p">,</span>
+                <span class="s1">&#39;num_audio_channels&#39;</span><span class="p">:</span> <span class="n">num_audio_channels</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;Mask&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="c1"># define the topology</span>
+    <span class="n">connections</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="s1">&#39;log_spectrogram&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;normalization&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;log_spectrogram&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;recurrent_stack&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;normalization&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;embedding&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;recurrent_stack&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;recurrent_stack&#39;</span><span class="p">,</span> <span class="p">]],</span>
+        <span class="p">[</span><span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;mask&#39;</span><span class="p">,</span> <span class="s1">&#39;mix_magnitude&#39;</span><span class="p">]]</span>
+    <span class="p">]</span>
+
+    <span class="c1"># define the outputs</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;embedding&#39;</span><span class="p">,</span> <span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;mask&#39;</span><span class="p">]</span>
+
+    <span class="c1"># put it together</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;modules&#39;</span><span class="p">:</span> <span class="n">modules</span><span class="p">,</span>
+        <span class="s1">&#39;connections&#39;</span><span class="p">:</span> <span class="n">connections</span><span class="p">,</span>
+        <span class="s1">&#39;output&#39;</span><span class="p">:</span> <span class="n">output</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">config</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Ethan Manilow, Prem Seetharaman
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -250,7 +250,7 @@
                     <span class="s2">&quot;Each key in loss dictionary must point to a dict!&quot;</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">val_key</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">val_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="s1">&#39;kwargs&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">val_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="s1">&#39;kwargs&#39;</span><span class="p">]:</span>
                     <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in loss_dictionary not in [&#39;weight&#39;, &#39;args&#39;, &#39;kwargs&#39;&quot;</span><span class="p">)</span>
 
@@ -307,7 +307,8 @@
 
         <span class="n">loss_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
         <span class="n">loss_</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-        <span class="n">engine</span><span class="o">.</span><span class="n">fire_event</span><span class="p">(</span><span class="n">BackwardsEvents</span><span class="o">.</span><span class="n">BACKWARDS_COMPLETED</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">engine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">engine</span><span class="o">.</span><span class="n">fire_event</span><span class="p">(</span><span class="n">BackwardsEvents</span><span class="o">.</span><span class="n">BACKWARDS_COMPLETED</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
         <span class="n">loss_</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">loss_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">loss_</span><span class="p">}</span>
 
