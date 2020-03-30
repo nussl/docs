@@ -8,3 +8,5 @@ Primitives
    REPET <repet.py>
    REPETSIM <repet_sim.py>
    Melodia <melodia.py>
+   TimbreClustering <timbre.py>
+   HPSS <hpss.py>
