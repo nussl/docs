@@ -2020,7 +2020,8 @@
     "deep mask estimation networks. Let's build our dataset\n",
     "again, this time *without* transforms, so we have access to\n",
     "the actual AudioSignal objects. Then let's instantiate the\n",
-    "separation algorithm and use to separate an item from the dataset."
+    "separation algorithm and use it to separate an item from the \n",
+    "dataset."
    ]
   },
   {
