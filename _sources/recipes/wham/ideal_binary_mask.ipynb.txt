@@ -12,8 +12,8 @@
     "as a notebook for documentation but can be run directly\n",
     "as a script in `docs/recipes/ideal_binary_mask.py`.\n",
     "\n",
-    "Setting up\n",
-    "----------"
+    "Imports\n",
+    "-------"
    ]
   },
   {
@@ -42,8 +42,8 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "Environment setup\n",
-    "-----------------\n",
+    "Setting up\n",
+    "----------\n",
     "\n",
     "Make sure to point `WHAM_ROOT` where you've actually\n",
     "built and saved the WHAM dataset."
