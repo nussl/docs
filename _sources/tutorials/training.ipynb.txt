@@ -917,7 +917,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 20,
+   "execution_count": 71,
    "metadata": {},
    "outputs": [
     {
@@ -926,7 +926,7 @@
        "dict_keys(['index', 'mix_magnitude', 'ideal_binary_mask', 'source_magnitudes', 'weights'])"
       ]
      },
-     "execution_count": 20,
+     "execution_count": 71,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -985,7 +985,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 22,
+   "execution_count": 73,
    "metadata": {},
    "outputs": [
     {
@@ -994,7 +994,7 @@
        "torch.Size([1, 251, 129, 1])"
       ]
      },
-     "execution_count": 22,
+     "execution_count": 73,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -1341,6 +1341,85 @@
    "source": [
     "The output is a dictionary with the `loss` item corresponding to the total\n",
     "(summed) loss and the other keys corresponding to the individual losses."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Custom loss functions ###\n",
+    "\n",
+    "Loss functions can be registered with the Closure in the same way that\n",
+    "modules are registered with SeparationModel:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 75,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "nussl.ml.train.loss contents:\n",
+      "CombinationInvariantLoss\n",
+      "DeepClusteringLoss\n",
+      "KLDivLoss\n",
+      "L1Loss\n",
+      "MSELoss\n",
+      "MeanDifference\n",
+      "PermutationInvariantLoss\n",
+      "SISDRLoss\n"
+     ]
+    }
+   ],
+   "source": [
+    "class MeanDifference(torch.nn.Module):\n",
+    "    DEFAULT_KEYS = {'estimates': 'input', 'source_magnitudes': 'target'}\n",
+    "    def __init__(self):\n",
+    "        super().__init__()\n",
+    "    \n",
+    "    def forward(self, input, target):\n",
+    "        return torch.abs(input.mean() - target.mean())\n",
+    "\n",
+    "nussl.ml.register_loss(MeanDifference)\n",
+    "print_existing_losses()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now this loss can be used in a closure:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 76,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "loss tensor(6.2003e-05, grad_fn=<AddBackward0>)\n",
+      "MeanDifference tensor(6.2003e-05, grad_fn=<AbsBackward>)\n"
+     ]
+    }
+   ],
+   "source": [
+    "loss_dictionary = {\n",
+    "    'MeanDifference': {}\n",
+    "}\n",
+    "\n",
+    "new_closure = nussl.ml.train.closures.Closure(loss_dictionary)\n",
+    "new_closure.losses\n",
+    "\n",
+    "output = model(item)\n",
+    "loss_output = new_closure.compute_loss(output, item)\n",
+    "for key, val in loss_output.items():\n",
+    "    print(key, val)"
    ]
   },
   {

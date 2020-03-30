@@ -102,6 +102,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#Handling-data">Handling data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#Closures-and-loss-functions">Closures and loss functions</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Loss-dictionary">Loss dictionary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Custom-loss-functions">Custom loss functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Optimizing-the-model">Optimizing the model</a></li>
 </ul>
 </li>
@@ -1110,7 +1111,7 @@ LLWMVJDIHKLLQSZYQFAM_player[containerID].playButton.click();});};LLWMVJDIHKLLQSZ
 </div>
 <p>Great! There’s 129 frequencies and 251 frames and 1 audio channel. To put it into our model though, we need the STFT in the right shape, and we also need some training data. Let’s use some of <em>nussl</em>’s transforms to do this. Specifically, we’ll use the <code class="docutils literal notranslate"><span class="pre">PhaseSensitiveSpectrumApproximation</span></code> and the <code class="docutils literal notranslate"><span class="pre">ToSeparationModel</span></code> transforms. We’ll also use the <code class="docutils literal notranslate"><span class="pre">MagnitudeWeights</span></code> transform in case we want to use deep clustering loss functions.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[71]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1130,7 +1131,7 @@ LLWMVJDIHKLLQSZYQFAM_player[containerID].playButton.click();});};LLWMVJDIHKLLQSZ
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[71]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1159,7 +1160,7 @@ torch.Size([251, 129, 1])
 </div>
 <p>We still need to add a batch dimension and make everything have float type though. So let’s do that for each key, if the key is a torch Tensor:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1172,7 +1173,7 @@ torch.Size([251, 129, 1])
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -1413,6 +1414,73 @@ L1Loss tensor(0.0024, grad_fn=&lt;L1LossBackward&gt;)
 </div>
 <p>The output is a dictionary with the <code class="docutils literal notranslate"><span class="pre">loss</span></code> item corresponding to the total (summed) loss and the other keys corresponding to the individual losses.</p>
 </div>
+<div class="section" id="Custom-loss-functions">
+<h3>Custom loss functions<a class="headerlink" href="#Custom-loss-functions" title="Permalink to this headline">¶</a></h3>
+<p>Loss functions can be registered with the Closure in the same way that modules are registered with SeparationModel:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[75]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">class</span> <span class="nc">MeanDifference</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">:</span> <span class="s1">&#39;target&#39;</span><span class="p">}</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="nb">input</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="n">target</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+<span class="n">nussl</span><span class="o">.</span><span class="n">ml</span><span class="o">.</span><span class="n">register_loss</span><span class="p">(</span><span class="n">MeanDifference</span><span class="p">)</span>
+<span class="n">print_existing_losses</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+nussl.ml.train.loss contents:
+CombinationInvariantLoss
+DeepClusteringLoss
+KLDivLoss
+L1Loss
+MSELoss
+MeanDifference
+PermutationInvariantLoss
+SISDRLoss
+</pre></div></div>
+</div>
+<p>Now this loss can be used in a closure:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">loss_dictionary</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;MeanDifference&#39;</span><span class="p">:</span> <span class="p">{}</span>
+<span class="p">}</span>
+
+<span class="n">new_closure</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">ml</span><span class="o">.</span><span class="n">train</span><span class="o">.</span><span class="n">closures</span><span class="o">.</span><span class="n">Closure</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
+<span class="n">new_closure</span><span class="o">.</span><span class="n">losses</span>
+
+<span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+<span class="n">loss_output</span> <span class="o">=</span> <span class="n">new_closure</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">loss_output</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+loss tensor(6.2003e-05, grad_fn=&lt;AddBackward0&gt;)
+MeanDifference tensor(6.2003e-05, grad_fn=&lt;AbsBackward&gt;)
+</pre></div></div>
+</div>
+</div>
 <div class="section" id="Optimizing-the-model">
 <h3>Optimizing the model<a class="headerlink" href="#Optimizing-the-model" title="Permalink to this headline">¶</a></h3>
 <p>We now have a loss. We can then put it backwards through the model and take a step forward on the model with an optimizer. Let’s define an optimizer (we’ll use Adam), and then use it to take a step on the model:</p>
@@ -1523,7 +1591,7 @@ Args:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_training_76_0.png" src="../_images/tutorials_training_76_0.png" />
+<img alt="../_images/tutorials_training_80_0.png" src="../_images/tutorials_training_80_0.png" />
 </div>
 </div>
 <p>Note that there is also a <code class="docutils literal notranslate"><span class="pre">ValidationClosure</span></code> which does not take an optimization step but only computes the loss.</p>
@@ -1556,21 +1624,21 @@ Args:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_training_78_0.png" src="../_images/tutorials_training_78_0.png" />
+<img alt="../_images/tutorials_training_82_0.png" src="../_images/tutorials_training_82_0.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_training_78_1.png" src="../_images/tutorials_training_78_1.png" />
+<img alt="../_images/tutorials_training_82_1.png" src="../_images/tutorials_training_82_1.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_training_78_2.png" src="../_images/tutorials_training_78_2.png" />
+<img alt="../_images/tutorials_training_82_2.png" src="../_images/tutorials_training_82_2.png" />
 </div>
 </div>
 <p>We’ve now overfit the model to a single item in the dataset. Now, let’s do it at scale by using ignite Engines with the functionality in <code class="docutils literal notranslate"><span class="pre">nussl.ml.train</span></code>.</p>
@@ -1721,7 +1789,7 @@ State:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_training_85_0.png" src="../_images/tutorials_training_85_0.png" />
+<img alt="../_images/tutorials_training_89_0.png" src="../_images/tutorials_training_89_0.png" />
 </div>
 </div>
 <p>Let’s also see what got saved in the output folder:</p>
@@ -1849,7 +1917,7 @@ trainer.state.epoch_history: {&#39;validation/loss&#39;: [0.0010815734800416975]
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_training_97_0.png" src="../_images/tutorials_training_97_0.png" />
+<img alt="../_images/tutorials_training_101_0.png" src="../_images/tutorials_training_101_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
