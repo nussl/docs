@@ -248,6 +248,7 @@ OMITTED_TRANSFORMS = (
                 self.audio_signal.resample(self.metadata[&#39;sample_rate&#39;])
 
         self.audio_signal.stft_params = self.metadata[&#39;stft_params&#39;]
+        self._preprocess_audio_signal()
 
         data = {&#39;mix&#39;: self.audio_signal}
         data = self.transform(data)
