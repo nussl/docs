@@ -163,102 +163,103 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.base.deep_mixin</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span></span>import torch
 
-<span class="kn">from</span> <span class="nn">...ml</span> <span class="kn">import</span> <span class="n">SeparationModel</span>
-<span class="kn">from</span> <span class="nn">...datasets</span> <span class="kn">import</span> <span class="n">transforms</span> <span class="k">as</span> <span class="n">tfm</span>
+from ...ml import SeparationModel
+from ...datasets import transforms as tfm
 
-<span class="n">OMITTED_TRANSFORMS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">tfm</span><span class="o">.</span><span class="n">GetExcerpt</span><span class="p">,</span>
-    <span class="n">tfm</span><span class="o">.</span><span class="n">MagnitudeWeights</span><span class="p">,</span>
-    <span class="n">tfm</span><span class="o">.</span><span class="n">SumSources</span><span class="p">,</span>
-    <span class="n">tfm</span><span class="o">.</span><span class="n">Cache</span>
-<span class="p">)</span>
+OMITTED_TRANSFORMS = (
+    tfm.GetExcerpt,
+    tfm.MagnitudeWeights,
+    tfm.SumSources,
+    tfm.Cache
+)
 
 
-<div class="viewcode-block" id="DeepMixin"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.DeepMixin">[docs]</a><span class="k">class</span> <span class="nc">DeepMixin</span><span class="p">:</span>
-<div class="viewcode-block" id="DeepMixin.load_model"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.DeepMixin.load_model">[docs]</a>    <span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Loads the model at specified path `model_path`. Uses GPU if</span>
-<span class="sd">        available.</span>
+<div class="viewcode-block" id="DeepMixin"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.DeepMixin">[docs]</a>class DeepMixin:
+<div class="viewcode-block" id="DeepMixin.load_model"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.DeepMixin.load_model">[docs]</a>    def load_model(self, model_path, device=&#39;cpu&#39;):
+        &quot;&quot;&quot;
+        Loads the model at specified path `model_path`. Uses GPU if
+        available.
 
-<span class="sd">        Args:</span>
-<span class="sd">            model_path (str): path to model saved as SeparatonModel.</span>
-<span class="sd">            device (str or torch.Device): loads model on CPU or GPU. Defaults to</span>
-<span class="sd">              &#39;cuda&#39;.</span>
+        Args:
+            model_path (str): path to model saved as SeparatonModel.
+            device (str or torch.Device): loads model on CPU or GPU. Defaults to
+              &#39;cuda&#39;.
 
-<span class="sd">        Returns:</span>
-<span class="sd">            model (SeparationModel): Loaded model, nn.Module</span>
-<span class="sd">            metadata (dict): metadata associated with model, used for making</span>
-<span class="sd">            the input data into the model.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">model_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">SeparationModel</span><span class="p">(</span><span class="n">model_dict</span><span class="p">[</span><span class="s1">&#39;config&#39;</span><span class="p">])</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">model_dict</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">])</span>
+        Returns:
+            model (SeparationModel): Loaded model, nn.Module
+            metadata (dict): metadata associated with model, used for making
+            the input data into the model.
+        &quot;&quot;&quot;
+        model_dict = torch.load(model_path, map_location=&#39;cpu&#39;)
+        model = SeparationModel(model_dict[&#39;config&#39;])
+        model.load_state_dict(model_dict[&#39;state_dict&#39;])
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-            <span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+        if not torch.cuda.is_available():
+            device = &#39;cpu&#39;
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        self.device = device
 
-        <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-        <span class="n">metadata</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;metadata&#39;</span> <span class="ow">in</span> <span class="n">model_dict</span> <span class="k">else</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_transforms</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;transforms&#39;</span><span class="p">])</span></div>
+        model = model.to(device).eval()
+        metadata = model_dict[&#39;metadata&#39;] if &#39;metadata&#39; in model_dict else {}
+        self.model = model
+        self.config = model_dict[&#39;config&#39;]
+        self.metadata = metadata
+        self.transform = self._get_transforms(
+            self.metadata[&#39;transforms&#39;])</div>
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_get_transforms</span><span class="p">(</span><span class="n">loaded_tfm</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Look through the loaded transforms and omits any that are in </span>
-<span class="sd">        `OMITTED_TRANSFORMS`.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            loaded_tfm (Transform): A Transform from `nussl.datasets.transforms`.</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            Transform: If the transform was a Compose, this returns a new Compose that</span>
-<span class="sd">              omits the transforms listed in `OMITTED_TRANSFORMS`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loaded_tfm</span><span class="p">,</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Compose</span><span class="p">):</span>
-            <span class="n">transform</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">_tfm</span> <span class="ow">in</span> <span class="n">loaded_tfm</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_tfm</span><span class="p">,</span> <span class="n">OMITTED_TRANSFORMS</span><span class="p">):</span>
-                    <span class="n">transform</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_tfm</span><span class="p">)</span>
-            <span class="n">transform</span> <span class="o">=</span> <span class="n">tfm</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loaded_tfm</span><span class="p">,</span> <span class="n">OMITTED_TRANSFORMS</span><span class="p">):</span>
-                <span class="n">transform</span> <span class="o">=</span> <span class="n">loaded_tfm</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">transform</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">transform</span>
+    @staticmethod
+    def _get_transforms(loaded_tfm):
+        &quot;&quot;&quot;
+        Look through the loaded transforms and omits any that are in 
+        `OMITTED_TRANSFORMS`.
+        
+        Args:
+            loaded_tfm (Transform): A Transform from `nussl.datasets.transforms`.
+        
+        Returns:
+            Transform: If the transform was a Compose, this returns a new Compose that
+              omits the transforms listed in `OMITTED_TRANSFORMS`.
+        &quot;&quot;&quot;
+        if isinstance(loaded_tfm, tfm.Compose):
+            transform = []
+            for _tfm in loaded_tfm.transforms:
+                if not isinstance(_tfm, OMITTED_TRANSFORMS):
+                    transform.append(_tfm)
+            transform = tfm.Compose(transform)
+        else:
+            if not isinstance(loaded_tfm, OMITTED_TRANSFORMS):
+                transform = loaded_tfm
+            else:
+                transform = None
+        return transform
 
-    <span class="k">def</span> <span class="nf">_get_input_data_for_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets up the audio signal with the appropriate STFT parameters and runs it</span>
-<span class="sd">        through the transform found in the metadata.</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            dict: Data dictionary to pass into the model.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;sample_rate&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;sample_rate&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;sample_rate&#39;</span><span class="p">])</span>
+    def _get_input_data_for_model(self):
+        &quot;&quot;&quot;
+        Sets up the audio signal with the appropriate STFT parameters and runs it
+        through the transform found in the metadata.
+        
+        Returns:
+            dict: Data dictionary to pass into the model.
+        &quot;&quot;&quot;
+        if self.metadata[&#39;sample_rate&#39;] is not None:
+            if self.audio_signal.sample_rate != self.metadata[&#39;sample_rate&#39;]:
+                self.audio_signal.resample(self.metadata[&#39;sample_rate&#39;])
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;stft_params&#39;</span><span class="p">]</span>
+        self.audio_signal.stft_params = self.metadata[&#39;stft_params&#39;]
 
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;mix&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">}</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        data = {&#39;mix&#39;: self.audio_signal}
+        data = self.transform(data)
 
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
-                <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;num_channels&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c1"># then each channel is processed indep</span>
-                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input_data</span> <span class="o">=</span> <span class="n">data</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_data</span></div>
+        for key in data:
+            if torch.is_tensor(data[key]):
+                data[key] = data[key].unsqueeze(0).to(self.device).float()
+                if self.metadata[&#39;num_channels&#39;] == 1:
+                    # then each channel is processed indep
+                    data[key] = data[key].transpose(0, -1)
+        self.input_data = data
+        return self.input_data</div>
 </pre></div>
 
            </div>

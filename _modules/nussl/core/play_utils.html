@@ -163,150 +163,150 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.core.play_utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">These are optional utilities included in nussl that allow one to embed an AudioSignal</span>
-<span class="sd">as a playable object in a Jupyter notebook, or to play audio from</span>
-<span class="sd">the terminal.</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
-<span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">from</span> <span class="nn">tempfile</span> <span class="kn">import</span> <span class="n">NamedTemporaryFile</span>
+<span></span>&quot;&quot;&quot;
+These are optional utilities included in nussl that allow one to embed an AudioSignal
+as a playable object in a Jupyter notebook, or to play audio from
+the terminal.
+&quot;&quot;&quot;
+from copy import deepcopy
+import subprocess
+from tempfile import NamedTemporaryFile
 
-<span class="kn">import</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">string</span>
-<span class="kn">import</span> <span class="nn">importlib.resources</span> <span class="k">as</span> <span class="nn">pkg_resources</span>
+import random, string
+import importlib.resources as pkg_resources
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">templates</span>
+from . import templates
 
-<span class="n">multitrack_template</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">templates</span><span class="p">,</span> <span class="s1">&#39;multitrack.html&#39;</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">_check_imports</span><span class="p">():</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">ffmpy</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="n">ffmpy</span> <span class="o">=</span> <span class="kc">False</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">IPython</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s1">&#39;IPython must be installed in order to use this function!&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ffmpy</span><span class="p">,</span> <span class="n">IPython</span>
+multitrack_template = pkg_resources.read_text(templates, &#39;multitrack.html&#39;)
 
 
-<div class="viewcode-block" id="embed_audio"><a class="viewcode-back" href="../../../core.html#nussl.core.play_utils.embed_audio">[docs]</a><span class="k">def</span> <span class="nf">embed_audio</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;.mp3&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Write a numpy array to a temporary mp3 file using ffmpy, then embeds the mp3</span>
-<span class="sd">    into the notebook.</span>
+def _check_imports():
+    try:
+        import ffmpy
+    except:
+        ffmpy = False
 
-<span class="sd">    Args:</span>
-<span class="sd">        audio_signal (AudioSignal): AudioSignal object containing the data.</span>
-<span class="sd">        ext (str): What extension to use when embedding. &#39;.mp3&#39; is more lightweight </span>
-<span class="sd">          leading to smaller notebook sizes. Defaults to &#39;.mp3&#39;.</span>
-<span class="sd">        display (bool): Whether or not to display the object immediately, or to return</span>
-<span class="sd">          the html object for display later by the end user. Defaults to True.</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; import nussl</span>
-<span class="sd">        &gt;&gt;&gt; audio_file = nussl.efz_utils.download_audio_file(&#39;schoolboy_fascination_excerpt.wav&#39;)</span>
-<span class="sd">        &gt;&gt;&gt; audio_signal = nussl.AudioSignal(audio_file)</span>
-<span class="sd">        &gt;&gt;&gt; audio_signal.embed_audio()</span>
-
-<span class="sd">    This will show a little audio player where you can play the audio inline in </span>
-<span class="sd">    the notebook.      </span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">audio_signal</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">)</span>
-    <span class="n">ffmpy</span><span class="p">,</span> <span class="n">IPython</span> <span class="o">=</span> <span class="n">_check_imports</span><span class="p">()</span>
-    <span class="n">sr</span> <span class="o">=</span> <span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span>
-
-    <span class="n">tmp_wav</span> <span class="o">=</span> <span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w+&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.wav&#39;</span><span class="p">)</span>
-    <span class="n">audio_signal</span><span class="o">.</span><span class="n">write_audio_to_file</span><span class="p">(</span><span class="n">tmp_wav</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">ext</span> <span class="o">!=</span> <span class="s1">&#39;.wav&#39;</span> <span class="ow">and</span> <span class="n">ffmpy</span><span class="p">:</span>
-        <span class="n">tmp_converted</span> <span class="o">=</span> <span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w+&#39;</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="n">ext</span><span class="p">)</span>
-        <span class="n">ff</span> <span class="o">=</span> <span class="n">ffmpy</span><span class="o">.</span><span class="n">FFmpeg</span><span class="p">(</span>
-            <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="n">tmp_wav</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span>
-            <span class="n">outputs</span><span class="o">=</span><span class="p">{</span><span class="n">tmp_converted</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="s1">&#39;-write_xing 0 -codec:a libmp3lame -b:a 128k -y&#39;</span><span class="p">})</span>
-        <span class="n">ff</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">tmp_converted</span> <span class="o">=</span> <span class="n">tmp_wav</span>
-
-    <span class="n">audio_element</span> <span class="o">=</span> <span class="n">IPython</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">Audio</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">tmp_converted</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="n">sr</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
-        <span class="n">IPython</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">audio_element</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">ext</span> <span class="o">!=</span> <span class="s1">&#39;.wav&#39;</span><span class="p">:</span>
-        <span class="n">tmp_converted</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="n">tmp_wav</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">audio_element</span></div>
+    try:
+        import IPython
+    except:
+        raise ImportError(&#39;IPython must be installed in order to use this function!&#39;)
+    return ffmpy, IPython
 
 
-<div class="viewcode-block" id="multitrack"><a class="viewcode-back" href="../../../core.html#nussl.core.play_utils.multitrack">[docs]</a><span class="k">def</span> <span class="nf">multitrack</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="s1">&#39;.mp3&#39;</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes a bunch of audio sources, converts them to mp3 to make them smaller, and</span>
-<span class="sd">    creates a multitrack audio player in the notebook that lets you</span>
-<span class="sd">    toggle between the sources and the mixture. Heavily adapted</span>
-<span class="sd">    from https://github.com/binarymind/multitrackHTMLPlayer,</span>
-<span class="sd">    designed by Bastien Liutkus.</span>
+<div class="viewcode-block" id="embed_audio"><a class="viewcode-back" href="../../../core.html#nussl.core.play_utils.embed_audio">[docs]</a>def embed_audio(audio_signal, ext=&#39;.mp3&#39;, display=True):
+    &quot;&quot;&quot;
+    Write a numpy array to a temporary mp3 file using ffmpy, then embeds the mp3
+    into the notebook.
 
-<span class="sd">    Args:</span>
-<span class="sd">        audio_signals (list): List of AudioSignal objects that add up to the mixture.</span>
-<span class="sd">        names (list): List of names to give to each object (e.g. foreground, background).</span>
-<span class="sd">        ext (str): What extension to use when embedding. &#39;.mp3&#39; is more lightweight</span>
-<span class="sd">          leading to smaller notebook sizes.</span>
-<span class="sd">        display (bool): Whether or not to display the object immediately, or to return</span>
-<span class="sd">          the html object for display later by the end user.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ffmpy</span><span class="p">,</span> <span class="n">IPython</span> <span class="o">=</span> <span class="n">_check_imports</span><span class="p">()</span>
-    <span class="n">div_id</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_uppercase</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">))</span>
-    <span class="n">_names</span> <span class="o">=</span> <span class="kc">None</span>
+    Args:
+        audio_signal (AudioSignal): AudioSignal object containing the data.
+        ext (str): What extension to use when embedding. &#39;.mp3&#39; is more lightweight 
+          leading to smaller notebook sizes. Defaults to &#39;.mp3&#39;.
+        display (bool): Whether or not to display the object immediately, or to return
+          the html object for display later by the end user. Defaults to True.
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="n">_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">audio_signals</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="n">audio_signals</span> <span class="o">=</span> <span class="p">[</span><span class="n">audio_signals</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_names</span><span class="p">]</span>
+    Example:
+        &gt;&gt;&gt; import nussl
+        &gt;&gt;&gt; audio_file = nussl.efz_utils.download_audio_file(&#39;schoolboy_fascination_excerpt.wav&#39;)
+        &gt;&gt;&gt; audio_signal = nussl.AudioSignal(audio_file)
+        &gt;&gt;&gt; audio_signal.embed_audio()
 
-    <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;len(names) must be equal to len(audio_signals)!&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">names</span> <span class="o">=</span> <span class="n">_names</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">s</span><span class="o">.</span><span class="n">path_to_input_file</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">audio_signals</span><span class="p">)</span>
-            <span class="p">]</span>
+    This will show a little audio player where you can play the audio inline in 
+    the notebook.      
+    &quot;&quot;&quot;
+    audio_signal = deepcopy(audio_signal)
+    ffmpy, IPython = _check_imports()
+    sr = audio_signal.sample_rate
 
-    <span class="n">template</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;&lt;div id=</span><span class="si">{</span><span class="n">div_id</span><span class="si">}</span><span class="s2"> class=audio-container &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;preload=auto name=</span><span class="si">{</span><span class="n">div_id</span><span class="si">}</span><span class="s2">&gt;&quot;</span><span class="p">)</span>
+    tmp_wav = NamedTemporaryFile(mode=&#39;w+&#39;, suffix=&#39;.wav&#39;)
+    audio_signal.write_audio_to_file(tmp_wav.name)
+    if ext != &#39;.wav&#39; and ffmpy:
+        tmp_converted = NamedTemporaryFile(mode=&#39;w+&#39;, suffix=ext)
+        ff = ffmpy.FFmpeg(
+            inputs={tmp_wav.name: None},
+            outputs={tmp_converted.name: &#39;-write_xing 0 -codec:a libmp3lame -b:a 128k -y&#39;})
+        ff.run()
+    else:
+        tmp_converted = tmp_wav
 
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">audio_signals</span><span class="p">):</span>
-        <span class="n">encoded_audio</span> <span class="o">=</span> <span class="n">embed_audio</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">display</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">src_attr</span><span class="p">()</span>
-        <span class="n">audio_element</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;&lt;audio name=&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; url=</span><span class="si">{</span><span class="n">encoded_audio</span><span class="si">}</span><span class="s2">&gt;&lt;/audio&gt;&quot;</span><span class="p">)</span>
-        <span class="n">template</span> <span class="o">+=</span> <span class="n">audio_element</span>
-
-    <span class="n">template</span> <span class="o">+=</span> <span class="s2">&quot;&lt;/div&gt;&quot;</span>
-    <span class="n">template</span> <span class="o">+=</span> <span class="n">multitrack_template</span>
-    <span class="n">template</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;NAME&#39;</span><span class="p">,</span> <span class="n">div_id</span><span class="p">)</span>
-
-    <span class="n">html</span> <span class="o">=</span> <span class="n">IPython</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">HTML</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">display</span><span class="p">:</span>
-        <span class="n">IPython</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">html</span></div>
+    audio_element = IPython.display.Audio(data=tmp_converted.name, rate=sr)
+    if display:
+        IPython.display.display(audio_element)
+    if ext != &#39;.wav&#39;:
+        tmp_converted.close()
+    tmp_wav.close()
+    return audio_element</div>
 
 
-<div class="viewcode-block" id="play"><a class="viewcode-back" href="../../../core.html#nussl.core.play_utils.play">[docs]</a><span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="n">audio_signal</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Plays an audio signal if ffplay from the ffmpeg suite of tools is installed.</span>
-<span class="sd">    Otherwise, will fail. The audio signal is written to a temporary file</span>
-<span class="sd">    and then played with ffplay.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        audio_signal (AudioSignal): AudioSignal object to be played.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.wav&#39;</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp_wav</span><span class="p">:</span>
-        <span class="n">audio_signal</span><span class="o">.</span><span class="n">write_audio_to_file</span><span class="p">(</span><span class="n">tmp_wav</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="n">subprocess</span><span class="o">.</span><span class="n">call</span><span class="p">([</span><span class="s2">&quot;ffplay&quot;</span><span class="p">,</span> <span class="s2">&quot;-nodisp&quot;</span><span class="p">,</span> <span class="s2">&quot;-autoexit&quot;</span><span class="p">,</span> <span class="n">tmp_wav</span><span class="o">.</span><span class="n">name</span><span class="p">])</span></div>
+<div class="viewcode-block" id="multitrack"><a class="viewcode-back" href="../../../core.html#nussl.core.play_utils.multitrack">[docs]</a>def multitrack(audio_signals, names=None, ext=&#39;.mp3&#39;, display=True):
+    &quot;&quot;&quot;
+    Takes a bunch of audio sources, converts them to mp3 to make them smaller, and
+    creates a multitrack audio player in the notebook that lets you
+    toggle between the sources and the mixture. Heavily adapted
+    from https://github.com/binarymind/multitrackHTMLPlayer,
+    designed by Bastien Liutkus.
+
+    Args:
+        audio_signals (list): List of AudioSignal objects that add up to the mixture.
+        names (list): List of names to give to each object (e.g. foreground, background).
+        ext (str): What extension to use when embedding. &#39;.mp3&#39; is more lightweight
+          leading to smaller notebook sizes.
+        display (bool): Whether or not to display the object immediately, or to return
+          the html object for display later by the end user.
+    &quot;&quot;&quot;
+    ffmpy, IPython = _check_imports()
+    div_id = &#39;&#39;.join(random.choice(string.ascii_uppercase) for _ in range(20))
+    _names = None
+
+    if isinstance(audio_signals, dict):
+        _names = list(audio_signals.keys())
+        audio_signals = [audio_signals[k] for k in _names]
+
+    if names is not None:
+        if len(names) != len(audio_signals):
+            raise ValueError(&quot;len(names) must be equal to len(audio_signals)!&quot;)
+    else:
+        if _names is not None:
+            names = _names
+        else:
+            names = [
+                f&quot;{i}:{s.path_to_input_file}&quot;
+                for i, s in enumerate(audio_signals)
+            ]
+
+    template = (
+        f&quot;&lt;div id={div_id} class=audio-container &quot;
+        f&quot;preload=auto name={div_id}&gt;&quot;)
+
+    for name, signal in zip(names, audio_signals):
+        encoded_audio = embed_audio(signal, ext=ext, display=False).src_attr()
+        audio_element = (
+            f&quot;&lt;audio name=&#39;{name}&#39; url={encoded_audio}&gt;&lt;/audio&gt;&quot;)
+        template += audio_element
+
+    template += &quot;&lt;/div&gt;&quot;
+    template += multitrack_template
+    template = template.replace(&#39;NAME&#39;, div_id)
+
+    html = IPython.display.HTML(template)
+    if display:
+        IPython.display.display(html)
+    else:
+        return html</div>
+
+
+<div class="viewcode-block" id="play"><a class="viewcode-back" href="../../../core.html#nussl.core.play_utils.play">[docs]</a>def play(audio_signal):
+    &quot;&quot;&quot;
+    Plays an audio signal if ffplay from the ffmpeg suite of tools is installed.
+    Otherwise, will fail. The audio signal is written to a temporary file
+    and then played with ffplay.
+    
+    Args:
+        audio_signal (AudioSignal): AudioSignal object to be played.
+    &quot;&quot;&quot;
+    with NamedTemporaryFile(suffix=&#39;.wav&#39;, delete=True) as tmp_wav:
+        audio_signal.write_audio_to_file(tmp_wav.name)
+        subprocess.call([&quot;ffplay&quot;, &quot;-nodisp&quot;, &quot;-autoexit&quot;, tmp_wav.name])</div>
 </pre></div>
 
            </div>

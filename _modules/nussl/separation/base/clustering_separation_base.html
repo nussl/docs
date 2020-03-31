@@ -163,183 +163,183 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.base.clustering_separation_base</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span>import numpy as np
 
-<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">ml</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">SeparationException</span><span class="p">,</span> <span class="n">MaskSeparationBase</span>
-
-
-<span class="n">ALLOWED_CLUSTERING_TYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;KMeans&#39;</span><span class="p">,</span> <span class="s1">&#39;GaussianMixture&#39;</span><span class="p">,</span> <span class="s1">&#39;MiniBatchKMeans&#39;</span><span class="p">]</span>
+from ... import ml
+from . import SeparationException, MaskSeparationBase
 
 
-<div class="viewcode-block" id="ClusteringSeparationBase"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase">[docs]</a><span class="k">class</span> <span class="nc">ClusteringSeparationBase</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A base class for any clustering-based separation approach. Subclasses </span>
-<span class="sd">    of this class must implement just one function to use it: `extract_features`.</span>
-<span class="sd">    This function should uses the internal variables of the class to </span>
-<span class="sd">    extract the appropriate time-frequency features of the signal. These </span>
-<span class="sd">    time-frequency features will then be clustered by `cluster_features`. </span>
-<span class="sd">    Masks will then be produced by the run function and applied to the </span>
-<span class="sd">    audio signal to produce separated estimates.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal: (`AudioSignal`) An AudioSignal object containing the </span>
-<span class="sd">          mixture to be separated.</span>
-<span class="sd">          </span>
-<span class="sd">        num_sources (int): Number of sources to cluster the features of and separate</span>
-<span class="sd">          the mixture.</span>
+ALLOWED_CLUSTERING_TYPES = [&#39;KMeans&#39;, &#39;GaussianMixture&#39;, &#39;MiniBatchKMeans&#39;]
 
-<span class="sd">        clustering_type (str): One of &#39;KMeans&#39;, &#39;GaussianMixture&#39;, and &#39;MiniBatchKMeans&#39;.</span>
-<span class="sd">          The clustering approach to use on the features. Defaults to &#39;KMeans&#39;.</span>
 
-<span class="sd">        fit_clusterer (bool, optional): Whether or not to call fit on the clusterer.</span>
-<span class="sd">          If False, then the clusterer should already be fit for this to work. Defaults</span>
-<span class="sd">          to True.</span>
+<div class="viewcode-block" id="ClusteringSeparationBase"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase">[docs]</a>class ClusteringSeparationBase(MaskSeparationBase):
+    &quot;&quot;&quot;
+    A base class for any clustering-based separation approach. Subclasses 
+    of this class must implement just one function to use it: `extract_features`.
+    This function should uses the internal variables of the class to 
+    extract the appropriate time-frequency features of the signal. These 
+    time-frequency features will then be clustered by `cluster_features`. 
+    Masks will then be produced by the run function and applied to the 
+    audio signal to produce separated estimates.
+    
+    Args:
+        input_audio_signal: (`AudioSignal`) An AudioSignal object containing the 
+          mixture to be separated.
+          
+        num_sources (int): Number of sources to cluster the features of and separate
+          the mixture.
 
-<span class="sd">        percentile (int, optional): Percentile of time-frequency points to consider by loudness. </span>
-<span class="sd">          Audio spectrograms are very high dimensional, and louder points tend to </span>
-<span class="sd">          matter more than quieter points. By setting the percentile high, one can more</span>
-<span class="sd">          efficiently cluster an auditory scene by considering only points above</span>
-<span class="sd">          that threshold. Defaults to 90 (which means the top 10 percentile of </span>
-<span class="sd">          time-frequency points will be used for clustering).</span>
+        clustering_type (str): One of &#39;KMeans&#39;, &#39;GaussianMixture&#39;, and &#39;MiniBatchKMeans&#39;.
+          The clustering approach to use on the features. Defaults to &#39;KMeans&#39;.
 
-<span class="sd">        beta (float, optional): When using KMeans, we use soft KMeans, which has an additional </span>
-<span class="sd">          parameter `beta`. `beta` controls how soft the assignments are. As beta </span>
-<span class="sd">          increases, the assignments become more binary (either 0 or 1). Defaults to </span>
-<span class="sd">          5.0, a value discovered through cross-validation.</span>
+        fit_clusterer (bool, optional): Whether or not to call fit on the clusterer.
+          If False, then the clusterer should already be fit for this to work. Defaults
+          to True.
 
-<span class="sd">        mask_type (str, optional): Masking approach to use. Passed up to MaskSeparationBase.</span>
+        percentile (int, optional): Percentile of time-frequency points to consider by loudness. 
+          Audio spectrograms are very high dimensional, and louder points tend to 
+          matter more than quieter points. By setting the percentile high, one can more
+          efficiently cluster an auditory scene by considering only points above
+          that threshold. Defaults to 90 (which means the top 10 percentile of 
+          time-frequency points will be used for clustering).
 
-<span class="sd">        mask_threshold (float, optional): Threshold for masking. Passed up to MaskSeparationBase.</span>
+        beta (float, optional): When using KMeans, we use soft KMeans, which has an additional 
+          parameter `beta`. `beta` controls how soft the assignments are. As beta 
+          increases, the assignments become more binary (either 0 or 1). Defaults to 
+          5.0, a value discovered through cross-validation.
 
-<span class="sd">        **kwargs (dict, optional): Additional keyword arguments that are passed to the clustering</span>
-<span class="sd">          object (one of KMeans, GaussianMixture, or MiniBatchKMeans).</span>
-<span class="sd">    </span>
-<span class="sd">    Raises:</span>
-<span class="sd">        SeparationException: If clustering type is not one of the allowed ones, or if</span>
-<span class="sd">          the output of `extract_features` has the wrong shape according to the STFT</span>
-<span class="sd">          shape of the AudioSignal.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">,</span> <span class="n">clustering_type</span><span class="o">=</span><span class="s1">&#39;KMeans&#39;</span><span class="p">,</span> 
-                 <span class="n">fit_clusterer</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">percentile</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span>
-                 <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        mask_type (str, optional): Masking approach to use. Passed up to MaskSeparationBase.
 
-        <span class="k">if</span> <span class="n">clustering_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">ml</span><span class="o">.</span><span class="n">cluster</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;clustering_type = </span><span class="si">{</span><span class="n">clustering_type</span><span class="si">}</span><span class="s2"> not allowed!&quot;</span> 
-                <span class="sa">f</span><span class="s2">&quot;Use one of </span><span class="si">{</span><span class="n">ALLOWED_CLUSTERING_TYPES</span><span class="si">}</span><span class="s2">.&quot;</span>
-            <span class="p">)</span>
+        mask_threshold (float, optional): Threshold for masking. Passed up to MaskSeparationBase.
 
-        <span class="n">ClusterClass</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ml</span><span class="o">.</span><span class="n">cluster</span><span class="p">,</span> <span class="n">clustering_type</span><span class="p">)</span>
+        **kwargs (dict, optional): Additional keyword arguments that are passed to the clustering
+          object (one of KMeans, GaussianMixture, or MiniBatchKMeans).
+    
+    Raises:
+        SeparationException: If clustering type is not one of the allowed ones, or if
+          the output of `extract_features` has the wrong shape according to the STFT
+          shape of the AudioSignal.
+    &quot;&quot;&quot;
+    def __init__(self, input_audio_signal, num_sources, clustering_type=&#39;KMeans&#39;, 
+                 fit_clusterer=True, percentile=90, beta=5.0, mask_type=&#39;soft&#39;,
+                 mask_threshold=0.5, **kwargs):
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_sources</span> <span class="o">=</span> <span class="n">num_sources</span>
-        <span class="k">if</span> <span class="n">clustering_type</span> <span class="o">==</span> <span class="s1">&#39;GaussianMixture&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">clusterer</span> <span class="o">=</span> <span class="n">ClusterClass</span><span class="p">(</span><span class="n">n_components</span><span class="o">=</span><span class="n">num_sources</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">clusterer</span> <span class="o">=</span> <span class="n">ClusterClass</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="n">num_sources</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">clustering_type</span> <span class="o">=</span> <span class="n">clustering_type</span>
+        if clustering_type not in dir(ml.cluster):
+            raise SeparationException(
+                f&quot;clustering_type = {clustering_type} not allowed!&quot; 
+                f&quot;Use one of {ALLOWED_CLUSTERING_TYPES}.&quot;
+            )
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">percentile</span> <span class="o">=</span> <span class="n">percentile</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fit_clusterer</span> <span class="o">=</span> <span class="n">fit_clusterer</span>
+        ClusterClass = getattr(ml.cluster, clustering_type)
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">ClusteringSeparationBase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span>
-            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
-            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span>
-        <span class="p">)</span>
+        self.num_sources = num_sources
+        if clustering_type == &#39;GaussianMixture&#39;:
+            self.clusterer = ClusterClass(n_components=num_sources, **kwargs)
+        else:
+            self.clusterer = ClusterClass(n_clusters=num_sources, **kwargs)
+        self.clustering_type = clustering_type
 
-    <span class="k">def</span> <span class="nf">_preprocess_audio_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Preprocess the audio signal object - takes STFTs, sets features to None </span>
-<span class="sd">        (new audio signal means new features), finds the time frequency points above</span>
-<span class="sd">        the cutoff according to the percentile.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stft</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
+        self.percentile = percentile
+        self.features = None
+        self.beta = beta
+        self.fit_clusterer = fit_clusterer
 
-        <span class="c1"># get a cutoff using the percentile</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">percentile</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tf_point_over_cutoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span>
+        super(ClusteringSeparationBase, self).__init__(
+            input_audio_signal=input_audio_signal,
+            mask_type=mask_type,
+            mask_threshold=mask_threshold
+        )
 
-<div class="viewcode-block" id="ClusteringSeparationBase.extract_features"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.extract_features">[docs]</a>    <span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This function should be implemented by the subclass. It should extract</span>
-<span class="sd">        features. If the STFT shape is `(n_freq, n_time, n_chan)`, the output of this</span>
-<span class="sd">        function should be `(n_freq, n_time, n_chan, n_features)`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+    def _preprocess_audio_signal(self):
+        &quot;&quot;&quot;
+        Preprocess the audio signal object - takes STFTs, sets features to None 
+        (new audio signal means new features), finds the time frequency points above
+        the cutoff according to the percentile.
+        &quot;&quot;&quot;
+        self.features = None
+        self.stft = self.audio_signal.stft()
 
-<div class="viewcode-block" id="ClusteringSeparationBase.cluster_features"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.cluster_features">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">clusterer</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Clusters each time-frequency point according to features for each</span>
-<span class="sd">        time-frequency point. Features should be on the last axis.</span>
+        # get a cutoff using the percentile
+        self.cutoff = np.percentile(np.abs(self.stft), self.percentile)
+        self.tf_point_over_cutoff = np.abs(self.stft) &gt;= self.cutoff
 
-<span class="sd">        Features should come in in the shape:</span>
-<span class="sd">          `(..., n_features)`</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            features (np.ndarray): Features to cluster, for each time-frequency point.</span>
-<span class="sd">            clusterer (object): Clustering object to use.</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            np.ndarray: Responsibilities for each cluster for each time-frequency point. </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">features_to_fit</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">features_to_fit</span> <span class="o">=</span> <span class="n">features_to_fit</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tf_point_over_cutoff</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="p">:]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_clusterer</span><span class="p">:</span>
-            <span class="n">clusterer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">features_to_fit</span><span class="p">)</span>
-        <span class="n">responsibilities</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="viewcode-block" id="ClusteringSeparationBase.extract_features"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.extract_features">[docs]</a>    def extract_features(self):
+        &quot;&quot;&quot;
+        This function should be implemented by the subclass. It should extract
+        features. If the STFT shape is `(n_freq, n_time, n_chan)`, the output of this
+        function should be `(n_freq, n_time, n_chan, n_features)`.
+        &quot;&quot;&quot;
+        raise NotImplementedError()</div>
 
-        <span class="k">if</span> <span class="s1">&#39;KMeans&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clustering_type</span><span class="p">:</span>
-            <span class="n">distances</span> <span class="o">=</span> <span class="n">clusterer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
-            <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">*</span> <span class="n">distances</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span>
-            <span class="n">responsibilities</span> <span class="o">=</span> <span class="n">distances</span> <span class="o">/</span> <span class="n">distances</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="s1">&#39;GaussianMixture&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clustering_type</span><span class="p">:</span>
-            <span class="n">responsibilities</span> <span class="o">=</span> <span class="n">clusterer</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+<div class="viewcode-block" id="ClusteringSeparationBase.cluster_features"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.cluster_features">[docs]</a>    def cluster_features(self, features, clusterer):
+        &quot;&quot;&quot;
+        Clusters each time-frequency point according to features for each
+        time-frequency point. Features should be on the last axis.
 
-        <span class="n">responsibilities</span> <span class="o">=</span> <span class="n">responsibilities</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
-        <span class="k">return</span> <span class="n">responsibilities</span></div>
-
-<div class="viewcode-block" id="ClusteringSeparationBase.run"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Clusters the features using the chosen clustering algorithm.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            features (np.ndarray, optional): If features are given, then the </span>
-<span class="sd">              `extract_features` step will be skipped. Defaults to None (so</span>
-<span class="sd">              `extract_features` will be run.)</span>
-<span class="sd">        </span>
-<span class="sd">        Raises:</span>
-<span class="sd">            SeparationException: If features.shape doesn&#39;t match what is expected</span>
-<span class="sd">              in the STFT of the audio signal, an exception is raised.</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            list: List of Mask objects in self.result_masks.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">features</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_features</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;features.shape did not match stft shape along all but feature &quot;</span> 
-                <span class="sa">f</span><span class="s2">&quot;dimension! Got </span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">, expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-
-        <span class="n">responsibilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_features</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusterer</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">features</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">responsibilities</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">responsibilities</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">responsibilities</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">responsibilities</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        Features should come in in the shape:
+          `(..., n_features)`
         
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span></div></div>
+        Args:
+            features (np.ndarray): Features to cluster, for each time-frequency point.
+            clusterer (object): Clustering object to use.
+        
+        Returns:
+            np.ndarray: Responsibilities for each cluster for each time-frequency point. 
+        &quot;&quot;&quot;
+        shape = features.shape
+        features_to_fit = features.reshape(-1, shape[-1])
+        features_to_fit = features_to_fit[self.tf_point_over_cutoff.flatten(), :]
+        if self.fit_clusterer:
+            clusterer.fit(features_to_fit)
+        responsibilities = None
+
+        if &#39;KMeans&#39; in self.clustering_type:
+            distances = clusterer.transform(features.reshape(-1, shape[-1]))
+            distances = np.exp(-self.beta * distances) + 1e-8
+            responsibilities = distances / distances.sum(axis=-1, keepdims=True)
+        elif &#39;GaussianMixture&#39; in self.clustering_type:
+            responsibilities = clusterer.predict_proba(features.reshape(-1, shape[-1]))
+
+        responsibilities = responsibilities.reshape(shape[:-1] + (-1,))
+        return responsibilities</div>
+
+<div class="viewcode-block" id="ClusteringSeparationBase.run"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.run">[docs]</a>    def run(self, features=None):
+        &quot;&quot;&quot;
+        Clusters the features using the chosen clustering algorithm.
+        
+        Args:
+            features (np.ndarray, optional): If features are given, then the 
+              `extract_features` step will be skipped. Defaults to None (so
+              `extract_features` will be run.)
+        
+        Raises:
+            SeparationException: If features.shape doesn&#39;t match what is expected
+              in the STFT of the audio signal, an exception is raised.
+        
+        Returns:
+            list: List of Mask objects in self.result_masks.
+        &quot;&quot;&quot;
+        if features is None:
+            features = self.extract_features()
+
+        if features.shape[:-1] != self.stft.shape:
+            raise SeparationException(
+                f&quot;features.shape did not match stft shape along all but feature &quot; 
+                f&quot;dimension! Got {features.shape[:-1]}, expected {self.stft.shape}.&quot;)
+
+        responsibilities = self.cluster_features(features, self.clusterer)
+        self.features = features
+        self.result_masks = []
+
+        for i in range(responsibilities.shape[-1]):
+            mask_data = responsibilities[..., i]
+            if self.mask_type == self.MASKS[&#39;binary&#39;]:
+                mask_data = (
+                    responsibilities[..., i] == responsibilities.max(axis=-1))
+            mask = self.mask_type(mask_data)
+            self.result_masks.append(mask)
+        
+        return self.result_masks</div></div>
 </pre></div>
 
            </div>

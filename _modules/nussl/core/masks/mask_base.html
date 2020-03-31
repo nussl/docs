@@ -163,239 +163,239 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.core.masks.mask_base</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Base class for Mask objects. Contains many common utilities used for accessing masks. The mask itself is</span>
-<span class="sd">represented under the hood as a three dimensional numpy :obj:`ndarray` object. The dimensions are </span>
-<span class="sd">``[NUM_FREQ, NUM_HOPS, NUM_CHAN]``. Safe accessors for these array indices are in :ref:`constants` as well as </span>
-<span class="sd">below.</span>
+<span></span>&quot;&quot;&quot;
+Base class for Mask objects. Contains many common utilities used for accessing masks. The mask itself is
+represented under the hood as a three dimensional numpy :obj:`ndarray` object. The dimensions are 
+``[NUM_FREQ, NUM_HOPS, NUM_CHAN]``. Safe accessors for these array indices are in :ref:`constants` as well as 
+below.
 
-<span class="sd">Right now only spectrogram-like masks are supported (note the shape of the :ref:`mask` property), but in future</span>
-<span class="sd">releases nussl will support masks for representations with different dimensionality requirements.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+Right now only spectrogram-like masks are supported (note the shape of the :ref:`mask` property), but in future
+releases nussl will support masks for representations with different dimensionality requirements.
+&quot;&quot;&quot;
 
-<span class="kn">import</span> <span class="nn">numbers</span>
+import numbers
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+import numpy as np
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">constants</span>
+from .. import utils
+from .. import constants
 
 
-<div class="viewcode-block" id="MaskBase"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase">[docs]</a><span class="k">class</span> <span class="nc">MaskBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Args:</span>
-<span class="sd">        input_mask (:obj:`np.ndarray`): A 2- or 3-dimensional numpy ``ndarray`` representing a mask.</span>
-<span class="sd">        </span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mask_shape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="viewcode-block" id="MaskBase"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase">[docs]</a>class MaskBase(object):
+    &quot;&quot;&quot;
+    Args:
+        input_mask (:obj:`np.ndarray`): A 2- or 3-dimensional numpy ``ndarray`` representing a mask.
+        
+    &quot;&quot;&quot;
+    def __init__(self, input_mask=None, mask_shape=None):
+        self._mask = None
 
-        <span class="k">if</span> <span class="n">mask_shape</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">input_mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot initialize mask without mask_shape or input_mask!&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">mask_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">input_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot initialize mask with both mask_shape and input_mask!&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_mask</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">input_mask</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask_shape</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mask_shape</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;input_mask must be a np.ndarray, or mask_shape must be a tuple!&#39;</span><span class="p">)</span>
+        if mask_shape is None and input_mask is None:
+            raise ValueError(&#39;Cannot initialize mask without mask_shape or input_mask!&#39;)
+        if mask_shape is not None and input_mask is not None:
+            raise ValueError(&#39;Cannot initialize mask with both mask_shape and input_mask!&#39;)
+        if isinstance(input_mask, np.ndarray):
+            self.mask = input_mask
+        elif isinstance(mask_shape, tuple):
+            self.mask = np.zeros(mask_shape)
+        else:
+            raise ValueError(&#39;input_mask must be a np.ndarray, or mask_shape must be a tuple!&#39;)
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;        </span>
-<span class="sd">        The actual mask. This is represented as a three dimensional numpy :obj:`ndarray` object.</span>
-<span class="sd">        The input gets validated by :func:`_validate_mask`. In the case of </span>
-<span class="sd">        :class:`separation.masks.binary_mask.BinaryMask` the validation checks that the values are all 1 or 0 </span>
-<span class="sd">        (or bools), in the case of :class:`separation.masks.soft_mask.SoftMask` the validation checks that all values</span>
-<span class="sd">        are within the domain ``[0.0, 1.0]``.</span>
-<span class="sd">        </span>
-<span class="sd">        This base class will throw a ``NotImplementedError`` if instantiated directly.</span>
-<span class="sd">        </span>
-<span class="sd">        Raises:</span>
-<span class="sd">            :obj:`ValueError` if :attr:`mask.ndim` is less than 2 or greater than 3, or if values fail validation.</span>
-<span class="sd">            :obj:`NotImplementedError` if instantiated directly.</span>
+    @property
+    def mask(self):
+        &quot;&quot;&quot;        
+        The actual mask. This is represented as a three dimensional numpy :obj:`ndarray` object.
+        The input gets validated by :func:`_validate_mask`. In the case of 
+        :class:`separation.masks.binary_mask.BinaryMask` the validation checks that the values are all 1 or 0 
+        (or bools), in the case of :class:`separation.masks.soft_mask.SoftMask` the validation checks that all values
+        are within the domain ``[0.0, 1.0]``.
+        
+        This base class will throw a ``NotImplementedError`` if instantiated directly.
+        
+        Raises:
+            :obj:`ValueError` if :attr:`mask.ndim` is less than 2 or greater than 3, or if values fail validation.
+            :obj:`NotImplementedError` if instantiated directly.
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span>
+        &quot;&quot;&quot;
+        return self._mask
 
-    <span class="nd">@mask</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span> <span class="s1">&#39;Type of self.mask must be np.ndarray!&#39;</span>
+    @mask.setter
+    def mask(self, value):
+        assert isinstance(value, np.ndarray), &#39;Type of self.mask must be np.ndarray!&#39;
 
-        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot support arrays with less than 2 dimensions!&#39;</span><span class="p">)</span>
+        if value.ndim == 1:
+            raise ValueError(&#39;Cannot support arrays with less than 2 dimensions!&#39;)
 
-        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">)</span>
+        if value.ndim == 2:
+            value = np.expand_dims(value, axis=constants.STFT_CHAN_INDEX)
 
-        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot support arrays with more than 3 dimensions!&#39;</span><span class="p">)</span>
+        if value.ndim &gt; 3:
+            raise ValueError(&#39;Cannot support arrays with more than 3 dimensions!&#39;)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_mask</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        self._mask = self._validate_mask(value)
 
-<div class="viewcode-block" id="MaskBase.get_channel"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.get_channel">[docs]</a>    <span class="k">def</span> <span class="nf">get_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ch</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gets mask channel ``ch`` and returns it as a 2D :obj:`np.ndarray`</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            ch (int): Channel index to return (0-based).</span>
+<div class="viewcode-block" id="MaskBase.get_channel"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.get_channel">[docs]</a>    def get_channel(self, ch):
+        &quot;&quot;&quot;
+        Gets mask channel ``ch`` and returns it as a 2D :obj:`np.ndarray`
+        
+        Args:
+            ch (int): Channel index to return (0-based).
 
-<span class="sd">        Returns:</span>
-<span class="sd">            :obj:`np.array` with the mask channel</span>
-<span class="sd">            </span>
-<span class="sd">        Raises:</span>
-<span class="sd">            :obj:`ValueError` if ``ch`` is less than 0 or greater than the number of channels that this mask object has.</span>
+        Returns:
+            :obj:`np.array` with the mask channel
+            
+        Raises:
+            :obj:`ValueError` if ``ch`` is less than 0 or greater than the number of channels that this mask object has.
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">ch</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;Cannot get channel </span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1"> for object w/ </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="si">}</span><span class="s1"> channels!&#39;</span>
-                <span class="s1">&#39; (0-based)&#39;</span>
-            <span class="p">)</span>
+        &quot;&quot;&quot;
+        if ch &gt;= self.num_channels:
+            raise ValueError(
+                f&#39;Cannot get channel {ch} for object w/ {self.num_channels} channels!&#39;
+                &#39; (0-based)&#39;
+            )
 
-        <span class="k">if</span> <span class="n">ch</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot get channel </span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s1">. This will cause unexpected results!&#39;</span><span class="p">)</span>
+        if ch &lt; 0:
+            raise ValueError(f&#39;Cannot get channel {ch}. This will cause unexpected results!&#39;)
 
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">_get_axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">,</span> <span class="n">ch</span><span class="p">)</span></div>
+        return utils._get_axis(self.mask, constants.STFT_CHAN_INDEX, ch)</div>
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        (int) Number of channels this mask has.</span>
+    @property
+    def num_channels(self):
+        &quot;&quot;&quot;
+        (int) Number of channels this mask has.
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">]</span>
+        &quot;&quot;&quot;
+        return self.mask.shape[constants.STFT_CHAN_INDEX]
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        (tuple) Returns the shape of the whole mask. Identical to ``np.ndarray.shape()``.</span>
+    @property
+    def shape(self):
+        &quot;&quot;&quot;
+        (tuple) Returns the shape of the whole mask. Identical to ``np.ndarray.shape()``.
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span>
+        &quot;&quot;&quot;
+        return self.mask.shape
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        (str) Returns the data type of the values of the mask. </span>
+    @property
+    def dtype(self):
+        &quot;&quot;&quot;
+        (str) Returns the data type of the values of the mask. 
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">dtype</span>
+        &quot;&quot;&quot;
+        return self.mask.dtype
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_validate_mask</span><span class="p">(</span><span class="n">mask_</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            mask_: </span>
+    @staticmethod
+    def _validate_mask(mask_):
+        &quot;&quot;&quot;
+        Args:
+            mask_: 
 
-<span class="sd">        Returns:</span>
+        Returns:
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Cannot call base class! Use BinaryMask or SoftMask!&#39;</span><span class="p">)</span>
+        &quot;&quot;&quot;
+        raise NotImplementedError(&#39;Cannot call base class! Use BinaryMask or SoftMask!&#39;)
 
-<div class="viewcode-block" id="MaskBase.ones"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.ones">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">ones</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Makes a mask with all ones with the specified shape. Exactly the same as ``np.ones()``.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            shape (tuple): Shape of the resultant mask.</span>
+<div class="viewcode-block" id="MaskBase.ones"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.ones">[docs]</a>    @classmethod
+    def ones(cls, shape):
+        &quot;&quot;&quot;
+        Makes a mask with all ones with the specified shape. Exactly the same as ``np.ones()``.
+        Args:
+            shape (tuple): Shape of the resultant mask.
 
-<span class="sd">        Returns:</span>
+        Returns:
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></div>
+        &quot;&quot;&quot;
+        return cls(np.ones(shape))</div>
 
-<div class="viewcode-block" id="MaskBase.zeros"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.zeros">[docs]</a>    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">zeros</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Makes a mask with all zeros with the specified shape. Exactly the same as ``np.zeros()``.</span>
-<span class="sd">        Args:</span>
-<span class="sd">            shape (tuple): Shape of the resultant mask.</span>
+<div class="viewcode-block" id="MaskBase.zeros"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.zeros">[docs]</a>    @classmethod
+    def zeros(cls, shape):
+        &quot;&quot;&quot;
+        Makes a mask with all zeros with the specified shape. Exactly the same as ``np.zeros()``.
+        Args:
+            shape (tuple): Shape of the resultant mask.
 
-<span class="sd">        Returns:</span>
+        Returns:
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span></div>
+        &quot;&quot;&quot;
+        return cls(np.zeros(shape))</div>
 
-<div class="viewcode-block" id="MaskBase.invert_mask"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.invert_mask">[docs]</a>    <span class="k">def</span> <span class="nf">invert_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MaskBase.invert_mask"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.invert_mask">[docs]</a>    def invert_mask(self):
+        &quot;&quot;&quot;
 
-<span class="sd">        Returns:</span>
+        Returns:
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Cannot call base class! Use BinaryMask or SoftMask!&#39;</span><span class="p">)</span></div>
+        &quot;&quot;&quot;
+        raise NotImplementedError(&#39;Cannot call base class! Use BinaryMask or SoftMask!&#39;)</div>
 
-<div class="viewcode-block" id="MaskBase.inverse_mask"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.inverse_mask">[docs]</a>    <span class="k">def</span> <span class="nf">inverse_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Alias for :func:`invert_mask`</span>
+<div class="viewcode-block" id="MaskBase.inverse_mask"><a class="viewcode-back" href="../../../../core.html#nussl.core.masks.MaskBase.inverse_mask">[docs]</a>    def inverse_mask(self):
+        &quot;&quot;&quot;
+        Alias for :func:`invert_mask`
 
-<span class="sd">        See Also:</span>
-<span class="sd">            :func:`invert_mask`</span>
+        See Also:
+            :func:`invert_mask`
 
-<span class="sd">        Returns:</span>
+        Returns:
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">invert_mask</span><span class="p">()</span></div>
+        &quot;&quot;&quot;
+        return self.invert_mask()</div>
 
-    <span class="k">def</span> <span class="nf">_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="n">class_method</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">new_mask</span> <span class="o">=</span> <span class="n">class_method</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">MaskBase</span><span class="p">):</span>
-            <span class="n">new_mask</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">new_mask</span><span class="o">.</span><span class="n">mask</span> <span class="o">+</span> <span class="n">other</span><span class="o">.</span><span class="n">mask</span>
-            <span class="k">return</span> <span class="n">new_mask</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">new_mask</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">new_mask</span><span class="o">.</span><span class="n">mask</span> <span class="o">+</span> <span class="n">other</span>
-            <span class="k">return</span> <span class="n">new_mask</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot do arithmetic operation with MaskBase and </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    def _add(self, other):
+        class_method = type(self)
+        new_mask = class_method(self.mask)
+        if isinstance(other, MaskBase):
+            new_mask.mask = new_mask.mask + other.mask
+            return new_mask
+        if isinstance(other, np.ndarray):
+            new_mask.mask = new_mask.mask + other
+            return new_mask
+        else:
+            raise ValueError(f&#39;Cannot do arithmetic operation with MaskBase and {type(other)}&#39;)
 
-    <span class="k">def</span> <span class="nf">_mult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot do operation with MaskBase and </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">class_method</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">new_mask</span> <span class="o">=</span> <span class="n">class_method</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
-        <span class="n">new_mask</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">new_mask</span><span class="o">.</span><span class="n">mask</span> <span class="o">*</span> <span class="n">value</span>
-        <span class="k">return</span> <span class="n">new_mask</span>
+    def _mult(self, value):
+        if not isinstance(value, numbers.Real):
+            raise ValueError(f&#39;Cannot do operation with MaskBase and {type(value)}&#39;)
+        class_method = type(self)
+        new_mask = class_method(self.mask)
+        new_mask.mask = new_mask.mask * value
+        return new_mask
 
-    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    def __add__(self, other):
+        return self._add(other)
 
-    <span class="k">def</span> <span class="fm">__sub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">other</span><span class="p">)</span>
+    def __sub__(self, other):
+        return self + (-1 * other)
 
-    <span class="k">def</span> <span class="fm">__iadd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span> <span class="o">+</span> <span class="n">other</span>
+    def __iadd__(self, other):
+        return self + other
 
-    <span class="k">def</span> <span class="fm">__isub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span> <span class="o">-</span> <span class="n">other</span>
+    def __isub__(self, other):
+        return self - other
 
-    <span class="k">def</span> <span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mult</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    def __mul__(self, value):
+        return self._mult(value)
 
-    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mult</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    def __rmul__(self, value):
+        return self._mult(value)
 
-    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mult</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    def __div__(self, value):
+        return self._mult(1 / float(value))
 
-    <span class="k">def</span> <span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__div__</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    def __truediv__(self, value):
+        return self.__div__(value)
 
-    <span class="k">def</span> <span class="fm">__imul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span> <span class="o">*</span> <span class="n">value</span>
+    def __imul__(self, value):
+        return self * value
 
-    <span class="k">def</span> <span class="nf">__idiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span> <span class="o">/</span> <span class="n">value</span>
+    def __idiv__(self, value):
+        return self / value
 
-    <span class="k">def</span> <span class="fm">__itruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__idiv__</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    def __itruediv__(self, value):
+        return self.__idiv__(value)
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+    def __eq__(self, other):
+        return np.array_equal(self.mask, other.mask)
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></div>
+    def __ne__(self, other):
+        return not self.__eq__(other)</div>
 </pre></div>
 
            </div>

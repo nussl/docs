@@ -163,408 +163,408 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.primitive.melodia</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.ndimage.filters</span> <span class="kn">import</span> <span class="n">convolve</span>
-<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">maximum_filter</span><span class="p">,</span> <span class="n">gaussian_filter</span>
+<span></span>import numpy as np
+from scipy.ndimage.filters import convolve
+from scipy.ndimage import maximum_filter, gaussian_filter
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span><span class="p">,</span> <span class="n">SeparationException</span>
-<span class="kn">from</span> <span class="nn">..benchmark</span> <span class="kn">import</span> <span class="n">HighLowPassFilter</span>
-<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
-<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">vamp_imported</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy.signal</span>
+from .. import MaskSeparationBase, SeparationException
+from ..benchmark import HighLowPassFilter
+from ... import AudioSignal
+from ... import vamp_imported
+import numpy as np
+import scipy.signal
 
-<span class="k">if</span> <span class="n">vamp_imported</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">vamp</span>
+if vamp_imported:
+    import vamp
 
-<span class="c1"># function for generating the vocal chord impulse response</span>
-<span class="k">def</span> <span class="nf">rosenmodel</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This model for generating singing vowel sounds from sine tones comes</span>
-<span class="sd">    from:</span>
+# function for generating the vocal chord impulse response
+def rosenmodel(t1, t2, fs):
+    &quot;&quot;&quot;
+    This model for generating singing vowel sounds from sine tones comes
+    from:
 
-<span class="sd">    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf</span>
+    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf
 
-<span class="sd">    The above will be referred to throughout these docstrings as THE DOCUMENT.</span>
+    The above will be referred to throughout these docstrings as THE DOCUMENT.
 
-<span class="sd">    Original author: Fatemeh Pishdadian</span>
+    Original author: Fatemeh Pishdadian
 
-<span class="sd">    The arguments to the fucntions throughout this text follow the </span>
-<span class="sd">    signatures laid out in THE DOCUMENT.</span>
+    The arguments to the fucntions throughout this text follow the 
+    signatures laid out in THE DOCUMENT.
 
-<span class="sd">    This is used in Melodia to generate the melody signal to produce a </span>
-<span class="sd">    mask.</span>
+    This is used in Melodia to generate the melody signal to produce a 
+    mask.
 
-<span class="sd">    Equation 2 in THE DOCUMENT.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    Equation 2 in THE DOCUMENT.
+    &quot;&quot;&quot;
 
-    <span class="n">N1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">t1</span> <span class="o">*</span> <span class="n">fs</span><span class="p">)</span>
-    <span class="n">N2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">t2</span> <span class="o">*</span> <span class="n">fs</span><span class="p">)</span>
+    N1 = np.floor(t1 * fs)
+    N2 = np.floor(t2 * fs)
 
-    <span class="n">samp_vec1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N1</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">samp_vec2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N1</span><span class="p">,</span><span class="n">N1</span><span class="o">+</span><span class="n">N2</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    samp_vec1 = np.arange(N1+1)
+    samp_vec2 = np.arange(N1,N1+N2+1)
 
-    <span class="n">ir_func1</span> <span class="o">=</span>  <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">samp_vec1</span><span class="p">)</span><span class="o">/</span><span class="n">N1</span><span class="p">))</span>
-    <span class="n">ir_func2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">samp_vec2</span> <span class="o">-</span> <span class="n">N1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">N2</span><span class="p">))</span>
+    ir_func1 =  0.5 * (1 - np.cos((np.pi * samp_vec1)/N1))
+    ir_func2 = np.cos(np.pi * (samp_vec2 - N1)/(2 * N2))
 
-    <span class="n">vchord_filt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ir_func1</span><span class="p">,</span><span class="n">ir_func2</span><span class="p">))</span>
+    vchord_filt = np.concatenate((ir_func1,ir_func2))
 
-    <span class="k">return</span> <span class="n">vchord_filt</span>
+    return vchord_filt
 
 
-<span class="c1"># function for computing the denominator coeffs of the vocal cavity filter transfer function</span>
-<span class="k">def</span> <span class="nf">oral_cavity_filt</span><span class="p">(</span><span class="n">pole_amps</span><span class="p">,</span> <span class="n">pole_freqs</span><span class="p">,</span><span class="n">fs</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This model for generating singing vowel sounds from sine tones comes</span>
-<span class="sd">    from:</span>
+# function for computing the denominator coeffs of the vocal cavity filter transfer function
+def oral_cavity_filt(pole_amps, pole_freqs,fs):
+    &quot;&quot;&quot;
+    This model for generating singing vowel sounds from sine tones comes
+    from:
 
-<span class="sd">    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf</span>
+    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf
 
-<span class="sd">    The above will be referred to throughout these docstrings as THE DOCUMENT.</span>
+    The above will be referred to throughout these docstrings as THE DOCUMENT.
 
-<span class="sd">    Original author: Fatemeh Pishdadian</span>
+    Original author: Fatemeh Pishdadian
 
-<span class="sd">    The arguments to the fucntions throughout this text follow the </span>
-<span class="sd">    signatures laid out in THE DOCUMENT.</span>
+    The arguments to the fucntions throughout this text follow the 
+    signatures laid out in THE DOCUMENT.
 
-<span class="sd">    This is used in Melodia to generate the melody signal to produce a </span>
-<span class="sd">    mask.</span>
+    This is used in Melodia to generate the melody signal to produce a 
+    mask.
 
-<span class="sd">    Solves &quot;Q. Write a function to synthesize filter H(z)&quot; in </span>
-<span class="sd">    THE DOCUMENT</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">num_pole_pair</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pole_amps</span><span class="p">)</span>
-    <span class="n">poles</span> <span class="o">=</span> <span class="n">pole_amps</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">pole_freqs</span> <span class="o">/</span> <span class="n">fs</span><span class="p">)</span>
-    <span class="n">poles_conj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">poles</span><span class="p">)</span>
+    Solves &quot;Q. Write a function to synthesize filter H(z)&quot; in 
+    THE DOCUMENT
+    &quot;&quot;&quot;
+    num_pole_pair = len(pole_amps)
+    poles = pole_amps * np.exp(1j * 2 * np.pi * pole_freqs / fs)
+    poles_conj = np.conj(poles)
 
-    <span class="n">denom_coeffs</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_pole_pair</span><span class="p">):</span>
-        <span class="n">pole_temp</span> <span class="o">=</span> <span class="n">poles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">pole_conj_temp</span> <span class="o">=</span> <span class="n">poles_conj</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="n">pole_pair_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="n">pole_temp</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="n">pole_conj_temp</span><span class="p">]))</span>
+    denom_coeffs = 1
+    for i in range(num_pole_pair):
+        pole_temp = poles[i]
+        pole_conj_temp = poles_conj[i]
+        pole_pair_coeffs = np.convolve(np.array([1,-pole_temp]),np.array([1,-pole_conj_temp]))
 
-        <span class="n">denom_coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">denom_coeffs</span><span class="p">,</span> <span class="n">pole_pair_coeffs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">denom_coeffs</span>
+        denom_coeffs = np.convolve(denom_coeffs, pole_pair_coeffs)
+    return denom_coeffs
 
-<span class="k">def</span> <span class="nf">_apply_vowel_filter</span><span class="p">(</span><span class="n">impulse_train</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">t1</span><span class="o">=</span><span class="mf">0.0075</span><span class="p">,</span> <span class="n">t2</span><span class="o">=.</span><span class="mi">013</span><span class="p">,</span>
-                     <span class="n">pole_amps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pole_freqs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This model for generating singing vowel sounds from sine tones comes</span>
-<span class="sd">    from:</span>
+def _apply_vowel_filter(impulse_train, fs, t1=0.0075, t2=.013,
+                     pole_amps=None, pole_freqs=None):
+    &quot;&quot;&quot;
+    This model for generating singing vowel sounds from sine tones comes
+    from:
 
-<span class="sd">    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf</span>
+    https://simonl02.users.greyc.fr/files/Documents/Teaching/SignalProcessingLabs/lab3.pdf
 
-<span class="sd">    The above will be referred to throughout these docstrings as THE DOCUMENT.</span>
+    The above will be referred to throughout these docstrings as THE DOCUMENT.
 
-<span class="sd">    Original author: Fatemeh Pishdadian</span>
+    Original author: Fatemeh Pishdadian
 
-<span class="sd">    The arguments to the fucntions throughout this text follow the </span>
-<span class="sd">    signatures laid out in THE DOCUMENT.</span>
+    The arguments to the fucntions throughout this text follow the 
+    signatures laid out in THE DOCUMENT.
 
-<span class="sd">    This is used in Melodia to generate the melody signal to produce a </span>
-<span class="sd">    mask.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        impulse_train (np.ndarray): Numpy array with data to be filtered</span>
-<span class="sd">        fs (int): Sample rate of audio.</span>
-<span class="sd">        t1 (float, optional): N1 in Equation 2 in THE DOCUMENT. Defaults to 0.0075.</span>
-<span class="sd">        t2 (float, optional): N2 in Equation 2 in THE DOCUMENT. Defaults to .013.</span>
-<span class="sd">        pole_amps (np.ndarray, optional): Pole amplitudes, see Figures 2-4 in THE DOCUMENT. </span>
-<span class="sd">          Defaults to None, which maps to E vowel.</span>
-<span class="sd">        pole_freqs (np.ndarray, optional): Pole frequencies, see Figures 2-4 in THE DOCUMENT. </span>
-<span class="sd">          Defaults to None, which maps to E vowel</span>
-<span class="sd">    </span>
-<span class="sd">    Returns:</span>
-<span class="sd">        np.ndarray: Filtered impulse train that should sound sort of like the desired </span>
-<span class="sd">          vowel.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">pole_amps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">pole_amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.99</span><span class="p">,</span><span class="mf">0.98</span><span class="p">,</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.9</span><span class="p">])</span>
-    <span class="k">if</span> <span class="n">pole_freqs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">pole_freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">800</span><span class="p">,</span><span class="mi">1200</span><span class="p">,</span><span class="mi">2800</span><span class="p">,</span><span class="mi">3600</span><span class="p">])</span>
-        
-    <span class="n">vchord_filt</span> <span class="o">=</span> <span class="n">rosenmodel</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
-    <span class="n">vchord_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">impulse_train</span><span class="p">,</span> <span class="n">vchord_filt</span><span class="p">)</span>
-        
-    <span class="n">denom_coeffs</span> <span class="o">=</span> <span class="n">oral_cavity_filt</span><span class="p">(</span><span class="n">pole_amps</span><span class="p">,</span> <span class="n">pole_freqs</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
-    <span class="n">oral_out</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span> <span class="n">denom_coeffs</span><span class="p">,</span> <span class="n">vchord_out</span><span class="p">)</span>
-    <span class="n">lip_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">lfilter</span><span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span> <span class="n">oral_out</span><span class="p">))</span>
+    This is used in Melodia to generate the melody signal to produce a 
+    mask.
     
-    <span class="n">lip_out</span> <span class="o">=</span> <span class="n">lip_out</span><span class="p">[:</span><span class="n">impulse_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    Args:
+        impulse_train (np.ndarray): Numpy array with data to be filtered
+        fs (int): Sample rate of audio.
+        t1 (float, optional): N1 in Equation 2 in THE DOCUMENT. Defaults to 0.0075.
+        t2 (float, optional): N2 in Equation 2 in THE DOCUMENT. Defaults to .013.
+        pole_amps (np.ndarray, optional): Pole amplitudes, see Figures 2-4 in THE DOCUMENT. 
+          Defaults to None, which maps to E vowel.
+        pole_freqs (np.ndarray, optional): Pole frequencies, see Figures 2-4 in THE DOCUMENT. 
+          Defaults to None, which maps to E vowel
     
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">lip_out</span><span class="p">)</span>
+    Returns:
+        np.ndarray: Filtered impulse train that should sound sort of like the desired 
+          vowel.
+    &quot;&quot;&quot;
+    if pole_amps is None:
+        pole_amps = np.array([0.99,0.98,0.9,0.9])
+    if pole_freqs is None:
+        pole_freqs = np.array([800,1200,2800,3600])
+        
+    vchord_filt = rosenmodel(t1, t2, fs)
+    vchord_out = np.convolve(impulse_train, vchord_filt)
+        
+    denom_coeffs = oral_cavity_filt(pole_amps, pole_freqs, fs)
+    oral_out = scipy.signal.lfilter(
+        np.array([1]), denom_coeffs, vchord_out)
+    lip_out = np.real(scipy.signal.lfilter(
+        np.array([1,-1]), np.array([1]), oral_out))
+    
+    lip_out = lip_out[:impulse_train.shape[0]]
+    
+    return np.real(lip_out)
 
-<div class="viewcode-block" id="Melodia"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.Melodia">[docs]</a><span class="k">class</span> <span class="nc">Melodia</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements melody extraction using Melodia [1].</span>
+<div class="viewcode-block" id="Melodia"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.Melodia">[docs]</a>class Melodia(MaskSeparationBase):
+    &quot;&quot;&quot;
+    Implements melody extraction using Melodia [1].
 
-<span class="sd">    This needs Melodia installed as a vamp plugin, as well as having vampy for </span>
-<span class="sd">    Python installed. Install Melodia via: https://www.upf.edu/web/mtg/melodia.</span>
-<span class="sd">    Note that Melodia can be used only for NON-COMMERCIAL use.</span>
+    This needs Melodia installed as a vamp plugin, as well as having vampy for 
+    Python installed. Install Melodia via: https://www.upf.edu/web/mtg/melodia.
+    Note that Melodia can be used only for NON-COMMERCIAL use.
 
-<span class="sd">    References:</span>
+    References:
 
-<span class="sd">    [1] J. Salamon and E. Gómez, &quot;Melody Extraction from Polyphonic Music Signals using </span>
-<span class="sd">        Pitch Contour Characteristics&quot;, IEEE Transactions on Audio, Speech and </span>
-<span class="sd">        Language Processing, 20(6):1759-1770, Aug. 2012.</span>
+    [1] J. Salamon and E. Gómez, &quot;Melody Extraction from Polyphonic Music Signals using 
+        Pitch Contour Characteristics&quot;, IEEE Transactions on Audio, Speech and 
+        Language Processing, 20(6):1759-1770, Aug. 2012.
 
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal object): The AudioSignal object that has the</span>
-<span class="sd">          audio data that Melodia will be run on.</span>
+    Args:
+        input_audio_signal (AudioSignal object): The AudioSignal object that has the
+          audio data that Melodia will be run on.
 
-<span class="sd">        high_pass_cutoff (optional, float): value (in Hz) for the high pass cutoff </span>
-<span class="sd">          filter.</span>
-<span class="sd">        </span>
-<span class="sd">        minimum_frequency (optional, float): minimum frequency in Hertz (default 55.0)</span>
+        high_pass_cutoff (optional, float): value (in Hz) for the high pass cutoff 
+          filter.
+        
+        minimum_frequency (optional, float): minimum frequency in Hertz (default 55.0)
 
-<span class="sd">        maximum_frequency (optional, float): maximum frequency in Hertz (default 1760.0)</span>
+        maximum_frequency (optional, float): maximum frequency in Hertz (default 1760.0)
 
-<span class="sd">        voicing_tolerance (optional, float): Greater values will result in more pitch contours </span>
-<span class="sd">          included in the final melody. Smaller values will result in less pitch </span>
-<span class="sd">          contours included in the final melody (default 0.2).</span>
+        voicing_tolerance (optional, float): Greater values will result in more pitch contours 
+          included in the final melody. Smaller values will result in less pitch 
+          contours included in the final melody (default 0.2).
 
-<span class="sd">        minimum_peak_salience (optional, float): a hack to avoid silence turning into junk </span>
-<span class="sd">          contours when analyzing monophonic recordings (e.g. solo voice with </span>
-<span class="sd">          no accompaniment). Generally you want to leave this untouched (default 0.0).</span>
+        minimum_peak_salience (optional, float): a hack to avoid silence turning into junk 
+          contours when analyzing monophonic recordings (e.g. solo voice with 
+          no accompaniment). Generally you want to leave this untouched (default 0.0).
 
-<span class="sd">        num_overtones (optional, int): Number of overtones to use when creating </span>
-<span class="sd">          melody mask.</span>
+        num_overtones (optional, int): Number of overtones to use when creating 
+          melody mask.
 
-<span class="sd">        apply_vowel_filter (optional, bool): Whether or not to apply a vowel filter</span>
-<span class="sd">          on the resynthesized melody signal when masking.</span>
+        apply_vowel_filter (optional, bool): Whether or not to apply a vowel filter
+          on the resynthesized melody signal when masking.
 
-<span class="sd">        smooth_length (optional, int): Number of frames to smooth discontinuities in the</span>
-<span class="sd">          mask.</span>
+        smooth_length (optional, int): Number of frames to smooth discontinuities in the
+          mask.
 
-<span class="sd">        add_lower_octave (optional, fool): Use octave below fundamental frequency as well</span>
-<span class="sd">          to take care of octave errors in pitch tracking, since we only care about</span>
-<span class="sd">          the mask. Defaults to False.</span>
-<span class="sd">        </span>
-<span class="sd">        mask_type (optional, str): Type of mask to use.</span>
+        add_lower_octave (optional, fool): Use octave below fundamental frequency as well
+          to take care of octave errors in pitch tracking, since we only care about
+          the mask. Defaults to False.
+        
+        mask_type (optional, str): Type of mask to use.
 
-<span class="sd">        mask_threshold (optional, float): Threshold for mask to convert to binary.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+        mask_threshold (optional, float): Threshold for mask to convert to binary.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">high_pass_cutoff</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">minimum_frequency</span><span class="o">=</span><span class="mf">55.0</span><span class="p">,</span>
-                 <span class="n">maximum_frequency</span><span class="o">=</span><span class="mf">1760.0</span><span class="p">,</span> <span class="n">voicing_tolerance</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">minimum_peak_salience</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-                 <span class="n">compression</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">num_overtones</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">apply_vowel_filter</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">smooth_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> 
-                 <span class="n">add_lower_octave</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
-        <span class="c1"># lazy load vamp to check if it exists</span>
-        <span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">vamp_imported</span>
+    def __init__(self, input_audio_signal, high_pass_cutoff=100, minimum_frequency=55.0,
+                 maximum_frequency=1760.0, voicing_tolerance=0.2, minimum_peak_salience=0.0,
+                 compression=0.5, num_overtones=40, apply_vowel_filter=False, smooth_length=5, 
+                 add_lower_octave=False, mask_type=&#39;soft&#39;, mask_threshold=0.5):
+        # lazy load vamp to check if it exists
+        from ... import vamp_imported
 
-        <span class="n">melodia_installed</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">vamp_imported</span><span class="p">:</span>
-            <span class="n">melodia_installed</span> <span class="o">=</span> <span class="s1">&#39;mtg-melodia:melodia&#39;</span> <span class="ow">in</span> <span class="n">vamp</span><span class="o">.</span><span class="n">list_plugins</span><span class="p">()</span>
+        melodia_installed = False
+        if vamp_imported:
+            melodia_installed = &#39;mtg-melodia:melodia&#39; in vamp.list_plugins()
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">vamp_imported</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">melodia_installed</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_raise_vamp_melodia_error</span><span class="p">()</span>
+        if not vamp_imported or not melodia_installed:
+            self._raise_vamp_melodia_error()
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span>
-            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
-            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span>
-        <span class="p">)</span>
+        super().__init__(
+            input_audio_signal=input_audio_signal,
+            mask_type=mask_type,
+            mask_threshold=mask_threshold
+        )
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span> <span class="o">=</span> <span class="n">high_pass_cutoff</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">minimum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">maximum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">voicing_tolerance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">voicing_tolerance</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">minimum_peak_salience</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minimum_peak_salience</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">compression</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">apply_vowel_filter</span> <span class="o">=</span> <span class="n">apply_vowel_filter</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_lower_octave</span> <span class="o">=</span> <span class="n">add_lower_octave</span>
+        self.high_pass_cutoff = high_pass_cutoff
+        self.minimum_frequency = float(minimum_frequency)
+        self.maximum_frequency = float(maximum_frequency)
+        self.voicing_tolerance = float(voicing_tolerance)
+        self.minimum_peak_salience = float(minimum_peak_salience)
+        self.compression = compression
+        self.apply_vowel_filter = apply_vowel_filter
+        self.add_lower_octave = add_lower_octave
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">melody</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="kc">None</span>
+        self.melody = None
+        self.melody_signal = None
+        self.timestamps = None
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_overtones</span> <span class="o">=</span> <span class="n">num_overtones</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">smooth_length</span> <span class="o">=</span> <span class="n">smooth_length</span>
+        self.num_overtones = num_overtones
+        self.smooth_length = smooth_length
 
-    <span class="k">def</span> <span class="nf">_raise_vamp_melodia_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
-            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">**~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~**&#39;</span>
-            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">*          Are Vamp and Melodia installed correctly?          *&#39;</span>
-            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">* Check https://bit.ly/2DXbrAk for installation instructions! *&#39;</span>
-            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">**~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~**&#39;</span><span class="p">)</span>
+    def _raise_vamp_melodia_error(self):
+        raise SeparationException(
+            &#39;\n**~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~**&#39;
+            &#39;\n*          Are Vamp and Melodia installed correctly?          *&#39;
+            &#39;\n* Check https://bit.ly/2DXbrAk for installation instructions! *&#39;
+            &#39;\n**~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~**&#39;)
 
-    <span class="k">def</span> <span class="nf">extract_melody</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Extracts melody from the audio using the melodia vamp plugin. Uses arguments kept </span>
-<span class="sd">        in self:</span>
-<span class="sd">        </span>
-<span class="sd">        - `self.minimum_frequency` (default: 55 Hz)</span>
-<span class="sd">        - `self.maximum_frequency` (default: 1760 Hz)</span>
-<span class="sd">        - `self.voicing_tolerance` (default: 0.2)</span>
-<span class="sd">        - `self.minimum_peak_salience` (default: 0.0)</span>
+    def extract_melody(self):
+        &quot;&quot;&quot;
+        Extracts melody from the audio using the melodia vamp plugin. Uses arguments kept 
+        in self:
+        
+        - `self.minimum_frequency` (default: 55 Hz)
+        - `self.maximum_frequency` (default: 1760 Hz)
+        - `self.voicing_tolerance` (default: 0.2)
+        - `self.minimum_peak_salience` (default: 0.0)
 
-<span class="sd">        This function sets two class members used in other parts:</span>
+        This function sets two class members used in other parts:
 
-<span class="sd">        - `self.melody`: (numpy array) contains the melody in Hz for every timestep </span>
-<span class="sd">          (0 indicates no voice).</span>
-<span class="sd">        - `self.timestamps`: (numpy array) contains the timestamps for each melody note</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        - `self.melody`: (numpy array) contains the melody in Hz for every timestep 
+          (0 indicates no voice).
+        - `self.timestamps`: (numpy array) contains the timestamps for each melody note
+        &quot;&quot;&quot;
 
-        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;minfqr&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_frequency</span><span class="p">,</span>
-            <span class="s1">&#39;maxfqr&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">maximum_frequency</span><span class="p">,</span>
-            <span class="s1">&#39;voicing&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">voicing_tolerance</span><span class="p">,</span>
-            <span class="s1">&#39;minpeaksalience&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimum_peak_salience</span>
-        <span class="p">}</span>
+        params = {
+            &#39;minfqr&#39;: self.minimum_frequency,
+            &#39;maxfqr&#39;: self.maximum_frequency,
+            &#39;voicing&#39;: self.voicing_tolerance,
+            &#39;minpeaksalience&#39;: self.minimum_peak_salience
+        }
 
-        <span class="n">data</span> <span class="o">=</span> <span class="n">vamp</span><span class="o">.</span><span class="n">collect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">audio_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
-                            <span class="s2">&quot;mtg-melodia:melodia&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        data = vamp.collect(self.audio_signal.audio_data, self.sample_rate,
+                            &quot;mtg-melodia:melodia&quot;, parameters=params)
 
-        <span class="n">_</span><span class="p">,</span> <span class="n">melody</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;vector&#39;</span><span class="p">]</span>
-        <span class="n">hop</span> <span class="o">=</span> <span class="mf">128.</span> <span class="o">/</span> <span class="mf">44100.</span>  <span class="c1"># hard coded hop in Melodia vamp plugin, converting it to frames.</span>
-        <span class="n">timestamps</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <span class="n">hop</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">melody</span><span class="p">))</span> <span class="o">*</span> <span class="n">hop</span>
-        <span class="n">melody</span><span class="p">[</span><span class="n">melody</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">melody</span> <span class="o">=</span> <span class="n">melody</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="n">timestamps</span>
+        _, melody = data[&#39;vector&#39;]
+        hop = 128. / 44100.  # hard coded hop in Melodia vamp plugin, converting it to frames.
+        timestamps = 8 * hop + np.arange(len(melody)) * hop
+        melody[melody &lt; 0] = 0
+        self.melody = melody
+        self.timestamps = timestamps
 
-    <span class="k">def</span> <span class="nf">create_melody_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_overtones</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adapted from Melosynth by Justin Salamon: https://github.com/justinsalamon/melosynth. </span>
-<span class="sd">        To mask the mixture, we need to identify time-frequency bins that belong to the </span>
-<span class="sd">        melody. Melodia outputs only the fundamental frequency of the melodic line. </span>
-<span class="sd">        To construct the mask we take the fundamental frequency and add all the </span>
-<span class="sd">        overtones of it (up to num_overtones) to the mask. The melody is faded in and </span>
-<span class="sd">        out at onsets and offsets to make the separation sound more natural </span>
-<span class="sd">        (hard-coded by transition_length).</span>
+    def create_melody_signal(self, num_overtones):
+        &quot;&quot;&quot;
+        Adapted from Melosynth by Justin Salamon: https://github.com/justinsalamon/melosynth. 
+        To mask the mixture, we need to identify time-frequency bins that belong to the 
+        melody. Melodia outputs only the fundamental frequency of the melodic line. 
+        To construct the mask we take the fundamental frequency and add all the 
+        overtones of it (up to num_overtones) to the mask. The melody is faded in and 
+        out at onsets and offsets to make the separation sound more natural 
+        (hard-coded by transition_length).
 
-<span class="sd">        Args:</span>
+        Args:
 
-<span class="sd">            num_overtones (int): Number of overtones to expand out to build the mask.</span>
+            num_overtones (int): Number of overtones to expand out to build the mask.
 
-<span class="sd">        &quot;&quot;&quot;</span>
+        &quot;&quot;&quot;
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">estimated_hop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">))</span>
-            <span class="n">previous_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">estimated_hop</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">previous_time</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">melody</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">melody</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        if self.timestamps[0] &gt; 0:
+            estimated_hop = np.median(np.diff(self.timestamps))
+            previous_time = max(self.timestamps[0] - estimated_hop, 0)
+            self.timestamps = np.insert(self.timestamps, 0, previous_time)
+            self.melody = np.insert(self.melody, 0, 0)
 
-        <span class="n">sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span>
-        <span class="n">melody_signal</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">transition_length</span> <span class="o">=</span> <span class="o">.</span><span class="mi">001</span>  <span class="c1"># duration for fade in/out and frequency interpretation</span>
-        <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_overtones</span><span class="p">)</span>
-        <span class="n">previous_frequency</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">previous_time</span> <span class="o">=</span> <span class="mi">0</span>
+        sample_rate = self.audio_signal.sample_rate
+        melody_signal = []
+        transition_length = .001  # duration for fade in/out and frequency interpretation
+        phase = np.zeros(num_overtones)
+        previous_frequency = 0
+        previous_time = 0
 
-        <span class="n">overtone_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_overtones</span><span class="p">)</span>
+        overtone_weights = np.ones(num_overtones)
 
-        <span class="k">for</span> <span class="n">time</span><span class="p">,</span> <span class="n">frequency</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timestamps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">melody</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_lower_octave</span><span class="p">:</span>
-                <span class="n">frequency</span> <span class="o">=</span> <span class="n">frequency</span> <span class="o">/</span> <span class="mi">2</span> 
-            <span class="c1"># taking care of octave errors since we only care about masking</span>
-            <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">time</span> <span class="o">-</span> <span class="n">previous_time</span><span class="p">)</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">num_samples</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">num_transition_samples</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
-                    <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">transition_length</span> <span class="o">*</span> <span class="n">sample_rate</span><span class="p">),</span> <span class="n">num_samples</span><span class="p">))</span>
-                <span class="n">frequency_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">*</span> <span class="n">previous_frequency</span>
+        for time, frequency in zip(self.timestamps, self.melody):
+            if self.add_lower_octave:
+                frequency = frequency / 2 
+            # taking care of octave errors since we only care about masking
+            num_samples = int(np.round((time - previous_time) * sample_rate))
+            if num_samples &gt; 0:
+                num_transition_samples = float(
+                    min(np.round(transition_length * sample_rate), num_samples))
+                frequency_series = np.ones(num_samples) * previous_frequency
 
-                <span class="k">if</span> <span class="n">previous_frequency</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">frequency_series</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
-                        <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_transition_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> \
-                                        <span class="p">(</span><span class="n">frequency</span> <span class="o">-</span> <span class="n">previous_frequency</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="n">frequency</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">frequency_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">*</span> <span class="n">frequency</span>
+                if previous_frequency &gt; 0 and frequency &gt; 0:
+                    frequency_series += np.minimum(
+                        np.arange(num_samples) / num_transition_samples, 1) * \
+                                        (frequency - previous_frequency)
+                elif frequency &gt; 0:
+                    frequency_series = np.ones(num_samples) * frequency
 
-                <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span>
+                samples = np.zeros(num_samples)
 
-                <span class="k">for</span> <span class="n">overtone</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_overtones</span><span class="p">):</span>
-                    <span class="n">overtone_num</span> <span class="o">=</span> <span class="n">overtone</span> <span class="o">+</span> <span class="mi">1</span>
-                    <span class="n">phasors</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">overtone_num</span> <span class="o">*</span> <span class="n">frequency_series</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">)</span>
-                    <span class="n">phases</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[</span><span class="n">overtone</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">phasors</span><span class="p">)</span>
-                    <span class="n">samples</span> <span class="o">+=</span> <span class="n">overtone_weights</span><span class="p">[</span><span class="n">overtone</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phases</span><span class="p">))</span>
-                    <span class="n">phase</span><span class="p">[</span><span class="n">overtone</span><span class="p">]</span> <span class="o">=</span> <span class="n">phases</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                for overtone in range(num_overtones):
+                    overtone_num = overtone + 1
+                    phasors = 2 * np.pi * overtone_num * frequency_series / float(sample_rate)
+                    phases = phase[overtone] + np.cumsum(phasors)
+                    samples += overtone_weights[overtone] * np.sign(np.sin(phases))
+                    phase[overtone] = phases[-1]
 
-                <span class="k">if</span> <span class="n">previous_frequency</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">samples</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_transition_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="n">previous_frequency</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">samples</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_transition_samples</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="n">previous_frequency</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">frequency</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">samples</span> <span class="o">*=</span> <span class="mi">0</span>
+                if previous_frequency == 0 and frequency &gt; 0:
+                    samples *= np.minimum(np.arange(num_samples) / num_transition_samples, 1)
+                elif previous_frequency &gt; 0 and frequency == 0:
+                    samples *= np.maximum(1 - np.arange(num_samples) / num_transition_samples, 0)
+                elif previous_frequency == 0 and frequency == 0:
+                    samples *= 0
 
-                <span class="n">melody_signal</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+                melody_signal.extend(samples)
 
-            <span class="n">previous_frequency</span> <span class="o">=</span> <span class="n">frequency</span>
-            <span class="n">previous_time</span> <span class="o">=</span> <span class="n">time</span>
+            previous_frequency = frequency
+            previous_time = time
 
-        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_vowel_filter</span><span class="p">:</span>
-            <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">_apply_vowel_filter</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+        melody_signal = np.asarray(melody_signal)
+        if self.apply_vowel_filter:
+            melody_signal = _apply_vowel_filter(melody_signal, sample_rate)
 
-        <span class="n">melody_signal</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">),</span> <span class="mf">1e-7</span><span class="p">))</span>
-        <span class="n">melody_signal</span> <span class="o">=</span> <span class="p">[</span><span class="n">melody_signal</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">)]</span>
-        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">melody_signal</span><span class="p">)</span>
-        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">melody_signal</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">signal_length</span><span class="p">]</span>
-        <span class="n">melody_signal</span> <span class="o">=</span> <span class="n">AudioSignal</span><span class="p">(</span>
-            <span class="n">audio_data_array</span><span class="o">=</span><span class="n">melody_signal</span><span class="p">,</span>
-            <span class="n">sample_rate</span><span class="o">=</span><span class="n">sample_rate</span><span class="p">,</span>
-            <span class="n">stft_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span>
-        <span class="p">)</span>
+        melody_signal /= float(max(np.max(melody_signal), 1e-7))
+        melody_signal = [melody_signal for _ in range(self.audio_signal.num_channels)]
+        melody_signal = np.asarray(melody_signal)
+        melody_signal = melody_signal[:, 0:self.audio_signal.signal_length]
+        melody_signal = AudioSignal(
+            audio_data_array=melody_signal,
+            sample_rate=sample_rate,
+            stft_params=self.audio_signal.stft_params
+        )
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span> <span class="o">=</span> <span class="n">melody_signal</span>
-        <span class="k">return</span> <span class="n">melody_signal</span>
+        self.melody_signal = melody_signal
+        return melody_signal
 
-    <span class="k">def</span> <span class="nf">create_harmonic_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">melody_signal</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a harmonic mask from the melody signal. The mask is smoothed to reduce </span>
-<span class="sd">        the effects of discontinuities in the melody synthesizer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">stft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">melody_signal</span><span class="o">.</span><span class="n">stft</span><span class="p">())</span>
+    def create_harmonic_mask(self, melody_signal):
+        &quot;&quot;&quot;
+        Creates a harmonic mask from the melody signal. The mask is smoothed to reduce 
+        the effects of discontinuities in the melody synthesizer.
+        &quot;&quot;&quot;
+        stft = np.abs(melody_signal.stft())
 
-        <span class="c1"># Need to threshold the melody stft since the synthesized</span>
-        <span class="c1"># F0 sequence overtones are at different weights.</span>
-        <span class="n">stft</span> <span class="o">=</span> <span class="n">stft</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span>
-        <span class="n">stft</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">stft</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="mf">1e-7</span><span class="p">)</span>
+        # Need to threshold the melody stft since the synthesized
+        # F0 sequence overtones are at different weights.
+        stft = stft ** self.compression
+        stft /= np.maximum(np.max(stft, axis=1, keepdims=True), 1e-7)
 
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        mask = np.empty(self.stft.shape)
 
-        <span class="c1"># Smoothing the mask row-wise using a low-pass filter to</span>
-        <span class="c1"># get rid of discontuinities in the mask.</span>
-        <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth_length</span><span class="p">),</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">smooth_length</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
-            <span class="n">mask</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">stft</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">],</span> <span class="n">kernel</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mask</span>
+        # Smoothing the mask row-wise using a low-pass filter to
+        # get rid of discontuinities in the mask.
+        kernel = np.full((1, self.smooth_length), 1 / self.smooth_length)
+        for ch in range(self.audio_signal.num_channels):
+            mask[..., ch] = convolve(stft[..., ch], kernel)
+        return mask
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">high_low</span> <span class="o">=</span> <span class="n">HighLowPassFilter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span><span class="p">)</span>
-        <span class="n">high_pass_masks</span> <span class="o">=</span> <span class="n">high_low</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    def run(self):
+        high_low = HighLowPassFilter(self.audio_signal, self.high_pass_cutoff)
+        high_pass_masks = high_low.run()
 
-        <span class="c1"># separate the mixture foreground melody by masking</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">extract_melody</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">create_melody_signal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_overtones</span><span class="p">)</span>
+        # separate the mixture foreground melody by masking
+        if self.melody_signal is None:
+            self.extract_melody()
+            self.create_melody_signal(self.num_overtones)
 
-        <span class="n">foreground_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_harmonic_mask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">melody_signal</span><span class="p">)</span>
-        <span class="n">foreground_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;soft&#39;</span><span class="p">](</span><span class="n">foreground_mask</span><span class="p">)</span>
+        foreground_mask = self.create_harmonic_mask(self.melody_signal)
+        foreground_mask = self.MASKS[&#39;soft&#39;](foreground_mask)
 
-        <span class="n">foreground_mask</span> <span class="o">=</span> <span class="n">foreground_mask</span>
-        <span class="n">background_mask</span> <span class="o">=</span> <span class="n">foreground_mask</span><span class="o">.</span><span class="n">invert_mask</span><span class="p">()</span>
+        foreground_mask = foreground_mask
+        background_mask = foreground_mask.invert_mask()
 
-        <span class="n">_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">background_mask</span><span class="o">.</span><span class="n">mask</span><span class="p">,</span> <span class="n">foreground_mask</span><span class="o">.</span><span class="n">mask</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        _masks = np.stack(
+            [background_mask.mask, foreground_mask.mask], axis=-1)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        self.result_masks = []
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        for i in range(_masks.shape[-1]):
+            mask_data = _masks[..., i]
+            if self.mask_type == self.MASKS[&#39;binary&#39;]:
+                mask_data = _masks[..., i] == np.max(_masks, axis=-1)
 
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            if i == 0:
+                mask_data = np.maximum(mask_data, high_pass_masks[i].mask)
+            elif i == 1:
+                mask_data = np.minimum(mask_data, high_pass_masks[i].mask)
 
-            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+            mask = self.mask_type(mask_data)
+            self.result_masks.append(mask)
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span></div>
+        return self.result_masks</div>
 </pre></div>
 
            </div>

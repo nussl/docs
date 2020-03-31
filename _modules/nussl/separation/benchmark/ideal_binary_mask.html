@@ -163,51 +163,51 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.benchmark.ideal_binary_mask</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span><span class="p">,</span> <span class="n">SeparationException</span>
-<span class="kn">from</span> <span class="nn">...datasets</span> <span class="kn">import</span> <span class="n">transforms</span>
+<span></span>from ..base import MaskSeparationBase, SeparationException
+from ...datasets import transforms
 
 
-<div class="viewcode-block" id="IdealBinaryMask"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.benchmark.IdealBinaryMask">[docs]</a><span class="k">class</span> <span class="nc">IdealBinaryMask</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements an ideal binary mask (IBM) that is computed by using the known</span>
-<span class="sd">    ground truth performance. This is one of the upper baselines.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): Signal to separate.</span>
-<span class="sd">        sources (list): List of audio signal objects that correspond to the sources.</span>
-<span class="sd">        mask_type (str, optional): Mask type. Defaults to &#39;binary&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="IdealBinaryMask"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.benchmark.IdealBinaryMask">[docs]</a>class IdealBinaryMask(MaskSeparationBase):
+    &quot;&quot;&quot;
+    Implements an ideal binary mask (IBM) that is computed by using the known
+    ground truth performance. This is one of the upper baselines.
+    
+    Args:
+        input_audio_signal (AudioSignal): Signal to separate.
+        sources (list): List of audio signal objects that correspond to the sources.
+        mask_type (str, optional): Mask type. Defaults to &#39;binary&#39;.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">,</span>
-                 <span class="n">mask_threshold</span><span class="o">=.</span><span class="mi">5</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">sources</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">sources</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sources</span><span class="p">))}</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span><span class="s2">&quot;sources must be a list or a dict!&quot;</span><span class="p">)</span>
+    def __init__(self, input_audio_signal, sources, mask_type=&#39;binary&#39;,
+                 mask_threshold=.5):
+        if isinstance(sources, list):
+            sources = {i: sources[i] for i in range(len(sources))}
+        elif not isinstance(sources, dict):
+            raise SeparationException(&quot;sources must be a list or a dict!&quot;)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">sources</span> <span class="o">=</span> <span class="n">sources</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
-            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span><span class="p">)</span>
+        self.sources = sources
+        super().__init__(
+            input_audio_signal=input_audio_signal, mask_type=mask_type,
+            mask_threshold=mask_threshold)
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Set up dictionary to pass to the transform.    </span>
-        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;mix&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span>
-            <span class="s1">&#39;sources&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sources</span>
-        <span class="p">}</span>
+    def run(self):
+        # Set up dictionary to pass to the transform.    
+        data = {
+            &#39;mix&#39;: self.audio_signal,
+            &#39;sources&#39;: self.sources
+        }
 
-        <span class="n">msa</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">MagnitudeSpectrumApproximation</span><span class="p">()</span>
-        <span class="n">ibm</span> <span class="o">=</span> <span class="n">msa</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">]</span>
+        msa = transforms.MagnitudeSpectrumApproximation()
+        ibm = msa(data)[&#39;ideal_binary_mask&#39;]
 
-        <span class="n">masks</span> <span class="o">=</span> <span class="p">[]</span>
+        masks = []
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ibm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">ibm</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">])</span>
-            <span class="n">masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+        for i in range(ibm.shape[-1]):
+            mask = self.mask_type(ibm[..., i])
+            masks.append(mask)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="n">masks</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span></div>
+        self.result_masks = masks
+        return self.result_masks</div>
 </pre></div>
 
            </div>

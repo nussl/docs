@@ -163,207 +163,207 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.primitive.repet_sim</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span>import numpy as np
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span>
-<span class="kn">from</span> <span class="nn">..benchmark</span> <span class="kn">import</span> <span class="n">HighLowPassFilter</span>
-<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">constants</span>
+from .. import MaskSeparationBase
+from ..benchmark import HighLowPassFilter
+from ...core import utils
+from ...core import constants
 
 
-<div class="viewcode-block" id="RepetSim"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.RepetSim">[docs]</a><span class="k">class</span> <span class="nc">RepetSim</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements the REpeating Pattern Extraction Technique algorithm using </span>
-<span class="sd">    the Similarity Matrix (REPET-SIM).</span>
+<div class="viewcode-block" id="RepetSim"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.RepetSim">[docs]</a>class RepetSim(MaskSeparationBase):
+    &quot;&quot;&quot;
+    Implements the REpeating Pattern Extraction Technique algorithm using 
+    the Similarity Matrix (REPET-SIM).
 
-<span class="sd">    REPET is a simple method for separating the repeating background from the </span>
-<span class="sd">    non-repeating foreground in a piece of audio mixture. REPET-SIM is a generalization </span>
-<span class="sd">    of REPET, which looks for similarities instead of periodicities.</span>
+    REPET is a simple method for separating the repeating background from the 
+    non-repeating foreground in a piece of audio mixture. REPET-SIM is a generalization 
+    of REPET, which looks for similarities instead of periodicities.
 
-<span class="sd">    References:</span>
+    References:
 
-<span class="sd">    [1] Zafar Rafii and Bryan Pardo. </span>
-<span class="sd">        &quot;Music/Voice Separation using the Similarity Matrix,&quot; </span>
-<span class="sd">        13th International Society on Music Information Retrieval, </span>
-<span class="sd">        Porto, Portugal, October 8-12, 2012.</span>
+    [1] Zafar Rafii and Bryan Pardo. 
+        &quot;Music/Voice Separation using the Similarity Matrix,&quot; 
+        13th International Society on Music Information Retrieval, 
+        Porto, Portugal, October 8-12, 2012.
 
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): Audio signal to be separated.</span>
-<span class="sd">        similarity_threshold (int, optional): Threshold for considering two</span>
-<span class="sd">          frames to be similar. Defaults to 0.</span>
-<span class="sd">        min_distance_between_frames (float, optional): Number of seconds two frames</span>
-<span class="sd">          must be apart to be considered neighbors. Defaults to 1.</span>
-<span class="sd">        max_repeating_frames (int, optional): Max number of frames to consider as</span>
-<span class="sd">          neighbors. Defaults to 100.</span>
-<span class="sd">        high_pass_cutoff (float, optional): Cutoff for high pass filters. Bins below</span>
-<span class="sd">          this cutoff will be given to the background. Defaults to 100.</span>
-<span class="sd">        mask_type (str, optional): Mask type to use.. Defaults to &#39;soft&#39;.</span>
-<span class="sd">        mask_threshold (float, optional): Threshold for mask converting to binary. </span>
-<span class="sd">          Defaults to 0.5.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    Args:
+        input_audio_signal (AudioSignal): Audio signal to be separated.
+        similarity_threshold (int, optional): Threshold for considering two
+          frames to be similar. Defaults to 0.
+        min_distance_between_frames (float, optional): Number of seconds two frames
+          must be apart to be considered neighbors. Defaults to 1.
+        max_repeating_frames (int, optional): Max number of frames to consider as
+          neighbors. Defaults to 100.
+        high_pass_cutoff (float, optional): Cutoff for high pass filters. Bins below
+          this cutoff will be given to the background. Defaults to 100.
+        mask_type (str, optional): Mask type to use.. Defaults to &#39;soft&#39;.
+        mask_threshold (float, optional): Threshold for mask converting to binary. 
+          Defaults to 0.5.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">similarity_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> 
-                 <span class="n">min_distance_between_frames</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_repeating_frames</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
-                 <span class="n">high_pass_cutoff</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span> 
-            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
-            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span><span class="p">)</span>
+    def __init__(self, input_audio_signal, similarity_threshold=0, 
+                 min_distance_between_frames=1, max_repeating_frames=100, 
+                 high_pass_cutoff=100, mask_type=&#39;soft&#39;, mask_threshold=0.5):
+        super().__init__(
+            input_audio_signal=input_audio_signal, 
+            mask_type=mask_type,
+            mask_threshold=mask_threshold)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span> <span class="o">=</span> <span class="n">high_pass_cutoff</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">similarity_threshold</span> <span class="o">=</span> <span class="n">similarity_threshold</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_distance_between_frames</span> <span class="o">=</span> <span class="n">min_distance_between_frames</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_repeating_frames</span> <span class="o">=</span> <span class="n">max_repeating_frames</span>
+        self.high_pass_cutoff = high_pass_cutoff
+        self.similarity_threshold = similarity_threshold
+        self.min_distance_between_frames = min_distance_between_frames
+        self.max_repeating_frames = max_repeating_frames
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_min_distance_converted_to_hops</span> <span class="o">=</span> <span class="kc">False</span>
+        self._min_distance_converted_to_hops = False
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">similarity_matrix</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">similarity_indices</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="kc">None</span>
+        self.similarity_matrix = None
+        self.similarity_indices = None
+        self.magnitude_spectrogram = None
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">high_low</span> <span class="o">=</span> <span class="n">HighLowPassFilter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span><span class="p">)</span>
-        <span class="n">high_pass_masks</span> <span class="o">=</span> <span class="n">high_low</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    def run(self):
+        high_low = HighLowPassFilter(self.audio_signal, self.high_pass_cutoff)
+        high_pass_masks = high_low.run()
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">)</span>
+        self.magnitude_spectrogram = np.abs(self.stft)
 
-        <span class="n">background_masks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        background_masks = []
+        foreground_masks = []
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">similarity_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_similarity_indices</span><span class="p">()</span>
+        self.similarity_indices = self._get_similarity_indices()
 
-        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
-            <span class="n">background_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_mask</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">])</span>
-            <span class="n">foreground_mask</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">background_mask</span>
+        for ch in range(self.audio_signal.num_channels):
+            background_mask = self._compute_mask(
+                self.magnitude_spectrogram[..., ch])
+            foreground_mask = 1 - background_mask
             
-            <span class="n">background_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">background_mask</span><span class="p">)</span>
-            <span class="n">foreground_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">foreground_mask</span><span class="p">)</span>
+            background_masks.append(background_mask)
+            foreground_masks.append(foreground_mask)
 
-        <span class="n">background_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">foreground_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        background_masks = np.stack(background_masks, axis=-1)
+        foreground_masks = np.stack(foreground_masks, axis=-1)
 
-        <span class="n">_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">foreground_masks</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        _masks = np.stack([background_masks, foreground_masks], axis=-1)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        self.result_masks = []
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        for i in range(_masks.shape[-1]):
+            mask_data = _masks[..., i]
+            if self.mask_type == self.MASKS[&#39;binary&#39;]:
+                mask_data = _masks[..., i] == np.max(_masks, axis=-1)
             
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            if i == 0:
+                mask_data = np.maximum(mask_data, high_pass_masks[i].mask)
+            elif i == 1:
+                mask_data = np.minimum(mask_data, high_pass_masks[i].mask)
             
-            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+            mask = self.mask_type(mask_data)
+            self.result_masks.append(mask)
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span>
+        return self.result_masks
 
-    <span class="k">def</span> <span class="nf">_get_similarity_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">similarity_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_similarity_matrix</span><span class="p">()</span>
+    def _get_similarity_indices(self):
+        self.similarity_matrix = self.get_similarity_matrix()
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_distance_converted_to_hops</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">min_distance_between_frames</span> <span class="o">*=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">hop_length</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_min_distance_converted_to_hops</span> <span class="o">=</span> <span class="kc">True</span>
+        if not self._min_distance_converted_to_hops:
+            self.min_distance_between_frames *= (
+                self.audio_signal.sample_rate / self.stft_params.hop_length
+            )
+            self._min_distance_converted_to_hops = True
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_similarity_indices</span><span class="p">()</span>
+        return self._find_similarity_indices()
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">compute_similarity_matrix</span><span class="p">(</span><span class="n">matrix</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Computes the cosine similarity matrix using the cosine similarity for any given input matrix X.</span>
+    @staticmethod
+    def compute_similarity_matrix(matrix):
+        &quot;&quot;&quot;Computes the cosine similarity matrix using the cosine similarity for any given input matrix X.
 
-<span class="sd">        Parameters:</span>
-<span class="sd">            matrix (np.array): 2D matrix containing the magnitude spectrogram of the audio signal</span>
-<span class="sd">        Returns:</span>
-<span class="sd">            S (np.array): 2D similarity matrix</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># ignore the &#39;divide by zero&#39; warning</span>
-        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
-            <span class="c1"># Code below is adopted from http://stackoverflow.com/a/20687984/5768001</span>
+        Parameters:
+            matrix (np.array): 2D matrix containing the magnitude spectrogram of the audio signal
+        Returns:
+            S (np.array): 2D similarity matrix
+        &quot;&quot;&quot;
+        # ignore the &#39;divide by zero&#39; warning
+        with np.errstate(divide=&#39;ignore&#39;):
+            # Code below is adopted from http://stackoverflow.com/a/20687984/5768001
 
-            <span class="c1"># base similarity matrix (all dot products)</span>
-            <span class="n">similarity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">matrix</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+            # base similarity matrix (all dot products)
+            similarity = np.dot(matrix, matrix.T)
 
-            <span class="c1"># inverse_mask of the squared magnitude of preference vectors (number of occurrences)</span>
-            <span class="n">inv_square_mag</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">similarity</span><span class="p">)</span>
+            # inverse_mask of the squared magnitude of preference vectors (number of occurrences)
+            inv_square_mag = 1 / np.diag(similarity)
 
-            <span class="c1"># if it doesn&#39;t occur, set it&#39;s inverse_mask magnitude to zero (instead of inf)</span>
-            <span class="n">inv_square_mag</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">inv_square_mag</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+            # if it doesn&#39;t occur, set it&#39;s inverse_mask magnitude to zero (instead of inf)
+            inv_square_mag[np.isinf(inv_square_mag)] = 0
 
-            <span class="c1"># inverse_mask of the magnitude</span>
-            <span class="n">inv_mag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">inv_square_mag</span><span class="p">)</span>
+            # inverse_mask of the magnitude
+            inv_mag = np.sqrt(inv_square_mag)
 
-            <span class="c1"># cosine similarity (element-wise multiply by inverse_mask magnitudes)</span>
-            <span class="n">cosine</span> <span class="o">=</span> <span class="n">similarity</span> <span class="o">*</span> <span class="n">inv_mag</span>
-            <span class="n">cosine</span> <span class="o">=</span> <span class="n">cosine</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">inv_mag</span>
+            # cosine similarity (element-wise multiply by inverse_mask magnitudes)
+            cosine = similarity * inv_mag
+            cosine = cosine.T * inv_mag
 
-            <span class="k">return</span> <span class="n">cosine</span>
+            return cosine
 
-    <span class="k">def</span> <span class="nf">_find_similarity_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds the similarity indices for all time frames from the similarity matrix</span>
+    def _find_similarity_indices(self):
+        &quot;&quot;&quot;Finds the similarity indices for all time frames from the similarity matrix
 
-<span class="sd">        Returns:</span>
-<span class="sd">            similarity_indices (list of lists): similarity indices for all time frames</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">similarity_indices</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_length</span><span class="p">):</span>
-            <span class="n">cur_indices</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">find_peak_indices</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">similarity_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_repeating_frames</span><span class="p">,</span>
-                <span class="n">min_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_distance_between_frames</span><span class="p">,</span>
-                <span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">similarity_threshold</span><span class="p">)</span>
+        Returns:
+            similarity_indices (list of lists): similarity indices for all time frames
+        &quot;&quot;&quot;
+        similarity_indices = []
+        for i in range(self.audio_signal.stft_length):
+            cur_indices = utils.find_peak_indices(
+                self.similarity_matrix[i, :], self.max_repeating_frames,
+                min_dist=self.min_distance_between_frames,
+                threshold=self.similarity_threshold)
 
-            <span class="c1"># the first peak is always itself so we throw it out</span>
-            <span class="c1"># we also want only self.max_repeating_frames peaks</span>
-            <span class="c1"># so +1 for 0-based, and +1 for the first peak we threw out</span>
-            <span class="n">cur_indices</span> <span class="o">=</span> <span class="n">cur_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">max_repeating_frames</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span>
-            <span class="n">similarity_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur_indices</span><span class="p">)</span>
+            # the first peak is always itself so we throw it out
+            # we also want only self.max_repeating_frames peaks
+            # so +1 for 0-based, and +1 for the first peak we threw out
+            cur_indices = cur_indices[1:self.max_repeating_frames + 2]
+            similarity_indices.append(cur_indices)
 
-        <span class="k">return</span> <span class="n">similarity_indices</span>
+        return similarity_indices
 
-    <span class="k">def</span> <span class="nf">_compute_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitude_spectrogram_channel</span><span class="p">):</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">magnitude_spectrogram_channel</span><span class="p">)</span>
+    def _compute_mask(self, magnitude_spectrogram_channel):
+        mask = np.zeros_like(magnitude_spectrogram_channel)
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_length</span><span class="p">):</span>
-            <span class="n">cur_similarities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">similarity_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        for i in range(self.audio_signal.stft_length):
+            cur_similarities = self.similarity_indices[i]
 
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">cur_similarities</span><span class="p">:</span>
-                <span class="c1"># If there are no similarities, then just add ones to the mask here.</span>
-                <span class="n">mask</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_VERT_INDEX</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">similar_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">magnitude_spectrogram_channel</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
-                                          <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">cur_similarities</span><span class="p">])</span>
+            if not cur_similarities:
+                # If there are no similarities, then just add ones to the mask here.
+                mask[:, i] = np.ones(mask.shape[constants.STFT_VERT_INDEX])
+            else:
+                similar_times = np.array([magnitude_spectrogram_channel[:, j]
+                                          for j in cur_similarities])
 
-                <span class="n">mask</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">similar_times</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                mask[:, i] = np.median(similar_times, axis=0)
 
-        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">magnitude_spectrogram_channel</span><span class="p">)</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">mask</span> <span class="o">+</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">magnitude_spectrogram_channel</span> <span class="o">+</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">mask</span>
+        mask = np.minimum(mask, magnitude_spectrogram_channel)
+        mask = (mask + constants.EPSILON) / (magnitude_spectrogram_channel + constants.EPSILON)
+        return mask
 
-    <span class="k">def</span> <span class="nf">get_similarity_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Calculates and returns the similarity matrix for the audio file associated with this object</span>
+    def get_similarity_matrix(self):
+        &quot;&quot;&quot;Calculates and returns the similarity matrix for the audio file associated with this object
 
-<span class="sd">        Returns:</span>
-<span class="sd">             similarity_matrix (np.array): similarity matrix for the audio file.</span>
+        Returns:
+             similarity_matrix (np.array): similarity matrix for the audio file.
 
-<span class="sd">        EXAMPLE::</span>
+        EXAMPLE::
 
-<span class="sd">            # Set up audio signal</span>
-<span class="sd">            signal = nussl.AudioSignal(&#39;path_to_file.wav&#39;)</span>
+            # Set up audio signal
+            signal = nussl.AudioSignal(&#39;path_to_file.wav&#39;)
 
-<span class="sd">            # Set up a RepetSim object</span>
-<span class="sd">            repet_sim = nussl.RepetSim(signal)</span>
+            # Set up a RepetSim object
+            repet_sim = nussl.RepetSim(signal)
 
-<span class="sd">            # I don&#39;t have to run repet to get a similarity matrix for signal</span>
-<span class="sd">            sim_mat = repet_sim.get_similarity_matrix()</span>
+            # I don&#39;t have to run repet to get a similarity matrix for signal
+            sim_mat = repet_sim.get_similarity_matrix()
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">mean_magnitude_spectrogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_similarity_matrix</span><span class="p">(</span><span class="n">mean_magnitude_spectrogram</span><span class="o">.</span><span class="n">T</span><span class="p">)</span></div>
+        &quot;&quot;&quot;
+        mean_magnitude_spectrogram = np.mean(self.magnitude_spectrogram, axis=2)
+        return self.compute_similarity_matrix(mean_magnitude_spectrogram.T)</div>
 </pre></div>
 
            </div>

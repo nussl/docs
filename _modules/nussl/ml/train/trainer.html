@@ -163,366 +163,366 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.ml.train.trainer</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">time</span>
-
-<span class="kn">from</span> <span class="nn">ignite.engine</span> <span class="kn">import</span> <span class="n">Events</span><span class="p">,</span> <span class="n">Engine</span>
-<span class="kn">from</span> <span class="nn">ignite.handlers</span> <span class="kn">import</span> <span class="n">Timer</span>
-<span class="kn">from</span> <span class="nn">torch.utils.tensorboard</span> <span class="kn">import</span> <span class="n">SummaryWriter</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="kn">from</span> <span class="nn">nussl</span> <span class="kn">import</span> <span class="n">datasets</span>
-
-
-<div class="viewcode-block" id="ValidationEvents"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.ValidationEvents">[docs]</a><span class="k">class</span> <span class="nc">ValidationEvents</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Events based on validation running</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">VALIDATION_STARTED</span> <span class="o">=</span> <span class="s1">&#39;validation_started&#39;</span>
-    <span class="n">VALIDATION_COMPLETED</span> <span class="o">=</span> <span class="s1">&#39;validation_completed&#39;</span></div>
-
-
-<div class="viewcode-block" id="BackwardsEvents"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.BackwardsEvents">[docs]</a><span class="k">class</span> <span class="nc">BackwardsEvents</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Events based on validation running</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">BACKWARDS_COMPLETED</span> <span class="o">=</span> <span class="s1">&#39;backwards_completed&#39;</span></div>
-
-
-<div class="viewcode-block" id="cache_dataset"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.cache_dataset">[docs]</a><span class="k">def</span> <span class="nf">cache_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">log_frequency</span><span class="o">=.</span><span class="mi">1</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Runs through an entire dataset and caches it if there nussl.datasets.transforms.Cache</span>
-<span class="sd">    is in dataset.transform. If there is no caching, or dataset.cache_populated = True,</span>
-<span class="sd">    then this function just iterates through the dataset and does nothing.</span>
-
-<span class="sd">    This function can also take a `torch.util.data.DataLoader` object wrapped around</span>
-<span class="sd">    a `nussl.datasets.BaseDataset` object.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        dataset (nussl.datasets.BaseDataset): Must be a subclass of </span>
-<span class="sd">          `nussl.datasets.BaseDataset`.</span>
-
-<span class="sd">        log_frequency (float, optional): How often to log progress, as a fraction between</span>
-<span class="sd">          0.0 and 1.0 of the total dataset length. Defaults to .1 </span>
-<span class="sd">          (10x over the course of caching).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">dummy_process</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">pass</span>
-
-    <span class="n">cache</span> <span class="o">=</span> <span class="n">Engine</span><span class="p">(</span><span class="n">dummy_process</span><span class="p">)</span>
-    <span class="n">log_frequency</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">*</span> <span class="n">log_frequency</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-
-    <span class="nd">@cache</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_STARTED</span><span class="p">(</span><span class="n">every</span><span class="o">=</span><span class="n">log_frequency</span><span class="p">))</span>
-    <span class="k">def</span> <span class="nf">log_progress</span><span class="p">(</span><span class="n">engine</span><span class="p">):</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Cached </span><span class="si">{</span><span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iteration</span><span class="si">}</span><span class="s2"> / &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_length</span><span class="si">}</span><span class="s2"> batches&quot;</span><span class="p">)</span>
-
-    <span class="n">cache</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
-    <span class="n">dataset</span><span class="o">.</span><span class="n">cache_populated</span> <span class="o">=</span> <span class="kc">True</span></div>
-
-
-<div class="viewcode-block" id="create_train_and_validation_engines"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.create_train_and_validation_engines">[docs]</a><span class="k">def</span> <span class="nf">create_train_and_validation_engines</span><span class="p">(</span><span class="n">train_func</span><span class="p">,</span> <span class="n">val_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Helper function for creating an ignite Engine object with helpful defaults.</span>
-<span class="sd">    This sets up an Engine that has four handlers attached to it:</span>
-
-<span class="sd">    - prepare_batch: before a batch is passed to train_func or val_func, this</span>
-<span class="sd">      function runs, moving every item in the batch (which is a dictionary) to</span>
-<span class="sd">      the appropriate device (&#39;cpu&#39;  or &#39;cuda&#39;).</span>
-
-<span class="sd">    - book_keeping: sets up some dictionaries that are used for bookkeeping so one</span>
-<span class="sd">      can easily track the epoch and iteration losses for both training and</span>
-<span class="sd">      validation.</span>
-
-<span class="sd">    - add_to_iter_history: records the iteration, epoch, and past iteration losses</span>
-<span class="sd">      into the dictionaries set up by book_keeping.</span>
-
-<span class="sd">    - clear_iter_history: resets the current iteration history of losses after moving</span>
-<span class="sd">      the current iteration history into past iteration history.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        train_func (func): Function that provides the closure for training for</span>
-<span class="sd">          a single batch.</span>
-<span class="sd">        val_func (func, optional): Function that provides the closure for</span>
-<span class="sd">          validating a single batch. Defaults to None.</span>
-<span class="sd">        device (str, optional): Device to move tensors to. Defaults to &#39;cpu&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Set up engines for training and validation</span>
-    <span class="n">trainer</span> <span class="o">=</span> <span class="n">Engine</span><span class="p">(</span><span class="n">train_func</span><span class="p">)</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">register_events</span><span class="p">(</span><span class="o">*</span><span class="n">ValidationEvents</span><span class="p">)</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">register_events</span><span class="p">(</span><span class="o">*</span><span class="n">BackwardsEvents</span><span class="p">)</span>
-
-    <span class="n">validator</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">val_func</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Engine</span><span class="p">(</span><span class="n">val_func</span><span class="p">)</span>
-
-    <span class="c1"># Before a batch starts, the items should be float and moved to the </span>
-    <span class="c1"># correct device, for both training and validation. Checks to make</span>
-    <span class="c1"># sure &quot;cuda&quot; is available if user requested cuda.</span>
-    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-        <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">prepare_batch</span><span class="p">(</span><span class="n">engine</span><span class="p">):</span>
-        <span class="n">batch</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">batch</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
-                <span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">batch</span> <span class="o">=</span> <span class="n">batch</span>
-
-    <span class="c1"># Set up stuff for bookkeeping as training progresses.</span>
-    <span class="k">def</span> <span class="nf">book_keeping</span><span class="p">(</span><span class="n">engine</span><span class="p">):</span>
-        <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">past_iter_history</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">def</span> <span class="nf">add_to_iter_history</span><span class="p">(</span><span class="n">engine</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">:</span>
-                <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">past_iter_history</span><span class="p">:</span>
-                <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">past_iter_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="p">)</span>
-            <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">past_iter_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">clear_iter_history</span><span class="p">(</span><span class="n">engine</span><span class="p">):</span>
-        <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="n">trainer</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-        <span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_STARTED</span><span class="p">,</span> <span class="n">prepare_batch</span><span class="p">)</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-        <span class="n">Events</span><span class="o">.</span><span class="n">STARTED</span><span class="p">,</span> <span class="n">book_keeping</span><span class="p">)</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-        <span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">,</span> <span class="n">add_to_iter_history</span><span class="p">)</span>
-    <span class="n">trainer</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-        <span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">,</span> <span class="n">clear_iter_history</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">validator</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-            <span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_STARTED</span><span class="p">,</span> <span class="n">prepare_batch</span><span class="p">)</span>
-        <span class="n">validator</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-            <span class="n">Events</span><span class="o">.</span><span class="n">STARTED</span><span class="p">,</span> <span class="n">book_keeping</span><span class="p">)</span>
-        <span class="n">validator</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-            <span class="n">Events</span><span class="o">.</span><span class="n">ITERATION_COMPLETED</span><span class="p">,</span> <span class="n">add_to_iter_history</span><span class="p">)</span>
-        <span class="n">validator</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span>
-            <span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">,</span> <span class="n">clear_iter_history</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">validator</span></div>
-
-
-<div class="viewcode-block" id="add_validate_and_checkpoint"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_validate_and_checkpoint">[docs]</a><span class="k">def</span> <span class="nf">add_validate_and_checkpoint</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">train_data</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span>
-                                <span class="n">val_data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">validator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This adds the following handler to the trainer:</span>
-
-<span class="sd">    - validate_and_checkpoint: this runs the validator on the validation dataset </span>
-<span class="sd">      (``val_data``) using a defined validation process function ``val_func``. </span>
-<span class="sd">      These are optional. If these are not provided, then no validator is run</span>
-<span class="sd">      and the model is simply checkpointed. The model is always saved to </span>
-<span class="sd">      ``{output_folder}/checkpoints/latest.model.pth``. If the model is also the </span>
-<span class="sd">      one with the lowest validation loss, then it is *also* saved to</span>
-<span class="sd">      ``{output_folder}/checkpoints/best.model.pth. This is attached to</span>
-<span class="sd">      ``Events.EPOCH_COMPLETED`` on the trainer. After completion, it fires a</span>
-<span class="sd">      ``ValidationEvents.VALIDATION_COMPLETED`` event.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        model (torch.nn.Module): Model that is being trained (typically a SeparationModel).</span>
-<span class="sd">          optimizer (torch.optim.Optimizer): Optimizer being used to train.</span>
-
-<span class="sd">        train_data (BaseDataset): dataset that is being used to train the model. This is to</span>
-<span class="sd">          save additional metadata information alongside the model checkpoint such as the</span>
-<span class="sd">          STFTParams, dataset folder, length, list of transforms, etc.</span>
-
-<span class="sd">        trainer (ignite.Engine): Engine for trainer</span>
-
-<span class="sd">        validator (ignite.Engine, optional): Engine for validation. </span>
-<span class="sd">          Defaults to None.</span>
-
-<span class="sd">        val_data (torch.utils.data.Dataset, optional): The validation data. </span>
-<span class="sd">          Defaults to None.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># When the trainer finishes an epoch, it should validate and save </span>
-    <span class="c1"># the model.</span>
-    <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_COMPLETED</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">validate_and_checkpoint</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
-        <span class="n">trainer</span><span class="o">.</span><span class="n">fire_event</span><span class="p">(</span><span class="n">ValidationEvents</span><span class="o">.</span><span class="n">VALIDATION_STARTED</span><span class="p">)</span>
-
-        <span class="n">is_best</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="n">validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">validator</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">val_data</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">validator</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">:</span>
-                <span class="n">_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;validation/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="k">if</span> <span class="n">_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">:</span>
-                    <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="n">_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="n">_key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
-                    <span class="n">validator</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="p">))</span>
-
-            <span class="k">if</span> <span class="s1">&#39;validation/loss&#39;</span> <span class="ow">in</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">:</span>
-                <span class="n">cur</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="s1">&#39;validation/loss&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="n">is_best</span> <span class="o">=</span> <span class="n">cur</span> <span class="o">==</span> <span class="nb">min</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="s1">&#39;validation/loss&#39;</span><span class="p">])</span>
-
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">:</span>
-            <span class="n">_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;train/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="k">if</span> <span class="n">_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">:</span>
-                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="n">_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="n">_key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
-                <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">iter_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="p">))</span>
-
-        <span class="n">output_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-            <span class="n">output_folder</span><span class="p">,</span> <span class="s1">&#39;checkpoints&#39;</span><span class="p">,</span> <span class="s1">&#39;latest.model.pth&#39;</span><span class="p">)]</span>
-        <span class="k">if</span> <span class="n">is_best</span><span class="p">:</span>
-            <span class="n">output_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                <span class="n">output_folder</span><span class="p">,</span> <span class="s1">&#39;checkpoints&#39;</span><span class="p">,</span> <span class="s1">&#39;best.model.pth&#39;</span>
-            <span class="p">))</span>
-
-        <span class="n">_transform</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">train_data</span><span class="o">.</span><span class="n">transform</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_transform</span><span class="p">,</span> <span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_transform</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">Cache</span><span class="p">):</span>
-                    <span class="n">_transform</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-
-        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;stft_params&#39;</span><span class="p">:</span> <span class="n">train_data</span><span class="o">.</span><span class="n">stft_params</span><span class="p">,</span>
-            <span class="s1">&#39;sample_rate&#39;</span><span class="p">:</span> <span class="n">train_data</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
-            <span class="s1">&#39;num_channels&#39;</span><span class="p">:</span> <span class="n">train_data</span><span class="o">.</span><span class="n">num_channels</span><span class="p">,</span>
-            <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="n">train_data</span><span class="o">.</span><span class="n">folder</span><span class="p">,</span>
-            <span class="s1">&#39;transforms&#39;</span><span class="p">:</span> <span class="n">_transform</span><span class="p">,</span>
-            <span class="s1">&#39;trainer.state_dict&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;epoch&#39;</span><span class="p">:</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span>
-                <span class="s1">&#39;epoch_length&#39;</span><span class="p">:</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_length</span><span class="p">,</span>
-                <span class="s1">&#39;max_epochs&#39;</span><span class="p">:</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">,</span>
-                <span class="s1">&#39;output&#39;</span><span class="p">:</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">,</span>
-                <span class="s1">&#39;metrics&#39;</span><span class="p">:</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">metrics</span><span class="p">,</span>
-                <span class="s1">&#39;seed&#39;</span><span class="p">:</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
-            <span class="p">},</span>
-            <span class="s1">&#39;trainer.state.epoch_history&#39;</span><span class="p">:</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">,</span>
-        <span class="p">}</span>
-
-        <span class="k">for</span> <span class="n">_path</span> <span class="ow">in</span> <span class="n">output_paths</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                <span class="n">output_folder</span><span class="p">,</span> <span class="s1">&#39;checkpoints&#39;</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">DataParallel</span><span class="p">):</span>
-                <span class="n">_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">module</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">_model</span> <span class="o">=</span> <span class="n">model</span>
-            <span class="n">_model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">_path</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;metadata&#39;</span><span class="p">:</span> <span class="n">metadata</span><span class="p">})</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
-                       <span class="n">_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;model.pth&#39;</span><span class="p">,</span> <span class="s1">&#39;optimizer.pth&#39;</span><span class="p">))</span>
-
-        <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">saved_model_path</span> <span class="o">=</span> <span class="n">output_paths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output_folder</span> <span class="o">=</span> <span class="n">output_folder</span>
-        <span class="n">trainer</span><span class="o">.</span><span class="n">fire_event</span><span class="p">(</span><span class="n">ValidationEvents</span><span class="o">.</span><span class="n">VALIDATION_COMPLETED</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="add_stdout_handler"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_stdout_handler">[docs]</a><span class="k">def</span> <span class="nf">add_stdout_handler</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="n">validator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This adds the following handler to the trainer engine, and also sets up</span>
-<span class="sd">    Timers:</span>
-
-<span class="sd">    - log_epoch_to_stdout: This logs the results of a model after it has trained</span>
-<span class="sd">      for a single epoch on both the training and validation set. The output typically</span>
-<span class="sd">      looks like this:</span>
-
-<span class="sd">      .. code-block:: none</span>
-
-<span class="sd">            EPOCH SUMMARY</span>
-<span class="sd">            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
-<span class="sd">            - Epoch number: 0010 / 0010</span>
-<span class="sd">            - Training loss:   0.583591</span>
-<span class="sd">            - Validation loss: 0.137209</span>
-<span class="sd">            - Epoch took: 00:00:03</span>
-<span class="sd">            - Time since start: 00:00:32</span>
-<span class="sd">            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
-<span class="sd">            Saving to test.</span>
-<span class="sd">            Output @ tests/local/trainer</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        trainer (ignite.Engine): Engine for trainer</span>
-
-<span class="sd">        validator (ignite.Engine, optional): Engine for validation. </span>
-<span class="sd">          Defaults to None.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Set up timers for overall time taken and each epoch</span>
-    <span class="n">overall_timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="n">average</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">overall_timer</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span>
-                         <span class="n">start</span><span class="o">=</span><span class="n">Events</span><span class="o">.</span><span class="n">STARTED</span><span class="p">,</span> <span class="n">pause</span><span class="o">=</span><span class="n">Events</span><span class="o">.</span><span class="n">COMPLETED</span><span class="p">)</span>
-
-    <span class="n">epoch_timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="n">average</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">epoch_timer</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span>
-        <span class="n">trainer</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">Events</span><span class="o">.</span><span class="n">EPOCH_STARTED</span><span class="p">,</span>
-        <span class="n">pause</span><span class="o">=</span><span class="n">ValidationEvents</span><span class="o">.</span><span class="n">VALIDATION_COMPLETED</span>
-    <span class="p">)</span>
-
-    <span class="nd">@trainer</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ValidationEvents</span><span class="o">.</span><span class="n">VALIDATION_COMPLETED</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">log_epoch_to_stdout</span><span class="p">(</span><span class="n">trainer</span><span class="p">):</span>
-        <span class="n">epoch_time</span> <span class="o">=</span> <span class="n">epoch_timer</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
-        <span class="n">epoch_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-            <span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">(</span><span class="n">epoch_time</span><span class="p">))</span>
-        <span class="n">overall_time</span> <span class="o">=</span> <span class="n">overall_timer</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
-        <span class="n">overall_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
-            <span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">(</span><span class="n">overall_time</span><span class="p">))</span>
-
-        <span class="n">epoch_number</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span>
-        <span class="n">total_epochs</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">max_epochs</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">validation_loss</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="s1">&#39;validation/loss&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">04f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="n">validation_loss</span> <span class="o">=</span> <span class="s1">&#39;N/A&#39;</span>
-
-        <span class="n">train_loss</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="s1">&#39;train/loss&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">saved_model_path</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">saved_model_path</span>
-
-        <span class="n">logging_str</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;EPOCH SUMMARY </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;- Epoch number: </span><span class="si">{</span><span class="n">epoch_number</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">total_epochs</span><span class="si">:</span><span class="s2">04d</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;- Training loss:   </span><span class="si">{</span><span class="n">train_loss</span><span class="si">:</span><span class="s2">04f</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;- Validation loss: </span><span class="si">{</span><span class="n">validation_loss</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;- Epoch took: </span><span class="si">{</span><span class="n">epoch_time</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;- Time since start: </span><span class="si">{</span><span class="n">overall_time</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Saving to </span><span class="si">{</span><span class="n">saved_model_path</span><span class="si">}</span><span class="s2">. </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Output @ </span><span class="si">{</span><span class="n">trainer</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output_folder</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">logging_str</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="add_tensorboard_handler"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_tensorboard_handler">[docs]</a><span class="k">def</span> <span class="nf">add_tensorboard_handler</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">engine</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Every key in engine.state.epoch_history[-1] is logged to TensorBoard.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        output_folder (str): Where the tensorboard logs should go. The output</span>
-<span class="sd">          logs will go into a subfolder &#39;tensorboard&#39;.</span>
-
-<span class="sd">        trainer (ignite.Engine): The engine to log.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nd">@engine</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">ValidationEvents</span><span class="o">.</span><span class="n">VALIDATION_COMPLETED</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">log_to_tensorboard</span><span class="p">(</span><span class="n">engine</span><span class="p">):</span>
-        <span class="n">writer</span> <span class="o">=</span> <span class="n">SummaryWriter</span><span class="p">(</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="s1">&#39;tensorboard&#39;</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">:</span>
-            <span class="n">writer</span><span class="o">.</span><span class="n">add_scalar</span><span class="p">(</span>
-                <span class="n">key</span><span class="p">,</span> <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch_history</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">engine</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span></div>
+<span></span>import os
+import logging
+from enum import Enum
+import copy
+import time
+
+from ignite.engine import Events, Engine
+from ignite.handlers import Timer
+from torch.utils.tensorboard import SummaryWriter
+import torch
+from torch import nn
+import numpy as np
+
+from nussl import datasets
+
+
+<div class="viewcode-block" id="ValidationEvents"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.ValidationEvents">[docs]</a>class ValidationEvents(Enum):
+    &quot;&quot;&quot;
+    Events based on validation running
+    &quot;&quot;&quot;
+    VALIDATION_STARTED = &#39;validation_started&#39;
+    VALIDATION_COMPLETED = &#39;validation_completed&#39;</div>
+
+
+<div class="viewcode-block" id="BackwardsEvents"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.BackwardsEvents">[docs]</a>class BackwardsEvents(Enum):
+    &quot;&quot;&quot;
+    Events based on validation running
+    &quot;&quot;&quot;
+    BACKWARDS_COMPLETED = &#39;backwards_completed&#39;</div>
+
+
+<div class="viewcode-block" id="cache_dataset"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.cache_dataset">[docs]</a>def cache_dataset(dataset, log_frequency=.1):
+    &quot;&quot;&quot;
+    Runs through an entire dataset and caches it if there nussl.datasets.transforms.Cache
+    is in dataset.transform. If there is no caching, or dataset.cache_populated = True,
+    then this function just iterates through the dataset and does nothing.
+
+    This function can also take a `torch.util.data.DataLoader` object wrapped around
+    a `nussl.datasets.BaseDataset` object.
+    
+    Args:
+        dataset (nussl.datasets.BaseDataset): Must be a subclass of 
+          `nussl.datasets.BaseDataset`.
+
+        log_frequency (float, optional): How often to log progress, as a fraction between
+          0.0 and 1.0 of the total dataset length. Defaults to .1 
+          (10x over the course of caching).
+    &quot;&quot;&quot;
+
+    def dummy_process(engine, data):
+        pass
+
+    cache = Engine(dummy_process)
+    log_frequency = max(int(len(dataset) * log_frequency), 1)
+
+    @cache.on(Events.ITERATION_STARTED(every=log_frequency))
+    def log_progress(engine):
+        logging.info(
+            f&quot;Cached {engine.state.iteration} / &quot;
+            f&quot;{engine.state.epoch_length} batches&quot;)
+
+    cache.run(dataset)
+    dataset.cache_populated = True</div>
+
+
+<div class="viewcode-block" id="create_train_and_validation_engines"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.create_train_and_validation_engines">[docs]</a>def create_train_and_validation_engines(train_func, val_func=None, device=&#39;cpu&#39;):
+    &quot;&quot;&quot;
+    Helper function for creating an ignite Engine object with helpful defaults.
+    This sets up an Engine that has four handlers attached to it:
+
+    - prepare_batch: before a batch is passed to train_func or val_func, this
+      function runs, moving every item in the batch (which is a dictionary) to
+      the appropriate device (&#39;cpu&#39;  or &#39;cuda&#39;).
+
+    - book_keeping: sets up some dictionaries that are used for bookkeeping so one
+      can easily track the epoch and iteration losses for both training and
+      validation.
+
+    - add_to_iter_history: records the iteration, epoch, and past iteration losses
+      into the dictionaries set up by book_keeping.
+
+    - clear_iter_history: resets the current iteration history of losses after moving
+      the current iteration history into past iteration history.
+    
+    Args:
+        train_func (func): Function that provides the closure for training for
+          a single batch.
+        val_func (func, optional): Function that provides the closure for
+          validating a single batch. Defaults to None.
+        device (str, optional): Device to move tensors to. Defaults to &#39;cpu&#39;.
+    &quot;&quot;&quot;
+    # Set up engines for training and validation
+    trainer = Engine(train_func)
+    trainer.register_events(*ValidationEvents)
+    trainer.register_events(*BackwardsEvents)
+
+    validator = None if val_func is None else Engine(val_func)
+
+    # Before a batch starts, the items should be float and moved to the 
+    # correct device, for both training and validation. Checks to make
+    # sure &quot;cuda&quot; is available if user requested cuda.
+    device = torch.device(device)
+    if not torch.cuda.is_available():
+        device = torch.device(&#39;cpu&#39;)
+
+    def prepare_batch(engine):
+        batch = engine.state.batch
+        for key in batch:
+            if torch.is_tensor(batch[key]):
+                batch[key] = batch[key].float().to(device)
+        engine.state.batch = batch
+
+    # Set up stuff for bookkeeping as training progresses.
+    def book_keeping(engine):
+        engine.state.epoch_history = {}
+        engine.state.iter_history = {}
+        engine.state.past_iter_history = {}
+
+    def add_to_iter_history(engine):
+        for key in engine.state.output:
+            if key not in engine.state.iter_history:
+                engine.state.iter_history[key] = []
+            if key not in engine.state.past_iter_history:
+                engine.state.past_iter_history[key] = []
+            engine.state.iter_history[key].append(
+                engine.state.output[key]
+            )
+            engine.state.past_iter_history[key].append(
+                engine.state.iter_history[key]
+            )
+
+    def clear_iter_history(engine):
+        engine.state.iter_history = {}
+
+    trainer.add_event_handler(
+        Events.ITERATION_STARTED, prepare_batch)
+    trainer.add_event_handler(
+        Events.STARTED, book_keeping)
+    trainer.add_event_handler(
+        Events.ITERATION_COMPLETED, add_to_iter_history)
+    trainer.add_event_handler(
+        Events.EPOCH_STARTED, clear_iter_history)
+
+    if validator is not None:
+        validator.add_event_handler(
+            Events.ITERATION_STARTED, prepare_batch)
+        validator.add_event_handler(
+            Events.STARTED, book_keeping)
+        validator.add_event_handler(
+            Events.ITERATION_COMPLETED, add_to_iter_history)
+        validator.add_event_handler(
+            Events.EPOCH_STARTED, clear_iter_history)
+
+    return trainer, validator</div>
+
+
+<div class="viewcode-block" id="add_validate_and_checkpoint"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_validate_and_checkpoint">[docs]</a>def add_validate_and_checkpoint(output_folder, model, optimizer, train_data, trainer,
+                                val_data=None, validator=None):
+    &quot;&quot;&quot;
+    This adds the following handler to the trainer:
+
+    - validate_and_checkpoint: this runs the validator on the validation dataset 
+      (``val_data``) using a defined validation process function ``val_func``. 
+      These are optional. If these are not provided, then no validator is run
+      and the model is simply checkpointed. The model is always saved to 
+      ``{output_folder}/checkpoints/latest.model.pth``. If the model is also the 
+      one with the lowest validation loss, then it is *also* saved to
+      ``{output_folder}/checkpoints/best.model.pth. This is attached to
+      ``Events.EPOCH_COMPLETED`` on the trainer. After completion, it fires a
+      ``ValidationEvents.VALIDATION_COMPLETED`` event.
+
+    Args:
+        model (torch.nn.Module): Model that is being trained (typically a SeparationModel).
+          optimizer (torch.optim.Optimizer): Optimizer being used to train.
+
+        train_data (BaseDataset): dataset that is being used to train the model. This is to
+          save additional metadata information alongside the model checkpoint such as the
+          STFTParams, dataset folder, length, list of transforms, etc.
+
+        trainer (ignite.Engine): Engine for trainer
+
+        validator (ignite.Engine, optional): Engine for validation. 
+          Defaults to None.
+
+        val_data (torch.utils.data.Dataset, optional): The validation data. 
+          Defaults to None.
+    &quot;&quot;&quot;
+
+    # When the trainer finishes an epoch, it should validate and save 
+    # the model.
+    @trainer.on(Events.EPOCH_COMPLETED)
+    def validate_and_checkpoint(trainer):
+        trainer.fire_event(ValidationEvents.VALIDATION_STARTED)
+
+        is_best = True
+        if validator is not None:
+            validator.run(val_data)
+
+            for key in validator.state.iter_history:
+                _key = f&quot;validation/{key}&quot;
+                if _key not in trainer.state.epoch_history:
+                    trainer.state.epoch_history[_key] = []
+                trainer.state.epoch_history[_key].append(np.mean(
+                    validator.state.iter_history[key]
+                ))
+
+            if &#39;validation/loss&#39; in trainer.state.epoch_history:
+                cur = trainer.state.epoch_history[&#39;validation/loss&#39;][-1]
+                is_best = cur == min(trainer.state.epoch_history[&#39;validation/loss&#39;])
+
+        for key in trainer.state.iter_history:
+            _key = f&quot;train/{key}&quot;
+            if _key not in trainer.state.epoch_history:
+                trainer.state.epoch_history[_key] = []
+            trainer.state.epoch_history[_key].append(np.mean(
+                trainer.state.iter_history[key]
+            ))
+
+        output_paths = [os.path.join(
+            output_folder, &#39;checkpoints&#39;, &#39;latest.model.pth&#39;)]
+        if is_best:
+            output_paths.append(os.path.join(
+                output_folder, &#39;checkpoints&#39;, &#39;best.model.pth&#39;
+            ))
+
+        _transform = copy.deepcopy(train_data.transform)
+
+        if isinstance(_transform, datasets.transforms.Compose):
+            for t in _transform.transforms:
+                if isinstance(t, datasets.transforms.Cache):
+                    _transform.transforms.remove(t)
+
+        metadata = {
+            &#39;stft_params&#39;: train_data.stft_params,
+            &#39;sample_rate&#39;: train_data.sample_rate,
+            &#39;num_channels&#39;: train_data.num_channels,
+            &#39;folder&#39;: train_data.folder,
+            &#39;transforms&#39;: _transform,
+            &#39;trainer.state_dict&#39;: {
+                &#39;epoch&#39;: trainer.state.epoch,
+                &#39;epoch_length&#39;: trainer.state.epoch_length,
+                &#39;max_epochs&#39;: trainer.state.max_epochs,
+                &#39;output&#39;: trainer.state.output,
+                &#39;metrics&#39;: trainer.state.metrics,
+                &#39;seed&#39;: trainer.state.seed,
+            },
+            &#39;trainer.state.epoch_history&#39;: trainer.state.epoch_history,
+        }
+
+        for _path in output_paths:
+            os.makedirs(os.path.join(
+                output_folder, &#39;checkpoints&#39;), exist_ok=True)
+            if isinstance(model, nn.DataParallel):
+                _model = model.module
+            else:
+                _model = model
+            _model.save(_path, {&#39;metadata&#39;: metadata})
+            torch.save(optimizer.state_dict(),
+                       _path.replace(&#39;model.pth&#39;, &#39;optimizer.pth&#39;))
+
+        trainer.state.saved_model_path = output_paths[-1]
+        trainer.state.output_folder = output_folder
+        trainer.fire_event(ValidationEvents.VALIDATION_COMPLETED)</div>
+
+
+<div class="viewcode-block" id="add_stdout_handler"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_stdout_handler">[docs]</a>def add_stdout_handler(trainer, validator=None):
+    &quot;&quot;&quot;
+    This adds the following handler to the trainer engine, and also sets up
+    Timers:
+
+    - log_epoch_to_stdout: This logs the results of a model after it has trained
+      for a single epoch on both the training and validation set. The output typically
+      looks like this:
+
+      .. code-block:: none
+
+            EPOCH SUMMARY
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            - Epoch number: 0010 / 0010
+            - Training loss:   0.583591
+            - Validation loss: 0.137209
+            - Epoch took: 00:00:03
+            - Time since start: 00:00:32
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            Saving to test.
+            Output @ tests/local/trainer
+    
+    Args:
+        trainer (ignite.Engine): Engine for trainer
+
+        validator (ignite.Engine, optional): Engine for validation. 
+          Defaults to None.
+    &quot;&quot;&quot;
+    # Set up timers for overall time taken and each epoch
+    overall_timer = Timer(average=False)
+    overall_timer.attach(trainer,
+                         start=Events.STARTED, pause=Events.COMPLETED)
+
+    epoch_timer = Timer(average=False)
+    epoch_timer.attach(
+        trainer, start=Events.EPOCH_STARTED,
+        pause=ValidationEvents.VALIDATION_COMPLETED
+    )
+
+    @trainer.on(ValidationEvents.VALIDATION_COMPLETED)
+    def log_epoch_to_stdout(trainer):
+        epoch_time = epoch_timer.value()
+        epoch_time = time.strftime(
+            &quot;%H:%M:%S&quot;, time.gmtime(epoch_time))
+        overall_time = overall_timer.value()
+        overall_time = time.strftime(
+            &quot;%H:%M:%S&quot;, time.gmtime(overall_time))
+
+        epoch_number = trainer.state.epoch
+        total_epochs = trainer.state.max_epochs
+
+        try:
+            validation_loss = (
+                f&quot;{trainer.state.epoch_history[&#39;validation/loss&#39;][-1]:04f}&quot;)
+        except:
+            validation_loss = &#39;N/A&#39;
+
+        train_loss = trainer.state.epoch_history[&#39;train/loss&#39;][-1]
+        saved_model_path = trainer.state.saved_model_path
+
+        logging_str = (
+            f&quot;\n\n&quot;
+            f&quot;EPOCH SUMMARY \n&quot;
+            f&quot;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n&quot;
+            f&quot;- Epoch number: {epoch_number:04d} / {total_epochs:04d} \n&quot;
+            f&quot;- Training loss:   {train_loss:04f} \n&quot;
+            f&quot;- Validation loss: {validation_loss} \n&quot;
+            f&quot;- Epoch took: {epoch_time} \n&quot;
+            f&quot;- Time since start: {overall_time} \n&quot;
+            f&quot;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n&quot;
+            f&quot;Saving to {saved_model_path}. \n&quot;
+            f&quot;Output @ {trainer.state.output_folder} \n&quot;
+        )
+
+        logging.info(logging_str)</div>
+
+
+<div class="viewcode-block" id="add_tensorboard_handler"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_tensorboard_handler">[docs]</a>def add_tensorboard_handler(output_folder, engine):
+    &quot;&quot;&quot;
+    Every key in engine.state.epoch_history[-1] is logged to TensorBoard.
+    
+    Args:
+        output_folder (str): Where the tensorboard logs should go. The output
+          logs will go into a subfolder &#39;tensorboard&#39;.
+
+        trainer (ignite.Engine): The engine to log.
+    &quot;&quot;&quot;
+
+    @engine.on(ValidationEvents.VALIDATION_COMPLETED)
+    def log_to_tensorboard(engine):
+        writer = SummaryWriter(
+            os.path.join(output_folder, &#39;tensorboard&#39;))
+        for key in engine.state.epoch_history:
+            writer.add_scalar(
+                key, engine.state.epoch_history[key][-1], engine.state.epoch)</div>
 </pre></div>
 
            </div>

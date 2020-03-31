@@ -100,6 +100,11 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Contribution Guide</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#general">General</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#developing">Developing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deploying">Deploying</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#adding-your-own-algorithm">Adding your own algorithm</a></li>
 </ul>
 </li>
@@ -204,6 +209,132 @@ to <em>nussl</em> before you submit your next amazing pull request.</p>
 <p>Contributing to <em>nussl</em> is just like contributing to any other open source project, for the
 most part. The process is exactly the same for fixing bugs or adding utility functions: make
 a pull request, write some tests, make sure all of the code is up to snuff, and it’ll be approved.</p>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="developing">
+<h3>Developing<a class="headerlink" href="#developing" title="Permalink to this headline">¶</a></h3>
+<p>Documentation for <em>nussl</em> is built with Sphinx. The source code for making docs
+is kept in the <code class="docutils literal notranslate"><span class="pre">docs/</span></code> folder. There are two parts to the documentation. The first
+is API documentation which is maintained alongside the code. The second part is
+tutorials and examples, which are maintained as Jupyter <em>notebooks</em> and compiled into
+the docs via [nbsphinx](<a class="reference external" href="https://nbsphinx.readthedocs.io/en/0.5.1/">https://nbsphinx.readthedocs.io/en/0.5.1/</a>).</p>
+<p>The installation requirements for maintaining docs are kept in <code class="docutils literal notranslate"><span class="pre">extra_requirements</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pip install -r extra_requirements.txt
+</pre></div>
+</div>
+<p>You’ll also need Jupyter installed to edit or create new tutorials, or make new
+examples.</p>
+<p>However, notebooks are NOT kept in the docs repository as is, as notebooks are very
+hard to keep track of in git diffs and can get very large. Instead, they are kept as only
+[jupytext](<a class="reference external" href="https://jupytext.readthedocs.io/en/latest/index.html">https://jupytext.readthedocs.io/en/latest/index.html</a>) representations.
+So to build new docs, one will have to keep a local copy of every notebook executed. The
+only notebooks that get committed are the ones in <code class="docutils literal notranslate"><span class="pre">docs/recipes/</span></code>, as these require
+access to large datasets and GPU resources. These are run once and committed in an
+executed format to the repository from a specific machine.</p>
+<p>So, to contribute a notebook demonstrating or explaining some facet of <em>nussl</em>, do the
+following:</p>
+<ol class="arabic">
+<li><p>Execute all of the notebooks present in the docs (this only has to happen once on
+your machine):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python create_and_execute_notebook.py all            # make all notebooks
+# OR
+make notebooks # this just runs what is above
+
+python create_and_execute_notebook path/to/script.py # make just one notebook
+</pre></div>
+</div>
+<p>This will find every <a href="#id1"><span class="problematic" id="id2">*</span></a>.py script in docs/examples and docs/tutorials, create the
+associated notebook, execute the cells, and convert your notebook to HTML so you
+can quickly see what it looks like without having to launch it in Jupyter notebook.
+When you run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code>, the executed notebooks are used in the documentation.</p>
+</li>
+<li><p>Option 1: create a new notebook in either <code class="docutils literal notranslate"><span class="pre">tutorials</span></code> or <code class="docutils literal notranslate"><span class="pre">examples</span></code>. Work in the notebook
+until you are satisifed with your explanation/demo. Note: your notebook is NOT yet
+in version control!</p>
+<p>Now run the following command on your notebook:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>jupytext --set-formats ipynb,py docs/path/to/notebook.ipynb
+</pre></div>
+</div>
+<p>The light text representation of your notebook is now tracked by Git and it is
+identical to your notebook, except for the outputs. Since your notebook is already
+executed (manually), when you make the docs you’ll see it in there as long as you
+do the next step:</p>
+<p>Option 2: create a script that you will later link to a notebook. Work in this script
+until you’re satisfied like above. Then when done with it, run:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python create_and_execute_notebook path/to/script.py
+</pre></div>
+</div>
+<p>to link the script with a notebook and an HTML file. If you so wish, you can work
+entirely in a script and just check the HTML file in your browser to make sure
+everything renders okay.</p>
+</li>
+<li><p>Add your notebook to the toctree of the associated folder. For example,
+<code class="docutils literal notranslate"><span class="pre">examples/primitives/primitives.rst</span></code> has the following contents:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Primitives
+==========
+
+.. toctree::
+   :maxdepth: 4
+
+   FT2D &lt;2dft.py&gt;
+   REPET &lt;repet.py&gt;
+   REPETSIM &lt;repet_sim.py&gt;
+   Melodia &lt;melodia.py&gt;
+   TimbreClustering &lt;timbre.py&gt;
+   HPSS &lt;hpss.py&gt;
+</pre></div>
+</div>
+<p>So if you are adding examples for a new primitive algorithm, be sure to edit
+this like so:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Primitives
+==========
+
+.. toctree::
+   :maxdepth: 4
+
+   FT2D &lt;2dft.py&gt;
+   REPET &lt;repet.py&gt;
+   REPETSIM &lt;repet_sim.py&gt;
+   Melodia &lt;melodia.py&gt;
+   TimbreClustering &lt;timbre.py&gt;
+   HPSS &lt;hpss.py&gt;
+   [Your algorithm] &lt;path/to/light/script.py&gt;
+</pre></div>
+</div>
+</li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> from the docs folder. Then look at <code class="docutils literal notranslate"><span class="pre">_build/html/index.html</span></code> to see
+what got generated.</p></li>
+<li><p>Finally, it’s best to run the light script from scratch to make sure it’s doing what
+you expect:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python create_and_execute_notebook path/to/your_script.py
+</pre></div>
+</div>
+<p>Inspect the resultant HTML file to make sure it’s doing what you want. Then run
+<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> again.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="deploying">
+<h3>Deploying<a class="headerlink" href="#deploying" title="Permalink to this headline">¶</a></h3>
+<p>This process results in rich and interactive documentation but also results in
+large files. For this reason, the actual compiled documentation is kept in a [separate
+repository](<a class="reference external" href="https://github.com/nussl/docs">https://github.com/nussl/docs</a>), so that the main code repository stays
+small. To deploy the documentation, first use the staging script. This script takes in
+an as an argument the path to the cloned documentation repository (if the path does not
+exist, then the documentation is cloned into that folder). It will first copy the contents of
+<code class="docutils literal notranslate"><span class="pre">_build/html/</span></code> into the compiled docs repo. Then it will make a commit with update to
+the docs. Then it will tell you to push the docs after a manual inspection of it. The
+sequence of commands looks like this:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python stage_docs.py path/to/docs/repo/
+cd path/to/docs/repo
+# inspect the docs by opening index.html in your browser
+# make sure everything is okay
+git push origin master
+</pre></div>
+</div>
+<p>Then visit <a class="reference external" href="https://nussl.github.io/docs/">https://nussl.github.io/docs/</a> to make sure everything is okay.</p>
+</div>
 </div>
 <div class="section" id="adding-your-own-algorithm">
 <h2>Adding your own algorithm<a class="headerlink" href="#adding-your-own-algorithm" title="Permalink to this headline">¶</a></h2>

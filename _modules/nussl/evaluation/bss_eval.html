@@ -163,191 +163,191 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.evaluation.bss_eval</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">museval</span>
+<span></span>import numpy as np
+import museval
 
-<span class="kn">from</span> <span class="nn">.evaluation_base</span> <span class="kn">import</span> <span class="n">EvaluationBase</span>
-
-
-<div class="viewcode-block" id="scale_bss_eval"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.scale_bss_eval">[docs]</a><span class="k">def</span> <span class="nf">scale_bss_eval</span><span class="p">(</span><span class="n">references</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">scaling</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Computes SDR, SIR, SAR for references[idx] relative to the</span>
-<span class="sd">    chosen estimates. This only works for mono audio. Each</span>
-<span class="sd">    channel should be done independently when calling this</span>
-<span class="sd">    function. Lovingly borrowed from Gordon Wichern and </span>
-<span class="sd">    Jonathan Le Roux at Mitsubishi Electric Research Labs.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        references (np.ndarray): object containing the</span>
-<span class="sd">        references data. Of shape (n_samples, n_sources).</span>
-<span class="sd">        </span>
-<span class="sd">        estimates (np.ndarray): object containing the</span>
-<span class="sd">        estimates data. Of shape (n_samples, 1).</span>
-
-<span class="sd">        idx (int): Which estimates to compute metrics for.</span>
-
-<span class="sd">        scaling (bool, optional): Whether to use scale-invariant (True) or</span>
-<span class="sd">        scale-dependent (False) metrics. Defaults to True.</span>
-<span class="sd">    </span>
-<span class="sd">    Returns:</span>
-<span class="sd">        tuple: SDR, SIR, SAR if inputs are numpy arrays.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">references_projection</span> <span class="o">=</span> <span class="n">references</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">references</span>
-    <span class="n">source</span> <span class="o">=</span> <span class="n">references</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
-    <span class="n">scale</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="p">(</span><span class="n">source</span> <span class="o">@</span> <span class="n">estimates</span><span class="p">)</span> <span class="o">/</span>
-        <span class="n">references_projection</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">idx</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">scaling</span> <span class="k">else</span> <span class="mi">1</span>
-    <span class="p">)</span>
-
-    <span class="n">e_true</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">source</span>
-    <span class="n">e_res</span> <span class="o">=</span> <span class="n">estimates</span> <span class="o">-</span> <span class="n">e_true</span>
-
-    <span class="n">signal</span> <span class="o">=</span> <span class="p">(</span><span class="n">e_true</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">e_res</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-
-    <span class="n">sdr</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">signal</span> <span class="o">/</span> <span class="n">noise</span><span class="p">)</span>
-
-    <span class="n">references_onto_residual</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">references</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span> <span class="n">e_res</span><span class="p">)</span>
-    <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">references_projection</span><span class="p">,</span> <span class="n">references_onto_residual</span><span class="p">)</span>
-
-    <span class="n">e_interf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">references</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
-    <span class="n">e_artif</span> <span class="o">=</span> <span class="n">e_res</span> <span class="o">-</span> <span class="n">e_interf</span>
-
-    <span class="n">sir</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">signal</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_interf</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-    <span class="n">sar</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">signal</span> <span class="o">/</span> <span class="p">(</span><span class="n">e_artif</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-    <span class="k">return</span> <span class="n">sdr</span><span class="p">,</span> <span class="n">sir</span><span class="p">,</span> <span class="n">sar</span></div>
+from .evaluation_base import EvaluationBase
 
 
-<div class="viewcode-block" id="BSSEvaluationBase"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvaluationBase">[docs]</a><span class="k">class</span> <span class="nc">BSSEvaluationBase</span><span class="p">(</span><span class="n">EvaluationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base class for all evaluation classes that are based on BSSEval metrics. This </span>
-<span class="sd">    contains some useful verification functions, preprocessing functions that are</span>
-<span class="sd">    used in many separation-based evaluation. Specific evaluation metrics are </span>
-<span class="sd">    thin wrappers around this base class, basically only implementing the</span>
-<span class="sd">    ``self.evaluate_helper`` function.</span>
-<span class="sd">    </span>
-<span class="sd">    Both ``true_sources_list`` and ``estimated_sources_list`` get validated </span>
-<span class="sd">    using the private method :func:`_verify_input_list`. If your evaluation </span>
-<span class="sd">    needs to verify that input is set correctly (recommended) overwrite that method </span>
-<span class="sd">    to add checking.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        true_sources_list (list): List of objects that contain one ground truth source per object.</span>
-<span class="sd">            In some instances (such as the :class:`BSSEval` objects) this list is filled with</span>
-<span class="sd">            :class:`AudioSignals` but in other cases it is populated with</span>
-<span class="sd">            :class:`MaskBase` -derived objects (i.e., either a :class:`BinaryMask` or</span>
-<span class="sd">            :class:`SoftMask` object).</span>
-<span class="sd">        estimated_sources_list (list): List of objects that contain source estimations from a source</span>
-<span class="sd">            separation algorithm. List should be populated with the same type of objects and in the</span>
-<span class="sd">            same order as :param:`true_sources_list`.</span>
-<span class="sd">        source_labels (list): List of strings that are labels for each source to be used as keys for</span>
-<span class="sd">            the scores. Default value is `None` and in that case labels use the file_name attribute.</span>
-<span class="sd">            If that is also `None`, then the source labels are `Source 0`, `Source 1`, etc.</span>
-<span class="sd">        compute_permutation (bool): Whether or not to evaluate in a permutation-invariant </span>
-<span class="sd">            fashion, where the estimates are permuted to match the true sources. Only the </span>
-<span class="sd">            best permutation according to ``best_permutation_key`` is returned to the </span>
-<span class="sd">            scores dict. Defaults to False.</span>
-<span class="sd">        best_permutation_key (str): Which metric to use to decide which permutation of </span>
-<span class="sd">            the sources was best.</span>
-<span class="sd">        **kwargs (dict): Any additional arguments are passed on to evaluate_helper.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="scale_bss_eval"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.scale_bss_eval">[docs]</a>def scale_bss_eval(references, estimates, idx, scaling=True):
+    &quot;&quot;&quot;
+    Computes SDR, SIR, SAR for references[idx] relative to the
+    chosen estimates. This only works for mono audio. Each
+    channel should be done independently when calling this
+    function. Lovingly borrowed from Gordon Wichern and 
+    Jonathan Le Roux at Mitsubishi Electric Research Labs.
+    
+    Args:
+        references (np.ndarray): object containing the
+        references data. Of shape (n_samples, n_sources).
+        
+        estimates (np.ndarray): object containing the
+        estimates data. Of shape (n_samples, 1).
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_sources_list</span><span class="p">,</span> <span class="n">estimated_sources_list</span><span class="p">,</span> <span class="n">source_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">compute_permutation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">best_permutation_key</span><span class="o">=</span><span class="s2">&quot;SDR&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">true_sources_list</span><span class="p">,</span> <span class="n">estimated_sources_list</span><span class="p">,</span> <span class="n">source_labels</span><span class="o">=</span><span class="n">source_labels</span><span class="p">,</span>
-                         <span class="n">compute_permutation</span><span class="o">=</span><span class="n">compute_permutation</span><span class="p">,</span>
-                         <span class="n">best_permutation_key</span><span class="o">=</span><span class="n">best_permutation_key</span><span class="p">,</span>
-                         <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        idx (int): Which estimates to compute metrics for.
 
-<div class="viewcode-block" id="BSSEvaluationBase.preprocess"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvaluationBase.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Implements preprocess by stacking the audio_data inside each AudioSignal</span>
-<span class="sd">        object in both self.true_sources_list and self.estimated_sources_list.</span>
-<span class="sd">        </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            tuple: Tuple containing reference and estimate arrays.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">references</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_sources_list</span><span class="p">],</span>
-            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
-        <span class="p">)</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">audio_data</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimated_sources_list</span><span class="p">],</span>
-            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span></div></div>
+        scaling (bool, optional): Whether to use scale-invariant (True) or
+        scale-dependent (False) metrics. Defaults to True.
+    
+    Returns:
+        tuple: SDR, SIR, SAR if inputs are numpy arrays.
+    &quot;&quot;&quot;
+    references_projection = references.T @ references
+    source = references[..., idx]
+    scale = (
+        (source @ estimates) /
+        references_projection[idx, idx]
+        if scaling else 1
+    )
+
+    e_true = scale * source
+    e_res = estimates - e_true
+
+    signal = (e_true ** 2).sum()
+    noise = (e_res ** 2).sum()
+
+    sdr = 10 * np.log10(signal / noise)
+
+    references_onto_residual = np.dot(references.transpose(), e_res)
+    b = np.linalg.solve(references_projection, references_onto_residual)
+
+    e_interf = np.dot(references, b)
+    e_artif = e_res - e_interf
+
+    sir = 10 * np.log10(signal / (e_interf ** 2).sum())
+    sar = 10 * np.log10(signal / (e_artif ** 2).sum())
+    return sdr, sir, sar</div>
 
 
-<div class="viewcode-block" id="BSSEvalV4"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalV4">[docs]</a><span class="k">class</span> <span class="nc">BSSEvalV4</span><span class="p">(</span><span class="n">BSSEvaluationBase</span><span class="p">):</span>
-<div class="viewcode-block" id="BSSEvalV4.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalV4.evaluate_helper">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate_helper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Implements evaluation using museval.metrics.bss_eval</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># museval expects shape=(nsrc, nsampl, nchan)</span>
-        <span class="c1"># we have (nsampl, nchan, nsrc)</span>
-        <span class="c1"># so let&#39;s massage the data so it matches before feeding it in</span>
+<div class="viewcode-block" id="BSSEvaluationBase"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvaluationBase">[docs]</a>class BSSEvaluationBase(EvaluationBase):
+    &quot;&quot;&quot;
+    Base class for all evaluation classes that are based on BSSEval metrics. This 
+    contains some useful verification functions, preprocessing functions that are
+    used in many separation-based evaluation. Specific evaluation metrics are 
+    thin wrappers around this base class, basically only implementing the
+    ``self.evaluate_helper`` function.
+    
+    Both ``true_sources_list`` and ``estimated_sources_list`` get validated 
+    using the private method :func:`_verify_input_list`. If your evaluation 
+    needs to verify that input is set correctly (recommended) overwrite that method 
+    to add checking.
+    
+    Args:
+        true_sources_list (list): List of objects that contain one ground truth source per object.
+            In some instances (such as the :class:`BSSEval` objects) this list is filled with
+            :class:`AudioSignals` but in other cases it is populated with
+            :class:`MaskBase` -derived objects (i.e., either a :class:`BinaryMask` or
+            :class:`SoftMask` object).
+        estimated_sources_list (list): List of objects that contain source estimations from a source
+            separation algorithm. List should be populated with the same type of objects and in the
+            same order as :param:`true_sources_list`.
+        source_labels (list): List of strings that are labels for each source to be used as keys for
+            the scores. Default value is `None` and in that case labels use the file_name attribute.
+            If that is also `None`, then the source labels are `Source 0`, `Source 1`, etc.
+        compute_permutation (bool): Whether or not to evaluate in a permutation-invariant 
+            fashion, where the estimates are permuted to match the true sources. Only the 
+            best permutation according to ``best_permutation_key`` is returned to the 
+            scores dict. Defaults to False.
+        best_permutation_key (str): Which metric to use to decide which permutation of 
+            the sources was best.
+        **kwargs (dict): Any additional arguments are passed on to evaluate_helper.
+    &quot;&quot;&quot;
 
-        <span class="n">references</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">references</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    def __init__(self, true_sources_list, estimated_sources_list, source_labels=None,
+                 compute_permutation=False, best_permutation_key=&quot;SDR&quot;, **kwargs):
+        super().__init__(true_sources_list, estimated_sources_list, source_labels=source_labels,
+                         compute_permutation=compute_permutation,
+                         best_permutation_key=best_permutation_key,
+                         **kwargs)
 
-        <span class="n">sdr</span><span class="p">,</span> <span class="n">isr</span><span class="p">,</span> <span class="n">sir</span><span class="p">,</span> <span class="n">sar</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">museval</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">bss_eval</span><span class="p">(</span>
-            <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">compute_permutation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<div class="viewcode-block" id="BSSEvaluationBase.preprocess"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvaluationBase.preprocess">[docs]</a>    def preprocess(self):
+        &quot;&quot;&quot;
+        Implements preprocess by stacking the audio_data inside each AudioSignal
+        object in both self.true_sources_list and self.estimated_sources_list.
+        
+        Returns:
+            tuple: Tuple containing reference and estimate arrays.
+        &quot;&quot;&quot;
+        references = np.stack(
+            [np.copy(x.audio_data.T) for x in self.true_sources_list],
+            axis=-1
+        )
+        estimates = np.stack(
+            [np.copy(x.audio_data.T) for x in self.estimated_sources_list],
+            axis=-1
+        )
+        return references, estimates</div></div>
 
-        <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">references</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="n">score</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;SDR&#39;</span><span class="p">:</span> <span class="n">sdr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> 
-                <span class="s1">&#39;ISR&#39;</span><span class="p">:</span> <span class="n">isr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> 
-                <span class="s1">&#39;SIR&#39;</span><span class="p">:</span> <span class="n">sir</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> 
-                <span class="s1">&#39;SAR&#39;</span><span class="p">:</span> <span class="n">sar</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-            <span class="p">}</span>
-            <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scores</span></div></div>
+
+<div class="viewcode-block" id="BSSEvalV4"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalV4">[docs]</a>class BSSEvalV4(BSSEvaluationBase):
+<div class="viewcode-block" id="BSSEvalV4.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalV4.evaluate_helper">[docs]</a>    def evaluate_helper(self, references, estimates, **kwargs):
+        &quot;&quot;&quot;
+        Implements evaluation using museval.metrics.bss_eval
+        &quot;&quot;&quot;
+        # museval expects shape=(nsrc, nsampl, nchan)
+        # we have (nsampl, nchan, nsrc)
+        # so let&#39;s massage the data so it matches before feeding it in
+
+        references = np.transpose(references, (2, 0, 1))
+        estimates = np.transpose(estimates, (2, 0, 1))
+
+        sdr, isr, sir, sar, _ = museval.metrics.bss_eval(
+            references, estimates, compute_permutation=False, **kwargs)
+
+        scores = []
+        for j in range(references.shape[0]):
+            score = {
+                &#39;SDR&#39;: sdr[j].tolist(), 
+                &#39;ISR&#39;: isr[j].tolist(), 
+                &#39;SIR&#39;: sir[j].tolist(), 
+                &#39;SAR&#39;: sar[j].tolist(),
+            }
+            scores.append(score)
+        return scores</div></div>
 
 
-<div class="viewcode-block" id="BSSEvalScale"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale">[docs]</a><span class="k">class</span> <span class="nc">BSSEvalScale</span><span class="p">(</span><span class="n">BSSEvaluationBase</span><span class="p">):</span>
-<div class="viewcode-block" id="BSSEvalScale.preprocess"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale.preprocess">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Scale invariant metrics expects zero-mean centered references and sources.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">preprocess</span><span class="p">()</span>
-        <span class="n">references</span> <span class="o">-=</span> <span class="n">references</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">estimates</span> <span class="o">-=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span></div>
+<div class="viewcode-block" id="BSSEvalScale"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale">[docs]</a>class BSSEvalScale(BSSEvaluationBase):
+<div class="viewcode-block" id="BSSEvalScale.preprocess"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale.preprocess">[docs]</a>    def preprocess(self):
+        &quot;&quot;&quot;
+        Scale invariant metrics expects zero-mean centered references and sources.
+        &quot;&quot;&quot;
+        references, estimates = super().preprocess()
+        references -= references.mean(axis=0)
+        estimates -= estimates.mean(axis=0)
+        return references, estimates</div>
 
-<div class="viewcode-block" id="BSSEvalScale.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale.evaluate_helper">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate_helper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">scaling</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Implements evaluation using scale-invariant BSSEval metrics [1].</span>
+<div class="viewcode-block" id="BSSEvalScale.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale.evaluate_helper">[docs]</a>    def evaluate_helper(self, references, estimates, scaling=True, **kwargs):
+        &quot;&quot;&quot;
+        Implements evaluation using scale-invariant BSSEval metrics [1].
 
-<span class="sd">        [1] Le Roux, J., Wisdom, S., Erdogan, H., &amp; Hershey, J. R. </span>
-<span class="sd">        (2019, May). SDR–half-baked or well done?. In ICASSP 2019-2019 IEEE </span>
-<span class="sd">        International Conference on Acoustics, Speech and Signal </span>
-<span class="sd">        Processing (ICASSP) (pp. 626-630). IEEE.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+        [1] Le Roux, J., Wisdom, S., Erdogan, H., &amp; Hershey, J. R. 
+        (2019, May). SDR–half-baked or well done?. In ICASSP 2019-2019 IEEE 
+        International Conference on Acoustics, Speech and Signal 
+        Processing (ICASSP) (pp. 626-630). IEEE.
+        &quot;&quot;&quot;
 
-        <span class="n">sdr</span><span class="p">,</span> <span class="n">sir</span><span class="p">,</span> <span class="n">sar</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">references</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">cSDR</span><span class="p">,</span> <span class="n">cSIR</span><span class="p">,</span> <span class="n">cSAR</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">references</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]):</span>
-                <span class="n">_SDR</span><span class="p">,</span> <span class="n">_SIR</span><span class="p">,</span> <span class="n">_SAR</span> <span class="o">=</span> <span class="n">scale_bss_eval</span><span class="p">(</span>
-                    <span class="n">references</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="p">:],</span> <span class="n">estimates</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span>
-                    <span class="n">j</span><span class="p">,</span> <span class="n">scaling</span><span class="o">=</span><span class="n">scaling</span>
-                <span class="p">)</span>
-                <span class="n">cSDR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_SDR</span><span class="p">)</span>
-                <span class="n">cSIR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_SIR</span><span class="p">)</span>
-                <span class="n">cSAR</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_SAR</span><span class="p">)</span>
-            <span class="n">sdr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cSDR</span><span class="p">)</span>
-            <span class="n">sir</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cSIR</span><span class="p">)</span>
-            <span class="n">sar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cSAR</span><span class="p">)</span>
+        sdr, sir, sar = [], [], []
+        for j in range(references.shape[-1]):
+            cSDR, cSIR, cSAR = [], [], []
+            for ch in range(references.shape[-2]):
+                _SDR, _SIR, _SAR = scale_bss_eval(
+                    references[..., ch, :], estimates[..., ch, j],
+                    j, scaling=scaling
+                )
+                cSDR.append(_SDR)
+                cSIR.append(_SIR)
+                cSAR.append(_SAR)
+            sdr.append(cSDR)
+            sir.append(cSIR)
+            sar.append(cSAR)
 
-        <span class="n">scores</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">references</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">score</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;SDR&#39;</span><span class="p">:</span> <span class="n">sdr</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="s1">&#39;SIR&#39;</span><span class="p">:</span> <span class="n">sir</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="s1">&#39;SAR&#39;</span><span class="p">:</span> <span class="n">sar</span><span class="p">[</span><span class="n">j</span><span class="p">],</span>
-            <span class="p">}</span>
-            <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scores</span></div></div>
+        scores = []
+        for j in range(references.shape[-1]):
+            score = {
+                &#39;SDR&#39;: sdr[j], &#39;SIR&#39;: sir[j], &#39;SAR&#39;: sar[j],
+            }
+            scores.append(score)
+        return scores</div></div>
 </pre></div>
 
            </div>

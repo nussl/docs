@@ -223,17 +223,27 @@ want to use <code class="docutils literal notranslate"><span class="pre">nussl.s
 <p>If you want to use Melodia, then you will also need to follow the instructions
 <a class="reference external" href="https://github.com/justinsalamon/melodia_python_tutorial/blob/master/melodia_python_tutorial.ipynb">here</a>.</p>
 <p>If you are installing from source then you will need to install the requirements manually.</p>
-<p>Finally, there are extra requirements you will need to run the recipes. Those are in
-<code class="docutils literal notranslate"><span class="pre">extra_requirements.txt</span></code>.</p>
+<p>Finally, there are extra requirements you will need to run the examples, tutorials, and
+recipes. These extra requirements are mostly for the sake of visualization.
+Those are in <code class="docutils literal notranslate"><span class="pre">extra_requirements.txt</span></code>:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pip install -r extra_requirements.txt
+</pre></div>
+</div>
 <p>To make use of <a class="reference external" href="https://github.com/justinsalamon/scaper">Scaper</a>, you will also need
 to install <code class="docutils literal notranslate"><span class="pre">sox</span></code> and <code class="docutils literal notranslate"><span class="pre">ffmpeg</span></code>. You’ll also need <code class="docutils literal notranslate"><span class="pre">ffmpeg</span></code> to make use of some of the
 functionality in <code class="docutils literal notranslate"><span class="pre">nussl.play_utils</span></code>.</p>
+<p>Finally, try to install <code class="docutils literal notranslate"><span class="pre">tree</span></code> for the tutorials. This is a useful command line tool
+that shows you the structure of a directory. Install it via a package manager:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>brew install tree # on macosx
+sudo apt-get install tree # on ubuntu
+</pre></div>
+</div>
 </div>
 <div class="section" id="pip-install">
 <span id="anaconda-env"></span><h2>pip install<a class="headerlink" href="#pip-install" title="Permalink to this headline">¶</a></h2>
 <p>Installing <em>nussl</em> is easy using pip and the Python Package Index. This will install all required dependencies alongside
 the <em>nussl</em> installation. Use the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">nussl</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pip install nussl
 </pre></div>
 </div>
 <p>to install.</p>
@@ -241,10 +251,10 @@ the <em>nussl</em> installation. Use the following command:</p>
 <div class="section" id="running-the-tests">
 <h2>Running the tests<a class="headerlink" href="#running-the-tests" title="Permalink to this headline">¶</a></h2>
 <p>To run the tests, clone the repository, then <cite>cd</cite> into the directory and do:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">extra_requirements</span>
-<span class="c1"># install vamp and melodia as above</span>
-<span class="n">pytest</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pip install -r requirements
+pip install -r extra_requirements
+# install vamp and melodia as above
+pytest
 </pre></div>
 </div>
 </div>
@@ -252,7 +262,7 @@ the <em>nussl</em> installation. Use the following command:</p>
 <h2>Installing from source and downloading<a class="headerlink" href="#installing-from-source-and-downloading" title="Permalink to this headline">¶</a></h2>
 <p>Alternatively, you may download the source code from <a class="reference external" href="https://github.com/interactiveaudiolab/nussl">github</a>
 and install with the following command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">nussl</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python setup.py nussl
 </pre></div>
 </div>
 <p>It is also possible to download from github and copy the <em>nussl</em> folder into your working directory and

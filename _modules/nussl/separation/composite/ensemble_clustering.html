@@ -163,205 +163,205 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.composite.ensemble_clustering</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span>import numpy as np
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">ClusteringSeparationBase</span><span class="p">,</span> <span class="n">SeparationException</span>
+from .. import ClusteringSeparationBase, SeparationException
 
 
-<div class="viewcode-block" id="EnsembleClustering"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.composite.EnsembleClustering">[docs]</a><span class="k">class</span> <span class="nc">EnsembleClustering</span><span class="p">(</span><span class="n">ClusteringSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Run multiple separation algorithms on a single mixture and concatenate their</span>
-<span class="sd">    masks to input into a clustering algorithm.</span>
-<span class="sd">    </span>
-<span class="sd">    This algorithm allows you to combine the outputs of multiple separation </span>
-<span class="sd">    algorithms, fusing them into a single output via clustering. It was first</span>
-<span class="sd">    developed in [1]. When used with primitive separation algorithms, it becomes</span>
-<span class="sd">    the PrimitiveClustering algorithm described in [1].</span>
+<div class="viewcode-block" id="EnsembleClustering"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.composite.EnsembleClustering">[docs]</a>class EnsembleClustering(ClusteringSeparationBase):
+    &quot;&quot;&quot;
+    Run multiple separation algorithms on a single mixture and concatenate their
+    masks to input into a clustering algorithm.
+    
+    This algorithm allows you to combine the outputs of multiple separation 
+    algorithms, fusing them into a single output via clustering. It was first
+    developed in [1]. When used with primitive separation algorithms, it becomes
+    the PrimitiveClustering algorithm described in [1].
 
-<span class="sd">    References:</span>
+    References:
 
-<span class="sd">    [1] Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition. </span>
-<span class="sd">        Diss. Northwestern University, 2019.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): Signal to separate.</span>
+    [1] Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition. 
+        Diss. Northwestern University, 2019.
+    
+    Args:
+        input_audio_signal (AudioSignal): Signal to separate.
 
-<span class="sd">        num_sources (int): Number of sources to separate from signal.</span>
+        num_sources (int): Number of sources to separate from signal.
 
-<span class="sd">        separators (list): List of instantiated separation algorithms that will be</span>
-<span class="sd">          run on the input audio signal.</span>
+        separators (list): List of instantiated separation algorithms that will be
+          run on the input audio signal.
 
-<span class="sd">        weights (list, optional): Weight to give to each algorithm in the resultant</span>
-<span class="sd">          feature vector. For example, `[3, 1]`, will repeat the features from the first</span>
-<span class="sd">          algorithm 3 times and the second algorithm 1 time. Defaults to None - every</span>
-<span class="sd">          algorithm gets a weight of 1.</span>
+        weights (list, optional): Weight to give to each algorithm in the resultant
+          feature vector. For example, `[3, 1]`, will repeat the features from the first
+          algorithm 3 times and the second algorithm 1 time. Defaults to None - every
+          algorithm gets a weight of 1.
 
-<span class="sd">        returns (list, optional): Which outputs of each algorithm to keep in the resultant</span>
-<span class="sd">          feature vector. Defaults to None.</span>
+        returns (list, optional): Which outputs of each algorithm to keep in the resultant
+          feature vector. Defaults to None.
 
-<span class="sd">        num_cascades (int, optional): The output of each algorithm can be cascaded into </span>
-<span class="sd">          one another. The outputs of the first layer of algorithms will be refed to </span>
-<span class="sd">          each separation algorithm to create more features. Defaults to 1.</span>
+        num_cascades (int, optional): The output of each algorithm can be cascaded into 
+          one another. The outputs of the first layer of algorithms will be refed to 
+          each separation algorithm to create more features. Defaults to 1.
 
-<span class="sd">        extracted_feature (str, optional): Which feature to extract from each algorithm.</span>
-<span class="sd">          Must be one of `[&#39;estimates&#39;, &#39;masks&#39;]`. `estimates` will reconstruct a soft</span>
-<span class="sd">          mask using the output of the algorithm (useful if the algorithm is not a masking</span>
-<span class="sd">          based separation algorithm). `masks` will use the data in the `result_masks`</span>
-<span class="sd">          attribute of the separation algorithm. Defaults to &#39;masks&#39;.</span>
+        extracted_feature (str, optional): Which feature to extract from each algorithm.
+          Must be one of `[&#39;estimates&#39;, &#39;masks&#39;]`. `estimates` will reconstruct a soft
+          mask using the output of the algorithm (useful if the algorithm is not a masking
+          based separation algorithm). `masks` will use the data in the `result_masks`
+          attribute of the separation algorithm. Defaults to &#39;masks&#39;.
 
-<span class="sd">        clustering_type (str): One of &#39;KMeans&#39;, &#39;GaussianMixture&#39;, and &#39;MiniBatchKMeans&#39;.</span>
-<span class="sd">          The clustering approach to use on the features. Defaults to &#39;KMeans&#39;.</span>
+        clustering_type (str): One of &#39;KMeans&#39;, &#39;GaussianMixture&#39;, and &#39;MiniBatchKMeans&#39;.
+          The clustering approach to use on the features. Defaults to &#39;KMeans&#39;.
 
-<span class="sd">        fit_clusterer (bool, optional): Whether or not to call fit on the clusterer.</span>
-<span class="sd">          If False, then the clusterer should already be fit for this to work. Defaults</span>
-<span class="sd">          to True.</span>
+        fit_clusterer (bool, optional): Whether or not to call fit on the clusterer.
+          If False, then the clusterer should already be fit for this to work. Defaults
+          to True.
 
-<span class="sd">        percentile (int, optional): Percentile of time-frequency points to consider by loudness. </span>
-<span class="sd">          Audio spectrograms are very high dimensional, and louder points tend to </span>
-<span class="sd">          matter more than quieter points. By setting the percentile high, one can more</span>
-<span class="sd">          efficiently cluster an auditory scene by considering only points above</span>
-<span class="sd">          that threshold. Defaults to 90 (which means the top 10 percentile of </span>
-<span class="sd">          time-frequency points will be used for clustering).</span>
+        percentile (int, optional): Percentile of time-frequency points to consider by loudness. 
+          Audio spectrograms are very high dimensional, and louder points tend to 
+          matter more than quieter points. By setting the percentile high, one can more
+          efficiently cluster an auditory scene by considering only points above
+          that threshold. Defaults to 90 (which means the top 10 percentile of 
+          time-frequency points will be used for clustering).
 
-<span class="sd">        beta (float, optional): When using KMeans, we use soft KMeans, which has an additional </span>
-<span class="sd">          parameter `beta`. `beta` controls how soft the assignments are. As beta </span>
-<span class="sd">          increases, the assignments become more binary (either 0 or 1). Defaults to </span>
-<span class="sd">          5.0, a value discovered through cross-validation.</span>
+        beta (float, optional): When using KMeans, we use soft KMeans, which has an additional 
+          parameter `beta`. `beta` controls how soft the assignments are. As beta 
+          increases, the assignments become more binary (either 0 or 1). Defaults to 
+          5.0, a value discovered through cross-validation.
 
-<span class="sd">        mask_type (str, optional): Masking approach to use. Passed up to MaskSeparationBase.</span>
+        mask_type (str, optional): Masking approach to use. Passed up to MaskSeparationBase.
 
-<span class="sd">        mask_threshold (float, optional): Threshold for masking. Passed up to MaskSeparationBase.</span>
+        mask_threshold (float, optional): Threshold for masking. Passed up to MaskSeparationBase.
 
-<span class="sd">        **kwargs (dict, optional): Additional keyword arguments that are passed to the clustering</span>
-<span class="sd">          object (one of KMeans, GaussianMixture, or MiniBatchKMeans).</span>
-<span class="sd">    </span>
-<span class="sd">    Example:</span>
-<span class="sd">        </span>
-<span class="sd">        .. code-block:: python</span>
-
-<span class="sd">            from nussl.separation import (</span>
-<span class="sd">                primitive, </span>
-<span class="sd">                factorization, </span>
-<span class="sd">                composite, </span>
-<span class="sd">                SeparationException</span>
-<span class="sd">            )</span>
-
-<span class="sd">            separators = [</span>
-<span class="sd">                primitive.FT2D(mix),</span>
-<span class="sd">                factorization.RPCA(mix),</span>
-<span class="sd">                primitive.Melodia(mix, voicing_tolerance=0.2),</span>
-<span class="sd">                primitive.HPSS(mix),</span>
-<span class="sd">            ]</span>
-
-<span class="sd">            weights = [3, 3, 1, 1]</span>
-<span class="sd">            returns = [[1], [1], [1], [0]]</span>
-
-<span class="sd">            ensemble = composite.EnsembleClustering(</span>
-<span class="sd">                mix, 2, separators, weights=weights, returns=returns)</span>
-<span class="sd">            estimates = ensemble()</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">,</span> <span class="n">separators</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
-                 <span class="n">returns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_cascades</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">extracted_feature</span><span class="o">=</span><span class="s1">&#39;masks&#39;</span><span class="p">,</span> 
-                 <span class="n">clustering_type</span><span class="o">=</span><span class="s1">&#39;KMeans&#39;</span><span class="p">,</span> <span class="n">fit_clusterer</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">percentile</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-                 <span class="n">beta</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">,</span> <span class="n">clustering_type</span><span class="o">=</span><span class="n">clustering_type</span><span class="p">,</span> 
-            <span class="n">percentile</span><span class="o">=</span><span class="n">percentile</span><span class="p">,</span> <span class="n">fit_clusterer</span><span class="o">=</span><span class="n">fit_clusterer</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> 
-            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">separators</span> <span class="o">=</span> <span class="n">separators</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_cascades</span> <span class="o">=</span> <span class="n">num_cascades</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">separators</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;len(weights) must be the same as len(separators)!&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="p">))]</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">returns</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">returns</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">separators</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;len(returns) must be the same as len(separators)!&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">returns</span> <span class="o">=</span> <span class="n">returns</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">returns</span> <span class="o">=</span> <span class="kc">None</span>
-
-        <span class="k">if</span> <span class="n">extracted_feature</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;masks&#39;</span><span class="p">,</span> <span class="s1">&#39;estimates&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;extracted_feature must be one of [&#39;masks&#39;, &#39;estimates&#39;]. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">extracted_feature</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">extracted_feature</span> <span class="o">=</span> <span class="n">extracted_feature</span>
-
-    <span class="k">def</span> <span class="nf">run_separators_on_mixture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mixture</span><span class="p">):</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">masks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">separator</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="p">):</span>
-            <span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-
-            <span class="n">_estimates</span> <span class="o">=</span> <span class="n">separator</span><span class="p">(</span><span class="n">audio_signal</span><span class="o">=</span><span class="n">mixture</span><span class="p">)</span>
-            <span class="n">_names</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">_estimates</span><span class="p">]</span>
-            <span class="n">_masks</span> <span class="o">=</span> <span class="p">[]</span>
-
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">separator</span><span class="p">,</span> <span class="s1">&#39;result_masks&#39;</span><span class="p">):</span>
-                <span class="n">_masks</span> <span class="o">=</span> <span class="n">separator</span><span class="o">.</span><span class="n">result_masks</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">returns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                <span class="n">_estimates</span> <span class="o">=</span> <span class="p">[</span><span class="n">_estimates</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">returns</span><span class="p">]</span>
-                <span class="k">if</span> <span class="n">_masks</span><span class="p">:</span>
-                    <span class="n">_masks</span> <span class="o">=</span> <span class="p">[</span><span class="n">_masks</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">returns</span><span class="p">]</span>
-
-            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">weight</span><span class="p">):</span>
-                <span class="n">estimates</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_estimates</span><span class="p">)</span>
-                <span class="n">masks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_masks</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">masks</span>
-
-    <span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">current_signal</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">]</span>
-
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_cascades</span><span class="p">):</span>
-            <span class="n">new_signals</span> <span class="o">=</span> <span class="p">[]</span>
-
-            <span class="k">for</span> <span class="n">_signal</span> <span class="ow">in</span> <span class="n">current_signal</span><span class="p">:</span>
-                <span class="n">estimates</span><span class="p">,</span> <span class="n">masks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_separators_on_mixture</span><span class="p">(</span><span class="n">_signal</span><span class="p">)</span>
-                <span class="n">new_signals</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
-
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_feature</span> <span class="o">==</span> <span class="s1">&#39;masks&#39;</span><span class="p">:</span>
-                    <span class="n">_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_features_from_masks</span><span class="p">(</span><span class="n">masks</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_feature</span> <span class="o">==</span> <span class="s1">&#39;estimates&#39;</span><span class="p">:</span>
-                    <span class="n">_features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_features_from_estimates</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
-
-                <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_features</span><span class="p">)</span>
-            
-            <span class="n">current_signal</span> <span class="o">=</span> <span class="n">new_signals</span>
+        **kwargs (dict, optional): Additional keyword arguments that are passed to the clustering
+          object (one of KMeans, GaussianMixture, or MiniBatchKMeans).
+    
+    Example:
         
-        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        .. code-block:: python
 
-        <span class="k">return</span> <span class="n">features</span>
+            from nussl.separation import (
+                primitive, 
+                factorization, 
+                composite, 
+                SeparationException
+            )
 
-    <span class="k">def</span> <span class="nf">_extract_features_from_estimates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">):</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">mix_stft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">estimates</span><span class="p">:</span>
-            <span class="n">_stft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">stft</span><span class="p">())</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">_stft</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">_stft</span><span class="p">,</span> <span class="n">mix_stft</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">)</span>
-            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">features</span>
+            separators = [
+                primitive.FT2D(mix),
+                factorization.RPCA(mix),
+                primitive.Melodia(mix, voicing_tolerance=0.2),
+                primitive.HPSS(mix),
+            ]
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_extract_features_from_masks</span><span class="p">(</span><span class="n">masks</span><span class="p">):</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">masks</span><span class="p">:</span>
-            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">mask</span>
-            <span class="n">features</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">features</span></div>
+            weights = [3, 3, 1, 1]
+            returns = [[1], [1], [1], [0]]
+
+            ensemble = composite.EnsembleClustering(
+                mix, 2, separators, weights=weights, returns=returns)
+            estimates = ensemble()
+    &quot;&quot;&quot;
+    def __init__(self, input_audio_signal, num_sources, separators, weights=None, 
+                 returns=None, num_cascades=1, extracted_feature=&#39;masks&#39;, 
+                 clustering_type=&#39;KMeans&#39;, fit_clusterer=True, percentile=90,
+                 beta=5.0, mask_type=&#39;soft&#39;, mask_threshold=0.5, **kwargs):
+        super().__init__(
+            input_audio_signal, num_sources, clustering_type=clustering_type, 
+            percentile=percentile, fit_clusterer=fit_clusterer, beta=beta, 
+            mask_type=mask_type, mask_threshold=mask_threshold, **kwargs)
+
+        self.separators = separators
+        self.num_cascades = num_cascades
+
+        if isinstance(weights, list):
+            if len(weights) != len(separators):
+                raise SeparationException(
+                    f&quot;len(weights) must be the same as len(separators)!&quot;)
+            self.weights = weights
+        else:
+            self.weights = [1 for _ in range(len(self.separators))]
+
+        if isinstance(returns, list):
+            if len(returns) != len(separators):
+                raise SeparationException(
+                    f&quot;len(returns) must be the same as len(separators)!&quot;)
+            self.returns = returns
+        else:
+            self.returns = None
+
+        if extracted_feature not in [&#39;masks&#39;, &#39;estimates&#39;]:
+            raise SeparationException(
+                f&quot;extracted_feature must be one of [&#39;masks&#39;, &#39;estimates&#39;]. &quot;
+                f&quot;Got {extracted_feature}.&quot;)
+
+        self.extracted_feature = extracted_feature
+
+    def run_separators_on_mixture(self, mixture):
+        estimates = []
+        masks = []
+        for i, separator in enumerate(self.separators):
+            weight = self.weights[i]
+
+            _estimates = separator(audio_signal=mixture)
+            _names = [str(separator) for _ in _estimates]
+            _masks = []
+
+            if hasattr(separator, &#39;result_masks&#39;):
+                _masks = separator.result_masks
+
+            if self.returns is not None:
+                returns = self.returns[i]
+                _estimates = [_estimates[j] for j in returns]
+                if _masks:
+                    _masks = [_masks[j] for j in returns]
+
+            for _ in range(weight):
+                estimates.extend(_estimates)
+                masks.extend(_masks)
+
+        return estimates, masks
+
+    def extract_features(self):
+        features = []
+        current_signal = [self.audio_signal]
+
+        for i in range(self.num_cascades):
+            new_signals = []
+
+            for _signal in current_signal:
+                estimates, masks = self.run_separators_on_mixture(_signal)
+                new_signals.extend(estimates)
+
+                if self.extracted_feature == &#39;masks&#39;:
+                    _features = self._extract_features_from_masks(masks)
+                elif self.extracted_feature == &#39;estimates&#39;:
+                    _features = self._extract_features_from_estimates(estimates)
+
+                features.append(_features)
+            
+            current_signal = new_signals
+        
+        features = np.concatenate(features, axis=-1)
+
+        return features
+
+    def _extract_features_from_estimates(self, estimates):
+        features = []
+        mix_stft = np.abs(self.stft)
+        for e in estimates:
+            _stft = np.abs(e.stft())
+            data = _stft / np.maximum(_stft, mix_stft + 1e-7)
+            features.append(data)
+        features = np.stack(features, axis=-1)
+        return features
+
+    @staticmethod
+    def _extract_features_from_masks(masks):
+        features = []
+        for m in masks:
+            mask_data = m.mask
+            features.append(mask_data)
+        features = np.stack(features, axis=-1)
+        return features</div>
 </pre></div>
 
            </div>

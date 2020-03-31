@@ -163,751 +163,751 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.datasets.transforms</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">shutil</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">zarr</span>
-<span class="kn">import</span> <span class="nn">numcodecs</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">OneHotEncoder</span>
-
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">utils</span>
-
-
-<span class="k">def</span> <span class="nf">compute_ideal_binary_mask</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">):</span>
-    <span class="n">ibm</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">source_magnitudes</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
-
-    <span class="n">ibm</span> <span class="o">=</span> <span class="n">ibm</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ibm</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">ibm</span><span class="p">[</span><span class="n">ibm</span> <span class="o">&lt;=</span> <span class="o">.</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">return</span> <span class="n">ibm</span>
-
-
-<span class="c1"># Keys that correspond to the time-frequency representations after being passed through</span>
-<span class="c1"># the transforms here.</span>
-<span class="n">time_frequency_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">,</span> <span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">,</span> <span class="s1">&#39;weights&#39;</span><span class="p">]</span>
-
-
-<div class="viewcode-block" id="SumSources"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.SumSources">[docs]</a><span class="k">class</span> <span class="nc">SumSources</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Sums sources together. Looks for sources in ``data[self.source_key]``. If </span>
-<span class="sd">    a source belongs to a group, it is popped from the ``data[self.source_key]`` and</span>
-<span class="sd">    summed with the other sources in the group. If there is a corresponding </span>
-<span class="sd">    group_name in group_names, it is named that in ``data[self.source_key]``. If</span>
-<span class="sd">    group_names are not given, then the names are constructed using the keys</span>
-<span class="sd">    in each group (e.g. `drums+bass+other`).</span>
-
-<span class="sd">    If using Scaper datasets, then there may be multiple sources with the same</span>
-<span class="sd">    label but different counts. The Scaper dataset hook organizes the source</span>
-<span class="sd">    dictionary as follows:</span>
-
-<span class="sd">    .. code-block:: none</span>
-
-<span class="sd">        data[&#39;sources] = {</span>
-<span class="sd">            &#39;{label}::{count}&#39;: AudioSignal,</span>
-<span class="sd">            &#39;{label}::{count}&#39;: AudioSignal,</span>
-<span class="sd">            ...</span>
-<span class="sd">        }</span>
-<span class="sd">    </span>
-<span class="sd">    SumSources sums by source label, so the ``::count`` will be ignored and only the</span>
-<span class="sd">    label part will be used when grouping sources.</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; tfm = transforms.SumSources(</span>
-<span class="sd">        &gt;&gt;&gt;     groupings=[[&#39;drums&#39;, &#39;bass&#39;, &#39;other]],</span>
-<span class="sd">        &gt;&gt;&gt;     group_names=[&#39;accompaniment],</span>
-<span class="sd">        &gt;&gt;&gt; )</span>
-<span class="sd">        &gt;&gt;&gt; # data[&#39;sources&#39;] is a dict containing keys: </span>
-<span class="sd">        &gt;&gt;&gt; #   [&#39;vocals&#39;, &#39;drums&#39;, &#39;bass&#39;, &#39;other]</span>
-<span class="sd">        &gt;&gt;&gt; data = tfm(data)</span>
-<span class="sd">        &gt;&gt;&gt; # data[&#39;sources&#39;] is now a dict containing keys:</span>
-<span class="sd">        &gt;&gt;&gt; #   [&#39;vocals&#39;, &#39;accompaniment&#39;]</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        groupings (list): a list of lists telling how to group each sources. </span>
-<span class="sd">        group_names (list, optional): A list containing the names of each group, or None. </span>
-<span class="sd">          Defaults to None.</span>
-<span class="sd">        source_key (str, optional): The key to look for in the data containing the list of</span>
-<span class="sd">          source AudioSignals. Defaults to &#39;sources&#39;.</span>
-<span class="sd">    </span>
-<span class="sd">    Raises:</span>
-<span class="sd">        TransformException: if groupings is not a list</span>
-<span class="sd">        TransformException: if group_names is not None but </span>
-<span class="sd">            len(groupings) != len(group_names)</span>
-<span class="sd">    </span>
-<span class="sd">    Returns:</span>
-<span class="sd">        data: modified dictionary with summed sources</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groupings</span><span class="p">,</span> <span class="n">group_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">groupings</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;groupings must be a list, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">groupings</span><span class="p">)</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">group_names</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">group_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">groupings</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;group_names and groupings must be same length or &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;group_names can be None! Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">group_names</span><span class="p">)</span><span class="si">}</span><span class="s2"> for &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;len(group_names) and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">groupings</span><span class="p">)</span><span class="si">}</span><span class="s2"> for len(groupings).&quot;</span>
-                <span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">groupings</span> <span class="o">=</span> <span class="n">groupings</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
-        <span class="k">if</span> <span class="n">group_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">group_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;+&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">groupings</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">groupings</span><span class="p">))]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">group_names</span> <span class="o">=</span> <span class="n">group_names</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;passed to this Transform!&quot;</span>
-            <span class="p">)</span>
-        <span class="n">sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
-        <span class="n">source_keys</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;::&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
-
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groupings</span><span class="p">):</span>
-            <span class="n">combined</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">group_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">key1</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">source_keys</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">key2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">key1</span><span class="p">:</span>
-                        <span class="n">combined</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sources</span><span class="p">[</span><span class="n">key2</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
-                        <span class="n">sources</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key2</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-            <span class="n">sources</span><span class="p">[</span><span class="n">group_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
-            <span class="n">sources</span><span class="p">[</span><span class="n">group_name</span><span class="p">]</span><span class="o">.</span><span class="n">path_to_input_file</span> <span class="o">=</span> <span class="n">group_name</span>
-
-        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sources</span>
-        <span class="k">if</span> <span class="s1">&#39;metadata&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s1">&#39;labels&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]:</span>
-                <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;labels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">group_names</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">data</span>
-
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;groupings = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">groupings</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;group_names = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">group_names</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;source_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="LabelsToOneHot"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.LabelsToOneHot">[docs]</a><span class="k">class</span> <span class="nc">LabelsToOneHot</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes a data dictionary with sources and their keys and converts the keys to</span>
-<span class="sd">    a one-hot numpy array using the list in data[&#39;metadata&#39;][&#39;labels&#39;] to figure</span>
-<span class="sd">    out which index goes where.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39;metadata&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected metadata in data, got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;labels&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected labels in data[&#39;metadata&#39;], got &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="n">enc</span> <span class="o">=</span> <span class="n">OneHotEncoder</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;labels&#39;</span><span class="p">]])</span>
-
-        <span class="n">sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
-        <span class="n">source_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;::&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sources</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
-        <span class="n">source_labels</span> <span class="o">=</span> <span class="p">[[</span><span class="n">l</span><span class="p">]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">source_keys</span><span class="p">)]</span>
-
-        <span class="n">one_hot_labels</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">source_labels</span><span class="p">)</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;one_hot_labels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">one_hot_labels</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">data</span></div>
-
-
-<div class="viewcode-block" id="MagnitudeSpectrumApproximation"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.MagnitudeSpectrumApproximation">[docs]</a><span class="k">class</span> <span class="nc">MagnitudeSpectrumApproximation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes a dictionary and looks for two special keys, defined by the</span>
-<span class="sd">    arguments ``mix_key`` and ``source_key``. These default to `mix` and `sources`.</span>
-<span class="sd">    These values of these keys are used to calculate the magnitude spectrum </span>
-<span class="sd">    approximation [1]. The input dictionary is modified to have additional</span>
-<span class="sd">    keys:</span>
-
-<span class="sd">    - mix_magnitude: The magnitude spectrogram of the mixture audio signal.</span>
-<span class="sd">    - source_magnitudes: The magnitude spectrograms of each source spectrogram.</span>
-<span class="sd">    - assignments: The ideal binary assignments for each time-frequency bin.</span>
-
-<span class="sd">    ``data[self.source_key]`` points to a dictionary containing the source names in</span>
-<span class="sd">    the keys and the corresponding AudioSignal in the values. The keys are sorted</span>
-<span class="sd">    in alphabetical order and then appended to the mask. ``data[self.source_key]``</span>
-<span class="sd">    then points to an OrderedDict instead, where the keys are in the same order</span>
-<span class="sd">    as in ``data[&#39;source_magnitudes&#39;]`` and ``data[&#39;assignments&#39;]``.</span>
-
-<span class="sd">    This transform uses the STFTParams that are attached to the AudioSignal objects</span>
-<span class="sd">    contained in ``data[mix_key]`` and ``data[source_key]``.</span>
-
-<span class="sd">    [1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux. </span>
-<span class="sd">        &quot;Phase-sensitive and recognition-boosted speech separation using </span>
-<span class="sd">        deep recurrent neural networks.&quot; In 2015 IEEE International Conference </span>
-<span class="sd">        on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE, </span>
-<span class="sd">        2015.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        mix_key (str, optional): The key to look for in data for the mixture AudioSignal. </span>
-<span class="sd">          Defaults to &#39;mix&#39;.</span>
-<span class="sd">        source_key (str, optional): The key to look for in the data containing the list of</span>
-<span class="sd">          source AudioSignals. Defaults to &#39;sources&#39;.</span>
-<span class="sd">    </span>
-<span class="sd">    Raises:</span>
-<span class="sd">            TransformException: if the expected keys are not in the dictionary, an</span>
-<span class="sd">              Exception is raised.</span>
-<span class="sd">        </span>
-<span class="sd">    Returns:</span>
-<span class="sd">        data: Modified version of the input dictionary.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix&#39;</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="o">=</span> <span class="n">mix_key</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;passed to this Transform! Got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">mixture</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="p">]</span>
-        <span class="n">mixture</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
-        <span class="n">mix_magnitude</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">magnitude_spectrogram_data</span>
-
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mix_magnitude</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">data</span>
-
-        <span class="n">_sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
-        <span class="n">source_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_sources</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-
-        <span class="n">sources</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
-            <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sources</span>
-
-        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="n">s</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
-            <span class="n">source_magnitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">magnitude_spectrogram_data</span><span class="p">)</span>
-
-        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_ideal_binary_mask</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">)</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;source_magnitudes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_magnitudes</span>
-
-        <span class="k">return</span> <span class="n">data</span>
-
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;mix_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;source_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="MagnitudeWeights"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.MagnitudeWeights">[docs]</a><span class="k">class</span> <span class="nc">MagnitudeWeights</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Applying time-frequency weights to the deep clustering objective results in a</span>
-<span class="sd">    huge performance boost. This transform looks for &#39;mix_magnitude&#39;, which is output</span>
-<span class="sd">    by either MagnitudeSpectrumApproximation or PhaseSensitiveSpectrumApproximation</span>
-<span class="sd">    and puts it into the weights.</span>
-
-<span class="sd">    [1] Wang, Zhong-Qiu, Jonathan Le Roux, and John R. Hershey. </span>
-<span class="sd">    &quot;Alternative objective functions for deep clustering.&quot; 2018 IEEE International </span>
-<span class="sd">    Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2018.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        mix_magnitude_key (str): Which key to look for the mix_magnitude data in.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix&#39;</span><span class="p">,</span> <span class="n">mix_magnitude_key</span><span class="o">=</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span> <span class="o">=</span> <span class="n">mix_magnitude_key</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="o">=</span> <span class="n">mix_key</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span><span class="si">}</span><span class="s2"> or </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;passed to this Transform! Got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="s2">&quot;Either MagnitudeSpectrumApproximation or &quot;</span>
-                <span class="s2">&quot;PhaseSensitiveSpectrumApproximation should be called &quot;</span>
-                <span class="s2">&quot;on the data dict prior to this transform. &quot;</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="p">]</span><span class="o">.</span><span class="n">stft</span><span class="p">())</span>
-
-        <span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_magnitude_key</span><span class="p">]</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">magnitude_spectrogram</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
-        <span class="n">weights</span> <span class="o">*=</span> <span class="p">(</span>
-                <span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="p">)</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">data</span></div>
-
-
-<div class="viewcode-block" id="PhaseSensitiveSpectrumApproximation"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation">[docs]</a><span class="k">class</span> <span class="nc">PhaseSensitiveSpectrumApproximation</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes a dictionary and looks for two special keys, defined by the</span>
-<span class="sd">    arguments ``mix_key`` and ``source_key``. These default to `mix` and `sources`.</span>
-<span class="sd">    These values of these keys are used to calculate the phase sensitive spectrum </span>
-<span class="sd">    approximation [1]. The input dictionary is modified to have additional</span>
-<span class="sd">    keys:</span>
-
-<span class="sd">    - mix_magnitude: The magnitude spectrogram of the mixture audio signal.</span>
-<span class="sd">    - source_magnitudes: The magnitude spectrograms of each source spectrogram.</span>
-<span class="sd">    - assignments: The ideal binary assignments for each time-frequency bin.</span>
-
-<span class="sd">    ``data[self.source_key]`` points to a dictionary containing the source names in</span>
-<span class="sd">    the keys and the corresponding AudioSignal in the values. The keys are sorted</span>
-<span class="sd">    in alphabetical order and then appended to the mask. ``data[self.source_key]``</span>
-<span class="sd">    then points to an OrderedDict instead, where the keys are in the same order</span>
-<span class="sd">    as in ``data[&#39;source_magnitudes&#39;]`` and ``data[&#39;assignments&#39;]``.</span>
-
-<span class="sd">    This transform uses the STFTParams that are attached to the AudioSignal objects</span>
-<span class="sd">    contained in ``data[mix_key]`` and ``data[source_key]``.</span>
-
-<span class="sd">    [1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux. </span>
-<span class="sd">        &quot;Phase-sensitive and recognition-boosted speech separation using </span>
-<span class="sd">        deep recurrent neural networks.&quot; In 2015 IEEE International Conference </span>
-<span class="sd">        on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE, </span>
-<span class="sd">        2015.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        mix_key (str, optional): The key to look for in data for the mixture AudioSignal. </span>
-<span class="sd">          Defaults to &#39;mix&#39;.</span>
-<span class="sd">        source_key (str, optional): The key to look for in the data containing the list of</span>
-<span class="sd">          source AudioSignals. Defaults to &#39;sources&#39;.</span>
-<span class="sd">        range_min (float, optional): The lower end to use when truncating the source </span>
-<span class="sd">          magnitudes in the phase sensitive spectrum approximation. Defaults to 0.0 (construct</span>
-<span class="sd">          non-negative masks). Use -np.inf for untruncated source magnitudes.</span>
-<span class="sd">        range_max (float, optional): The higher end of the truncated spectrum. This gets</span>
-<span class="sd">          multiplied by the magnitude of the mixture. Use 1.0 to truncate the source </span>
-<span class="sd">          magnitudes to `max(source_magnitudes, mix_magnitude)`. Use np.inf for untruncated</span>
-<span class="sd">          source magnitudes (best performance for an oracle mask but may be beyond what a</span>
-<span class="sd">          neural network is capable of masking). Defaults to 1.0.</span>
-<span class="sd">          </span>
-<span class="sd">    Raises:</span>
-<span class="sd">            TransformException: if the expected keys are not in the dictionary, an</span>
-<span class="sd">              Exception is raised.</span>
-<span class="sd">        </span>
-<span class="sd">    Returns:</span>
-<span class="sd">        data: Modified version of the input dictionary.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mix_key</span><span class="o">=</span><span class="s1">&#39;mix&#39;</span><span class="p">,</span> <span class="n">source_key</span><span class="o">=</span><span class="s1">&#39;sources&#39;</span><span class="p">,</span>
-                 <span class="n">range_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">range_max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="o">=</span> <span class="n">mix_key</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="o">=</span> <span class="n">source_key</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">range_min</span> <span class="o">=</span> <span class="n">range_min</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">range_max</span> <span class="o">=</span> <span class="n">range_max</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2"> in dictionary &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;passed to this Transform! Got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">mixture</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="p">]</span>
-
-        <span class="n">mix_stft</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
-        <span class="n">mix_magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">mix_stft</span><span class="p">)</span>
-        <span class="n">mix_angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">mix_stft</span><span class="p">)</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;mix_magnitude&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mix_magnitude</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">data</span>
-
-        <span class="n">_sources</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span>
-        <span class="n">source_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_sources</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
-
-        <span class="n">sources</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
-            <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">_sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sources</span>
-
-        <span class="n">source_angles</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">source_names</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">=</span> <span class="n">sources</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="n">_stft</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">stft</span><span class="p">()</span>
-            <span class="n">source_magnitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">_stft</span><span class="p">))</span>
-            <span class="n">source_angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">_stft</span><span class="p">))</span>
-
-        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">source_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">source_angles</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">range_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_min</span>
-        <span class="n">range_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_max</span> <span class="o">*</span> <span class="n">mix_magnitude</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-
-        <span class="c1"># Section 3.1: https://arxiv.org/pdf/1909.08494.pdf</span>
-        <span class="n">source_magnitudes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
-                <span class="n">source_magnitudes</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">source_angles</span> <span class="o">-</span> <span class="n">mix_angle</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]),</span>
-                <span class="n">range_min</span>
-            <span class="p">),</span>
-            <span class="n">range_max</span>
-        <span class="p">)</span>
-
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_ideal_binary_mask</span><span class="p">(</span><span class="n">source_magnitudes</span><span class="p">)</span>
-        <span class="n">data</span><span class="p">[</span><span class="s1">&#39;source_magnitudes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_magnitudes</span>
-
-        <span class="k">return</span> <span class="n">data</span>
-
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;mix_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mix_key</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;source_key = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source_key</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
-        <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="IndexSources"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.IndexSources">[docs]</a><span class="k">class</span> <span class="nc">IndexSources</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes in a dictionary containing Torch tensors or numpy arrays and extracts the </span>
-<span class="sd">    indexed sources from the set key (usually either `source_magnitudes` or </span>
-<span class="sd">    `ideal_binary_mask`). Can be used to train single-source separation models </span>
-<span class="sd">    (e.g. mix goes in, vocals come out).</span>
-<span class="sd">    </span>
-<span class="sd">    You need to know which slice of the source magnitudes or ideal binary mask arrays </span>
-<span class="sd">    to extract. The order of the sources in the source magnitudes array will be in </span>
-<span class="sd">    alphabetical order according to their source labels. </span>
-
-<span class="sd">    For example, if source magnitudes has shape `(257, 400, 1, 4)`, and the data is</span>
-<span class="sd">    from MUSDB, then the four possible source labels are bass, drums, other, and vocals.</span>
-<span class="sd">    The data in source magnitudes is in alphabetical order, so:</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        # source_magnitudes is an array returned by either MagnitudeSpectrumApproximation</span>
-<span class="sd">        # or PhaseSensitiveSpectrumApproximation</span>
-<span class="sd">        source_magnitudes[..., 0] # bass spectrogram</span>
-<span class="sd">        source_magnitudes[..., 1] # drums spectrogram</span>
-<span class="sd">        source_magnitudes[..., 2] # other spectrogram</span>
-<span class="sd">        source_magnitudes[..., 3] # vocals spectrogram</span>
-
-<span class="sd">        # ideal_binary_mask is an array returned by either MagnitudeSpectrumApproximation</span>
-<span class="sd">        # or PhaseSensitiveSpectrumApproximation</span>
-<span class="sd">        ideal_binary_mask[..., 0] # bass ibm mask</span>
-<span class="sd">        ideal_binary_mask[..., 1] # drums ibm mask</span>
-<span class="sd">        ideal_binary_mask[..., 2] # other ibm mask</span>
-<span class="sd">        ideal_binary_mask[..., 3] # vocals ibm mask</span>
-
-<span class="sd">    You can apply this transform to either the `source_magnitudes` or the</span>
-<span class="sd">    `ideal_binary_mask` or both.</span>
-
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        object ([type]): [description]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_key</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="o">=</span> <span class="n">target_key</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2"> in dictionary, got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Shape of data[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="si">}</span><span class="s2">] is </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;but index =  </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2"> out of bounds bounds of last dim.&quot;</span><span class="p">)</span>
-        <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target_key</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">data</span></div>
-
-
-<div class="viewcode-block" id="GetExcerpt"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.GetExcerpt">[docs]</a><span class="k">class</span> <span class="nc">GetExcerpt</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes in a dictionary containing Torch tensors or numpy arrays and extracts an </span>
-<span class="sd">    excerpt from each tensor corresponding to a spectral representation of a specified </span>
-<span class="sd">    length in frames. Can be used to get L-length spectrograms from mixture and source</span>
-<span class="sd">    spectrograms. If the data is shorter than the specified length, it</span>
-<span class="sd">    is padded to the specified length. If it is longer, a random offset between</span>
-<span class="sd">    ``(0, data_length - specified_length)`` is chosen. This function assumes that</span>
-<span class="sd">    it is being passed data AFTER ToSeparationModel. Thus the time dimension is</span>
-<span class="sd">    on axis=1. </span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        excerpt_length (int): Specified length of transformed data in frames.</span>
-
-<span class="sd">        time_dim (int): Which dimension time is on (excerpts are taken along this axis).</span>
-<span class="sd">          Defaults to 0.</span>
-
-<span class="sd">        time_frequency_keys (list): Which keys to look at it in the data dictionary to</span>
-<span class="sd">          take excerpts from.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">excerpt_length</span><span class="p">,</span> <span class="n">time_dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                 <span class="n">tf_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span> <span class="o">=</span> <span class="n">excerpt_length</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span> <span class="o">=</span> <span class="n">time_dim</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time_frequency_keys</span> <span class="o">=</span> <span class="n">tf_keys</span> <span class="k">if</span> <span class="n">tf_keys</span> <span class="k">else</span> <span class="n">time_frequency_keys</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="n">is_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-        <span class="n">is_array</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_tensor</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_array</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;data[</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">] was not a torch Tensor or a numpy array!&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">is_tensor</span><span class="p">,</span> <span class="n">is_array</span>
-
-    <span class="k">def</span> <span class="nf">_get_offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-        <span class="n">data_length</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="n">data_length</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span><span class="p">:</span>
-            <span class="n">offset</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data_length</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
-
-        <span class="n">pad_amount</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span> <span class="o">-</span> <span class="n">data_length</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">offset</span><span class="p">,</span> <span class="n">pad_amount</span>
-
-    <span class="k">def</span> <span class="nf">_construct_pad_func_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">pad_amount</span><span class="p">,</span> <span class="n">is_tensor</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">is_tensor</span><span class="p">:</span>
-            <span class="n">pad_func</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pad</span>
-            <span class="n">pad_tuple</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">))]</span>
-            <span class="n">pad_tuple</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">pad_tuple</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">pad_amount</span>
-            <span class="n">pad_tuple</span> <span class="o">=</span> <span class="n">pad_tuple</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">pad_func</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span>
-            <span class="n">pad_tuple</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">))]</span>
-            <span class="n">pad_tuple</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pad_amount</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">pad_func</span><span class="p">,</span> <span class="n">pad_tuple</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">offset</span><span class="p">,</span> <span class="n">pad_amount</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_offset</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="n">time_frequency_keys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_frequency_keys</span><span class="p">:</span>
-                <span class="n">is_tensor</span><span class="p">,</span> <span class="n">is_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-
-                <span class="k">if</span> <span class="n">pad_amount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">pad_func</span><span class="p">,</span> <span class="n">pad_tuple</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_pad_func_tuple</span><span class="p">(</span>
-                        <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">pad_amount</span><span class="p">,</span> <span class="n">is_tensor</span><span class="p">)</span>
-                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">pad_func</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">pad_tuple</span><span class="p">)</span>
-
-                <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">_slice_along_dim</span><span class="p">(</span>
-                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_dim</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">excerpt_length</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">data</span></div>
-
-
-<div class="viewcode-block" id="Cache"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.Cache">[docs]</a><span class="k">class</span> <span class="nc">Cache</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    The Cache transform can be placed within a Compose transform. The data </span>
-<span class="sd">    dictionary coming into this transform will be saved to the specified</span>
-<span class="sd">    location using ``zarr``. Then instead of computing all of the transforms</span>
-<span class="sd">    before the cache, one can simply read from the cache. The transforms after</span>
-<span class="sd">    this will then be applied to the data dictionary that is read from the</span>
-<span class="sd">    cache. A typical pipeline might look like this:</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        dataset = datasets.Scaper(&#39;path/to/scaper/folder&#39;)</span>
-<span class="sd">        tfm = transforms.Compose([</span>
-<span class="sd">            transforms.PhaseSensitiveApproximation(),</span>
-<span class="sd">            transforms.ToSeparationModel(),</span>
-<span class="sd">            transforms.Cache(&#39;~/.nussl/cache/tag&#39;, overwrite=True),</span>
-<span class="sd">            transforms.GetExcerpt()</span>
-<span class="sd">        ])</span>
-<span class="sd">        dataset[0] # first time will write to cache then apply GetExcerpt</span>
-<span class="sd">        dataset.cache_populated = True # switches to reading from cache</span>
-<span class="sd">        dataset[0] # second time will read from cache then apply GetExcerpt</span>
-<span class="sd">        dataset[1] # will error out as it wasn&#39;t written to the cache!</span>
-
-<span class="sd">        dataset.cache_populated = False</span>
-<span class="sd">        for i in range(len(dataset)):</span>
-<span class="sd">            dataset[i] # every item will get written to cache</span>
-<span class="sd">        dataset.cache_populated = True</span>
-<span class="sd">        dataset[1] # now it exists</span>
-
-<span class="sd">        dataset = datasets.Scaper(&#39;path/to/scaper/folder&#39;) # next time around</span>
-<span class="sd">        tfm = transforms.Compose([</span>
-<span class="sd">            transforms.PhaseSensitiveApproximation(),</span>
-<span class="sd">            transforms.ToSeparationModel(),</span>
-<span class="sd">            transforms.Cache(&#39;~/.nussl/cache/tag&#39;, overwrite=False),</span>
-<span class="sd">            transforms.GetExcerpt()</span>
-<span class="sd">        ])</span>
-<span class="sd">        dataset.cache_populated = True</span>
-<span class="sd">        dataset[0] # will read from cache, which still exists from last time</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        object ([type]): [description]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">cache_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">location</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="o">=</span> <span class="n">cache_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span> <span class="o">=</span> <span class="n">overwrite</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">info</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">overwrite</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_overwrite</span>
-
-    <span class="nd">@overwrite</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">overwrite</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_overwrite</span> <span class="o">=</span> <span class="n">value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_open_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_clear_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Cache </span><span class="si">{</span><span class="n">location</span><span class="si">}</span><span class="s2"> exists and overwrite = True, clearing cache.&quot;</span><span class="p">)</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_open_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span><span class="p">,),</span>
-                                   <span class="n">chunks</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">,</span> <span class="n">object_codec</span><span class="o">=</span><span class="n">numcodecs</span><span class="o">.</span><span class="n">Pickle</span><span class="p">(),</span>
-                                   <span class="n">synchronizer</span><span class="o">=</span><span class="n">zarr</span><span class="o">.</span><span class="n">ThreadSynchronizer</span><span class="p">())</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">location</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">zarr</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
-                    <span class="n">object_codec</span><span class="o">=</span><span class="n">numcodecs</span><span class="o">.</span><span class="n">Pickle</span><span class="p">(),</span>
-                    <span class="n">synchronizer</span><span class="o">=</span><span class="n">zarr</span><span class="o">.</span><span class="n">ThreadSynchronizer</span><span class="p">())</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39;index&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected &#39;index&#39; in dictionary, got </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Reading from cache resulted in not a dictionary! &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Maybe you haven&#39;t written to index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> yet in &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;the cache?&quot;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">data</span></div>
-
-
-<div class="viewcode-block" id="ToSeparationModel"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.ToSeparationModel">[docs]</a><span class="k">class</span> <span class="nc">ToSeparationModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Takes in a dictionary containing objects and removes any objects that cannot</span>
-<span class="sd">    be passed to SeparationModel (e.g. not a numpy array or torch Tensor).</span>
-<span class="sd">    If these objects are passed to SeparationModel, then an error will occur. This </span>
-<span class="sd">    class should be the last one in your list of transforms, if you&#39;re using </span>
-<span class="sd">    this dataset in a DataLoader object for training a network. If the keys</span>
-<span class="sd">    correspond to numpy arrays, they are converted to tensors using </span>
-<span class="sd">    ``torch.from_numpy``. Finally, the dimensions corresponding to time and</span>
-<span class="sd">    frequency are swapped for all the keys in swap_tf_dims, as this is how </span>
-<span class="sd">    SeparationModel expects it.</span>
-
-<span class="sd">    Example:</span>
-
-<span class="sd">    .. code-block:: none</span>
-
-<span class="sd">        data = {</span>
-<span class="sd">            # 2ch spectrogram for mixture</span>
-<span class="sd">            &#39;mix_magnitude&#39;: torch.randn(513, 400, 2),</span>
-<span class="sd">            # 2ch spectrogram for each source</span>
-<span class="sd">            &#39;source_magnitudes&#39;: torch.randn(513, 400, 2, 4) </span>
-<span class="sd">            &#39;mix&#39;: AudioSignal()</span>
-<span class="sd">        }</span>
-
-<span class="sd">        tfm = transforms.ToSeparationModel()</span>
-<span class="sd">        data = tfm(data)</span>
-
-<span class="sd">        data[&#39;mix_magnitude&#39;].shape # (400, 513, 2)</span>
-<span class="sd">        data[&#39;source_magnitudes].shape # (400, 513, 2, 4)</span>
-<span class="sd">        &#39;mix&#39; in data.keys() # False</span>
-<span class="sd">    </span>
-
-<span class="sd">    If this class isn&#39;t in your transforms list for the dataset, but you are</span>
-<span class="sd">    using it in the Trainer class, then it is added automatically as the</span>
-<span class="sd">    last transform.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">swap_tf_dims</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swap_tf_dims</span> <span class="o">=</span> <span class="n">swap_tf_dims</span> <span class="k">if</span> <span class="n">swap_tf_dims</span> <span class="k">else</span> <span class="n">time_frequency_keys</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;index&#39;</span><span class="p">:</span>
-                <span class="n">is_array</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">is_array</span><span class="p">:</span>
-                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]):</span>
-                    <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">swap_tf_dims</span><span class="p">:</span>
-                    <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">data</span>
-
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span></div>
-
-
-<div class="viewcode-block" id="Compose"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.Compose">[docs]</a><span class="k">class</span> <span class="nc">Compose</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Composes several transforms together. Inspired by torchvision implementation.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        transforms (list of ``Transform`` objects): list of transforms to compose.</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; transforms.Compose([</span>
-<span class="sd">        &gt;&gt;&gt;     transforms.MagnitudeSpectrumApproximation(),</span>
-<span class="sd">        &gt;&gt;&gt;     transforms.ToSeparationModel(),</span>
-<span class="sd">        &gt;&gt;&gt; ])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transforms</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">TransformException</span><span class="p">(</span>
-                    <span class="s2">&quot;The output of every transform must be a dictionary!&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">data</span>
-
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span>
-        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
-            <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
-            <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;    </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">)&#39;</span>
-        <span class="k">return</span> <span class="n">format_string</span></div>
-
-
-<div class="viewcode-block" id="TransformException"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.TransformException">[docs]</a><span class="k">class</span> <span class="nc">TransformException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Exception class for errors when working with transforms in nussl.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">pass</span></div>
+<span></span>import os
+import shutil
+import logging
+import random
+from collections import OrderedDict
+
+import torch
+import zarr
+import numcodecs
+import numpy as np
+from sklearn.preprocessing import OneHotEncoder
+
+from .. import utils
+
+
+def compute_ideal_binary_mask(source_magnitudes):
+    ibm = (
+            source_magnitudes == np.max(source_magnitudes, axis=-1, keepdims=True)
+    ).astype(float)
+
+    ibm = ibm / np.sum(ibm, axis=-1, keepdims=True)
+    ibm[ibm &lt;= .5] = 0
+    return ibm
+
+
+# Keys that correspond to the time-frequency representations after being passed through
+# the transforms here.
+time_frequency_keys = [&#39;mix_magnitude&#39;, &#39;source_magnitudes&#39;, &#39;ideal_binary_mask&#39;, &#39;weights&#39;]
+
+
+<div class="viewcode-block" id="SumSources"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.SumSources">[docs]</a>class SumSources(object):
+    &quot;&quot;&quot;
+    Sums sources together. Looks for sources in ``data[self.source_key]``. If 
+    a source belongs to a group, it is popped from the ``data[self.source_key]`` and
+    summed with the other sources in the group. If there is a corresponding 
+    group_name in group_names, it is named that in ``data[self.source_key]``. If
+    group_names are not given, then the names are constructed using the keys
+    in each group (e.g. `drums+bass+other`).
+
+    If using Scaper datasets, then there may be multiple sources with the same
+    label but different counts. The Scaper dataset hook organizes the source
+    dictionary as follows:
+
+    .. code-block:: none
+
+        data[&#39;sources] = {
+            &#39;{label}::{count}&#39;: AudioSignal,
+            &#39;{label}::{count}&#39;: AudioSignal,
+            ...
+        }
+    
+    SumSources sums by source label, so the ``::count`` will be ignored and only the
+    label part will be used when grouping sources.
+
+    Example:
+        &gt;&gt;&gt; tfm = transforms.SumSources(
+        &gt;&gt;&gt;     groupings=[[&#39;drums&#39;, &#39;bass&#39;, &#39;other]],
+        &gt;&gt;&gt;     group_names=[&#39;accompaniment],
+        &gt;&gt;&gt; )
+        &gt;&gt;&gt; # data[&#39;sources&#39;] is a dict containing keys: 
+        &gt;&gt;&gt; #   [&#39;vocals&#39;, &#39;drums&#39;, &#39;bass&#39;, &#39;other]
+        &gt;&gt;&gt; data = tfm(data)
+        &gt;&gt;&gt; # data[&#39;sources&#39;] is now a dict containing keys:
+        &gt;&gt;&gt; #   [&#39;vocals&#39;, &#39;accompaniment&#39;]
+    
+    Args:
+        groupings (list): a list of lists telling how to group each sources. 
+        group_names (list, optional): A list containing the names of each group, or None. 
+          Defaults to None.
+        source_key (str, optional): The key to look for in the data containing the list of
+          source AudioSignals. Defaults to &#39;sources&#39;.
+    
+    Raises:
+        TransformException: if groupings is not a list
+        TransformException: if group_names is not None but 
+            len(groupings) != len(group_names)
+    
+    Returns:
+        data: modified dictionary with summed sources
+    &quot;&quot;&quot;
+
+    def __init__(self, groupings, group_names=None, source_key=&#39;sources&#39;):
+        if not isinstance(groupings, list):
+            raise TransformException(
+                f&quot;groupings must be a list, got {type(groupings)}!&quot;)
+
+        if group_names:
+            if len(group_names) != len(groupings):
+                raise TransformException(
+                    f&quot;group_names and groupings must be same length or &quot;
+                    f&quot;group_names can be None! Got {len(group_names)} for &quot;
+                    f&quot;len(group_names) and {len(groupings)} for len(groupings).&quot;
+                )
+
+        self.groupings = groupings
+        self.source_key = source_key
+        if group_names is None:
+            group_names = [&#39;+&#39;.join(groupings[i]) for i in range(len(groupings))]
+        self.group_names = group_names
+
+    def __call__(self, data):
+        if self.source_key not in data:
+            raise TransformException(
+                f&quot;Expected {self.source_key} in dictionary &quot;
+                f&quot;passed to this Transform!&quot;
+            )
+        sources = data[self.source_key]
+        source_keys = [(k.split(&#39;::&#39;)[0], k) for k in list(sources.keys())]
+
+        for i, group in enumerate(self.groupings):
+            combined = []
+            group_name = self.group_names[i]
+            for key1 in group:
+                for key2 in source_keys:
+                    if key2[0] == key1:
+                        combined.append(sources[key2[1]])
+                        sources.pop(key2[1])
+            sources[group_name] = sum(combined)
+            sources[group_name].path_to_input_file = group_name
+
+        data[self.source_key] = sources
+        if &#39;metadata&#39; in data:
+            if &#39;labels&#39; in data[&#39;metadata&#39;]:
+                data[&#39;metadata&#39;][&#39;labels&#39;].extend(self.group_names)
+
+        return data
+
+    def __repr__(self):
+        return (
+            f&quot;{self.__class__.__name__}(&quot;
+            f&quot;groupings = {self.groupings}, &quot;
+            f&quot;group_names = {self.group_names}, &quot;
+            f&quot;source_key = {self.source_key}&quot;
+            f&quot;)&quot;
+        )</div>
+
+
+<div class="viewcode-block" id="LabelsToOneHot"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.LabelsToOneHot">[docs]</a>class LabelsToOneHot(object):
+    &quot;&quot;&quot;
+    Takes a data dictionary with sources and their keys and converts the keys to
+    a one-hot numpy array using the list in data[&#39;metadata&#39;][&#39;labels&#39;] to figure
+    out which index goes where.
+    &quot;&quot;&quot;
+
+    def __init__(self, source_key=&#39;sources&#39;):
+        self.source_key = source_key
+
+    def __call__(self, data):
+        if &#39;metadata&#39; not in data:
+            raise TransformException(
+                f&quot;Expected metadata in data, got {list(data.keys())}&quot;)
+        if &#39;labels&#39; not in data[&#39;metadata&#39;]:
+            raise TransformException(
+                f&quot;Expected labels in data[&#39;metadata&#39;], got &quot;
+                f&quot;{list(data[&#39;metadata&#39;].keys())}&quot;)
+
+        enc = OneHotEncoder(categories=[data[&#39;metadata&#39;][&#39;labels&#39;]])
+
+        sources = data[self.source_key]
+        source_keys = [k.split(&#39;::&#39;)[0] for k in list(sources.keys())]
+        source_labels = [[l] for l in sorted(source_keys)]
+
+        one_hot_labels = enc.fit_transform(source_labels)
+        data[&#39;one_hot_labels&#39;] = one_hot_labels.toarray()
+
+        return data</div>
+
+
+<div class="viewcode-block" id="MagnitudeSpectrumApproximation"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.MagnitudeSpectrumApproximation">[docs]</a>class MagnitudeSpectrumApproximation(object):
+    &quot;&quot;&quot;
+    Takes a dictionary and looks for two special keys, defined by the
+    arguments ``mix_key`` and ``source_key``. These default to `mix` and `sources`.
+    These values of these keys are used to calculate the magnitude spectrum 
+    approximation [1]. The input dictionary is modified to have additional
+    keys:
+
+    - mix_magnitude: The magnitude spectrogram of the mixture audio signal.
+    - source_magnitudes: The magnitude spectrograms of each source spectrogram.
+    - assignments: The ideal binary assignments for each time-frequency bin.
+
+    ``data[self.source_key]`` points to a dictionary containing the source names in
+    the keys and the corresponding AudioSignal in the values. The keys are sorted
+    in alphabetical order and then appended to the mask. ``data[self.source_key]``
+    then points to an OrderedDict instead, where the keys are in the same order
+    as in ``data[&#39;source_magnitudes&#39;]`` and ``data[&#39;assignments&#39;]``.
+
+    This transform uses the STFTParams that are attached to the AudioSignal objects
+    contained in ``data[mix_key]`` and ``data[source_key]``.
+
+    [1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux. 
+        &quot;Phase-sensitive and recognition-boosted speech separation using 
+        deep recurrent neural networks.&quot; In 2015 IEEE International Conference 
+        on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE, 
+        2015.
+    
+    Args:
+        mix_key (str, optional): The key to look for in data for the mixture AudioSignal. 
+          Defaults to &#39;mix&#39;.
+        source_key (str, optional): The key to look for in the data containing the list of
+          source AudioSignals. Defaults to &#39;sources&#39;.
+    
+    Raises:
+            TransformException: if the expected keys are not in the dictionary, an
+              Exception is raised.
+        
+    Returns:
+        data: Modified version of the input dictionary.
+    &quot;&quot;&quot;
+
+    def __init__(self, mix_key=&#39;mix&#39;, source_key=&#39;sources&#39;):
+        self.mix_key = mix_key
+        self.source_key = source_key
+
+    def __call__(self, data):
+        if self.mix_key not in data:
+            raise TransformException(
+                f&quot;Expected {self.mix_key} in dictionary &quot;
+                f&quot;passed to this Transform! Got {list(data.keys())}.&quot;
+            )
+
+        mixture = data[self.mix_key]
+        mixture.stft()
+        mix_magnitude = mixture.magnitude_spectrogram_data
+
+        data[&#39;mix_magnitude&#39;] = mix_magnitude
+
+        if self.source_key not in data:
+            return data
+
+        _sources = data[self.source_key]
+        source_names = sorted(list(_sources.keys()))
+
+        sources = OrderedDict()
+        for key in source_names:
+            sources[key] = _sources[key]
+        data[self.source_key] = sources
+
+        source_magnitudes = []
+        for key in source_names:
+            s = sources[key]
+            s.stft()
+            source_magnitudes.append(s.magnitude_spectrogram_data)
+
+        source_magnitudes = np.stack(source_magnitudes, axis=-1)
+
+        data[&#39;ideal_binary_mask&#39;] = compute_ideal_binary_mask(source_magnitudes)
+        data[&#39;source_magnitudes&#39;] = source_magnitudes
+
+        return data
+
+    def __repr__(self):
+        return (
+            f&quot;{self.__class__.__name__}(&quot;
+            f&quot;mix_key = {self.mix_key}, &quot;
+            f&quot;source_key = {self.source_key}&quot;
+            f&quot;)&quot;
+        )</div>
+
+
+<div class="viewcode-block" id="MagnitudeWeights"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.MagnitudeWeights">[docs]</a>class MagnitudeWeights(object):
+    &quot;&quot;&quot;
+    Applying time-frequency weights to the deep clustering objective results in a
+    huge performance boost. This transform looks for &#39;mix_magnitude&#39;, which is output
+    by either MagnitudeSpectrumApproximation or PhaseSensitiveSpectrumApproximation
+    and puts it into the weights.
+
+    [1] Wang, Zhong-Qiu, Jonathan Le Roux, and John R. Hershey. 
+    &quot;Alternative objective functions for deep clustering.&quot; 2018 IEEE International 
+    Conference on Acoustics, Speech and Signal Processing (ICASSP). IEEE, 2018.
+    
+    Args:
+        mix_magnitude_key (str): Which key to look for the mix_magnitude data in.
+    &quot;&quot;&quot;
+
+    def __init__(self, mix_key=&#39;mix&#39;, mix_magnitude_key=&#39;mix_magnitude&#39;):
+        self.mix_magnitude_key = mix_magnitude_key
+        self.mix_key = mix_key
+
+    def __call__(self, data):
+        if self.mix_magnitude_key not in data and self.mix_key not in data:
+            raise TransformException(
+                f&quot;Expected {self.mix_magnitude_key} or {self.mix_key} in dictionary &quot;
+                f&quot;passed to this Transform! Got {list(data.keys())}. &quot;
+                &quot;Either MagnitudeSpectrumApproximation or &quot;
+                &quot;PhaseSensitiveSpectrumApproximation should be called &quot;
+                &quot;on the data dict prior to this transform. &quot;
+            )
+        elif self.mix_magnitude_key not in data:
+            data[self.mix_magnitude_key] = np.abs(data[self.mix_key].stft())
+
+        magnitude_spectrogram = data[self.mix_magnitude_key]
+        weights = magnitude_spectrogram / (np.sum(magnitude_spectrogram) + 1e-6)
+        weights *= (
+                magnitude_spectrogram.shape[0] * magnitude_spectrogram.shape[1]
+        )
+        data[&#39;weights&#39;] = np.sqrt(weights)
+        return data</div>
+
+
+<div class="viewcode-block" id="PhaseSensitiveSpectrumApproximation"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation">[docs]</a>class PhaseSensitiveSpectrumApproximation(object):
+    &quot;&quot;&quot;
+    Takes a dictionary and looks for two special keys, defined by the
+    arguments ``mix_key`` and ``source_key``. These default to `mix` and `sources`.
+    These values of these keys are used to calculate the phase sensitive spectrum 
+    approximation [1]. The input dictionary is modified to have additional
+    keys:
+
+    - mix_magnitude: The magnitude spectrogram of the mixture audio signal.
+    - source_magnitudes: The magnitude spectrograms of each source spectrogram.
+    - assignments: The ideal binary assignments for each time-frequency bin.
+
+    ``data[self.source_key]`` points to a dictionary containing the source names in
+    the keys and the corresponding AudioSignal in the values. The keys are sorted
+    in alphabetical order and then appended to the mask. ``data[self.source_key]``
+    then points to an OrderedDict instead, where the keys are in the same order
+    as in ``data[&#39;source_magnitudes&#39;]`` and ``data[&#39;assignments&#39;]``.
+
+    This transform uses the STFTParams that are attached to the AudioSignal objects
+    contained in ``data[mix_key]`` and ``data[source_key]``.
+
+    [1] Erdogan, Hakan, John R. Hershey, Shinji Watanabe, and Jonathan Le Roux. 
+        &quot;Phase-sensitive and recognition-boosted speech separation using 
+        deep recurrent neural networks.&quot; In 2015 IEEE International Conference 
+        on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE, 
+        2015.
+    
+    Args:
+        mix_key (str, optional): The key to look for in data for the mixture AudioSignal. 
+          Defaults to &#39;mix&#39;.
+        source_key (str, optional): The key to look for in the data containing the list of
+          source AudioSignals. Defaults to &#39;sources&#39;.
+        range_min (float, optional): The lower end to use when truncating the source 
+          magnitudes in the phase sensitive spectrum approximation. Defaults to 0.0 (construct
+          non-negative masks). Use -np.inf for untruncated source magnitudes.
+        range_max (float, optional): The higher end of the truncated spectrum. This gets
+          multiplied by the magnitude of the mixture. Use 1.0 to truncate the source 
+          magnitudes to `max(source_magnitudes, mix_magnitude)`. Use np.inf for untruncated
+          source magnitudes (best performance for an oracle mask but may be beyond what a
+          neural network is capable of masking). Defaults to 1.0.
+          
+    Raises:
+            TransformException: if the expected keys are not in the dictionary, an
+              Exception is raised.
+        
+    Returns:
+        data: Modified version of the input dictionary.
+    &quot;&quot;&quot;
+
+    def __init__(self, mix_key=&#39;mix&#39;, source_key=&#39;sources&#39;,
+                 range_min=0.0, range_max=1.0):
+        self.mix_key = mix_key
+        self.source_key = source_key
+        self.range_min = range_min
+        self.range_max = range_max
+
+    def __call__(self, data):
+        if self.mix_key not in data:
+            raise TransformException(
+                f&quot;Expected {self.mix_key} in dictionary &quot;
+                f&quot;passed to this Transform! Got {list(data.keys())}.&quot;
+            )
+
+        mixture = data[self.mix_key]
+
+        mix_stft = mixture.stft()
+        mix_magnitude = np.abs(mix_stft)
+        mix_angle = np.angle(mix_stft)
+        data[&#39;mix_magnitude&#39;] = mix_magnitude
+
+        if self.source_key not in data:
+            return data
+
+        _sources = data[self.source_key]
+        source_names = sorted(list(_sources.keys()))
+
+        sources = OrderedDict()
+        for key in source_names:
+            sources[key] = _sources[key]
+        data[self.source_key] = sources
+
+        source_angles = []
+        source_magnitudes = []
+        for key in source_names:
+            s = sources[key]
+            _stft = s.stft()
+            source_magnitudes.append(np.abs(_stft))
+            source_angles.append(np.angle(_stft))
+
+        source_magnitudes = np.stack(source_magnitudes, axis=-1)
+        source_angles = np.stack(source_angles, axis=-1)
+        range_min = self.range_min
+        range_max = self.range_max * mix_magnitude[..., None]
+
+        # Section 3.1: https://arxiv.org/pdf/1909.08494.pdf
+        source_magnitudes = np.minimum(
+            np.maximum(
+                source_magnitudes * np.cos(source_angles - mix_angle[..., None]),
+                range_min
+            ),
+            range_max
+        )
+
+        data[&#39;ideal_binary_mask&#39;] = compute_ideal_binary_mask(source_magnitudes)
+        data[&#39;source_magnitudes&#39;] = source_magnitudes
+
+        return data
+
+    def __repr__(self):
+        return (
+            f&quot;{self.__class__.__name__}(&quot;
+            f&quot;mix_key = {self.mix_key}, &quot;
+            f&quot;source_key = {self.source_key}&quot;
+            f&quot;)&quot;
+        )</div>
+
+
+<div class="viewcode-block" id="IndexSources"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.IndexSources">[docs]</a>class IndexSources(object):
+    &quot;&quot;&quot;
+    Takes in a dictionary containing Torch tensors or numpy arrays and extracts the 
+    indexed sources from the set key (usually either `source_magnitudes` or 
+    `ideal_binary_mask`). Can be used to train single-source separation models 
+    (e.g. mix goes in, vocals come out).
+    
+    You need to know which slice of the source magnitudes or ideal binary mask arrays 
+    to extract. The order of the sources in the source magnitudes array will be in 
+    alphabetical order according to their source labels. 
+
+    For example, if source magnitudes has shape `(257, 400, 1, 4)`, and the data is
+    from MUSDB, then the four possible source labels are bass, drums, other, and vocals.
+    The data in source magnitudes is in alphabetical order, so:
+
+    .. code-block:: python
+
+        # source_magnitudes is an array returned by either MagnitudeSpectrumApproximation
+        # or PhaseSensitiveSpectrumApproximation
+        source_magnitudes[..., 0] # bass spectrogram
+        source_magnitudes[..., 1] # drums spectrogram
+        source_magnitudes[..., 2] # other spectrogram
+        source_magnitudes[..., 3] # vocals spectrogram
+
+        # ideal_binary_mask is an array returned by either MagnitudeSpectrumApproximation
+        # or PhaseSensitiveSpectrumApproximation
+        ideal_binary_mask[..., 0] # bass ibm mask
+        ideal_binary_mask[..., 1] # drums ibm mask
+        ideal_binary_mask[..., 2] # other ibm mask
+        ideal_binary_mask[..., 3] # vocals ibm mask
+
+    You can apply this transform to either the `source_magnitudes` or the
+    `ideal_binary_mask` or both.
+
+    
+    Args:
+        object ([type]): [description]
+    &quot;&quot;&quot;
+
+    def __init__(self, target_key, index):
+        self.target_key = target_key
+        self.index = index
+
+    def __call__(self, data):
+        if self.target_key not in data:
+            raise TransformException(
+                f&quot;Expected {self.target_key} in dictionary, got {list(data.keys())}&quot;)
+        if self.index &gt;= data[self.target_key].shape[-1]:
+            raise TransformException(
+                f&quot;Shape of data[{self.target_key}] is {data[self.target_key].shape} &quot;
+                f&quot;but index =  {self.index} out of bounds bounds of last dim.&quot;)
+        data[self.target_key] = data[self.target_key][..., self.index, None]
+        return data</div>
+
+
+<div class="viewcode-block" id="GetExcerpt"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.GetExcerpt">[docs]</a>class GetExcerpt(object):
+    &quot;&quot;&quot;
+    Takes in a dictionary containing Torch tensors or numpy arrays and extracts an 
+    excerpt from each tensor corresponding to a spectral representation of a specified 
+    length in frames. Can be used to get L-length spectrograms from mixture and source
+    spectrograms. If the data is shorter than the specified length, it
+    is padded to the specified length. If it is longer, a random offset between
+    ``(0, data_length - specified_length)`` is chosen. This function assumes that
+    it is being passed data AFTER ToSeparationModel. Thus the time dimension is
+    on axis=1. 
+    
+    Args:
+        excerpt_length (int): Specified length of transformed data in frames.
+
+        time_dim (int): Which dimension time is on (excerpts are taken along this axis).
+          Defaults to 0.
+
+        time_frequency_keys (list): Which keys to look at it in the data dictionary to
+          take excerpts from.
+    &quot;&quot;&quot;
+
+    def __init__(self, excerpt_length, time_dim=0,
+                 tf_keys=None):
+        self.excerpt_length = excerpt_length
+        self.time_dim = time_dim
+        self.time_frequency_keys = tf_keys if tf_keys else time_frequency_keys
+
+    @staticmethod
+    def _validate(data, key):
+        is_tensor = torch.is_tensor(data[key])
+        is_array = isinstance(data[key], np.ndarray)
+        if not is_tensor and not is_array:
+            raise TransformException(
+                f&quot;data[{key}] was not a torch Tensor or a numpy array!&quot;)
+        return is_tensor, is_array
+
+    def _get_offset(self, data, key):
+        self._validate(data, key)
+        data_length = data[key].shape[self.time_dim]
+
+        if data_length &gt;= self.excerpt_length:
+            offset = random.randint(0, data_length - self.excerpt_length)
+        else:
+            offset = 0
+
+        pad_amount = max(0, self.excerpt_length - data_length)
+
+        return offset, pad_amount
+
+    def _construct_pad_func_tuple(self, shape, pad_amount, is_tensor):
+        if is_tensor:
+            pad_func = torch.nn.functional.pad
+            pad_tuple = [0 for _ in range(2 * len(shape))]
+            pad_tuple[2 * self.time_dim] = 0
+            pad_tuple[2 * self.time_dim + 1] = pad_amount
+            pad_tuple = pad_tuple[::-1]
+        else:
+            pad_func = np.pad
+            pad_tuple = [(0, 0) for _ in range(len(shape))]
+            pad_tuple[self.time_dim] = (0, pad_amount)
+        return pad_func, pad_tuple
+
+    def __call__(self, data):
+        offset, pad_amount = self._get_offset(
+            data, time_frequency_keys[0])
+
+        for key in data:
+            if key in self.time_frequency_keys:
+                is_tensor, is_array = self._validate(data, key)
+
+                if pad_amount &gt; 0:
+                    pad_func, pad_tuple = self._construct_pad_func_tuple(
+                        data[key].shape, pad_amount, is_tensor)
+                    data[key] = pad_func(data[key], pad_tuple)
+
+                data[key] = utils._slice_along_dim(
+                    data[key], self.time_dim, offset, offset + self.excerpt_length)
+        return data</div>
+
+
+<div class="viewcode-block" id="Cache"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.Cache">[docs]</a>class Cache(object):
+    &quot;&quot;&quot;
+    The Cache transform can be placed within a Compose transform. The data 
+    dictionary coming into this transform will be saved to the specified
+    location using ``zarr``. Then instead of computing all of the transforms
+    before the cache, one can simply read from the cache. The transforms after
+    this will then be applied to the data dictionary that is read from the
+    cache. A typical pipeline might look like this:
+
+    .. code-block:: python
+
+        dataset = datasets.Scaper(&#39;path/to/scaper/folder&#39;)
+        tfm = transforms.Compose([
+            transforms.PhaseSensitiveApproximation(),
+            transforms.ToSeparationModel(),
+            transforms.Cache(&#39;~/.nussl/cache/tag&#39;, overwrite=True),
+            transforms.GetExcerpt()
+        ])
+        dataset[0] # first time will write to cache then apply GetExcerpt
+        dataset.cache_populated = True # switches to reading from cache
+        dataset[0] # second time will read from cache then apply GetExcerpt
+        dataset[1] # will error out as it wasn&#39;t written to the cache!
+
+        dataset.cache_populated = False
+        for i in range(len(dataset)):
+            dataset[i] # every item will get written to cache
+        dataset.cache_populated = True
+        dataset[1] # now it exists
+
+        dataset = datasets.Scaper(&#39;path/to/scaper/folder&#39;) # next time around
+        tfm = transforms.Compose([
+            transforms.PhaseSensitiveApproximation(),
+            transforms.ToSeparationModel(),
+            transforms.Cache(&#39;~/.nussl/cache/tag&#39;, overwrite=False),
+            transforms.GetExcerpt()
+        ])
+        dataset.cache_populated = True
+        dataset[0] # will read from cache, which still exists from last time
+    
+    Args:
+        object ([type]): [description]
+    &quot;&quot;&quot;
+
+    def __init__(self, location, cache_size=1, overwrite=False):
+        self.location = location
+        self.cache_size = cache_size
+        self.cache = None
+        self.overwrite = overwrite
+
+    @property
+    def info(self):
+        return self.cache.info
+
+    @property
+    def overwrite(self):
+        return self._overwrite
+
+    @overwrite.setter
+    def overwrite(self, value):
+        self._overwrite = value
+        self._clear_cache(self.location)
+        self._open_cache(self.location)
+
+    def _clear_cache(self, location):
+        if os.path.exists(location):
+            if self.overwrite:
+                logging.info(
+                    f&quot;Cache {location} exists and overwrite = True, clearing cache.&quot;)
+                shutil.rmtree(location, ignore_errors=True)
+
+    def _open_cache(self, location):
+        if self.overwrite:
+            self.cache = zarr.open(location, mode=&#39;w&#39;, shape=(self.cache_size,),
+                                   chunks=(1,), dtype=object, object_codec=numcodecs.Pickle(),
+                                   synchronizer=zarr.ThreadSynchronizer())
+        else:
+            if os.path.exists(location):
+                self.cache = zarr.open(location, mode=&#39;r&#39;,
+                    object_codec=numcodecs.Pickle(),
+                    synchronizer=zarr.ThreadSynchronizer())
+
+    def __call__(self, data):
+        if &#39;index&#39; not in data:
+            raise TransformException(
+                f&quot;Expected &#39;index&#39; in dictionary, got {list(data.keys())}&quot;)
+        index = data[&#39;index&#39;]
+        if self.overwrite:
+            self.cache[index] = data
+        data = self.cache[index]
+
+        if not isinstance(data, dict):
+            raise TransformException(
+                f&quot;Reading from cache resulted in not a dictionary! &quot;
+                f&quot;Maybe you haven&#39;t written to index {index} yet in &quot;
+                f&quot;the cache?&quot;)
+
+        return data</div>
+
+
+<div class="viewcode-block" id="ToSeparationModel"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.ToSeparationModel">[docs]</a>class ToSeparationModel(object):
+    &quot;&quot;&quot;
+    Takes in a dictionary containing objects and removes any objects that cannot
+    be passed to SeparationModel (e.g. not a numpy array or torch Tensor).
+    If these objects are passed to SeparationModel, then an error will occur. This 
+    class should be the last one in your list of transforms, if you&#39;re using 
+    this dataset in a DataLoader object for training a network. If the keys
+    correspond to numpy arrays, they are converted to tensors using 
+    ``torch.from_numpy``. Finally, the dimensions corresponding to time and
+    frequency are swapped for all the keys in swap_tf_dims, as this is how 
+    SeparationModel expects it.
+
+    Example:
+
+    .. code-block:: none
+
+        data = {
+            # 2ch spectrogram for mixture
+            &#39;mix_magnitude&#39;: torch.randn(513, 400, 2),
+            # 2ch spectrogram for each source
+            &#39;source_magnitudes&#39;: torch.randn(513, 400, 2, 4) 
+            &#39;mix&#39;: AudioSignal()
+        }
+
+        tfm = transforms.ToSeparationModel()
+        data = tfm(data)
+
+        data[&#39;mix_magnitude&#39;].shape # (400, 513, 2)
+        data[&#39;source_magnitudes].shape # (400, 513, 2, 4)
+        &#39;mix&#39; in data.keys() # False
+    
+
+    If this class isn&#39;t in your transforms list for the dataset, but you are
+    using it in the Trainer class, then it is added automatically as the
+    last transform.
+    &quot;&quot;&quot;
+
+    def __init__(self, swap_tf_dims=None):
+        self.swap_tf_dims = swap_tf_dims if swap_tf_dims else time_frequency_keys
+
+    def __call__(self, data):
+        keys = list(data.keys())
+        for key in keys:
+            if key != &#39;index&#39;:
+                is_array = isinstance(data[key], np.ndarray)
+                if is_array:
+                    data[key] = torch.from_numpy(data[key])
+                if not torch.is_tensor(data[key]):
+                    data.pop(key)
+                if key in self.swap_tf_dims:
+                    data[key] = data[key].transpose(1, 0)
+        return data
+
+    def __repr__(self):
+        return f&quot;{self.__class__.__name__}()&quot;</div>
+
+
+<div class="viewcode-block" id="Compose"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.Compose">[docs]</a>class Compose(object):
+    &quot;&quot;&quot;Composes several transforms together. Inspired by torchvision implementation.
+
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        &gt;&gt;&gt; transforms.Compose([
+        &gt;&gt;&gt;     transforms.MagnitudeSpectrumApproximation(),
+        &gt;&gt;&gt;     transforms.ToSeparationModel(),
+        &gt;&gt;&gt; ])
+    &quot;&quot;&quot;
+
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, data):
+        for t in self.transforms:
+            data = t(data)
+            if not isinstance(data, dict):
+                raise TransformException(
+                    &quot;The output of every transform must be a dictionary!&quot;)
+        return data
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + &#39;(&#39;
+        for t in self.transforms:
+            format_string += &#39;\n&#39;
+            format_string += &#39;    {0}&#39;.format(t)
+        format_string += &#39;\n)&#39;
+        return format_string</div>
+
+
+<div class="viewcode-block" id="TransformException"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.TransformException">[docs]</a>class TransformException(Exception):
+    &quot;&quot;&quot;
+    Exception class for errors when working with transforms in nussl.
+    &quot;&quot;&quot;
+    pass</div>
 </pre></div>
 
            </div>

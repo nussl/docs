@@ -22,7 +22,18 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 58,
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import nussl\n",
+    "import time\n",
+    "start_time = time.time()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
    "metadata": {},
    "outputs": [
     {
@@ -35,7 +46,6 @@
     }
    ],
    "source": [
-    "import nussl\n",
     "input_file_path = nussl.efz_utils.download_audio_file(\n",
     "    'schoolboy_fascination_excerpt.wav')\n",
     "signal1 = nussl.AudioSignal(input_file_path)\n",
@@ -52,7 +62,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 59,
+   "execution_count": 3,
    "metadata": {},
    "outputs": [
     {
@@ -85,7 +95,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 60,
+   "execution_count": 4,
    "metadata": {},
    "outputs": [
     {
@@ -111,7 +121,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 61,
+   "execution_count": 5,
    "metadata": {},
    "outputs": [
     {
@@ -163,7 +173,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 69,
+   "execution_count": 6,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -187,7 +197,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 70,
+   "execution_count": 7,
    "metadata": {},
    "outputs": [
     {
@@ -213,7 +223,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 71,
+   "execution_count": 8,
    "metadata": {},
    "outputs": [
     {
@@ -256,7 +266,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 72,
+   "execution_count": 9,
    "metadata": {},
    "outputs": [
     {
@@ -307,7 +317,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 73,
+   "execution_count": 10,
    "metadata": {},
    "outputs": [
     {
@@ -316,7 +326,7 @@
        "nussl.core.audio_signal.STFTParams"
       ]
      },
-     "execution_count": 73,
+     "execution_count": 10,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -334,7 +344,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 74,
+   "execution_count": 11,
    "metadata": {},
    "outputs": [
     {
@@ -343,7 +353,7 @@
        "STFTParams(window_length=2048, hop_length=512, window_type='sqrt_hann')"
       ]
      },
-     "execution_count": 74,
+     "execution_count": 11,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -365,7 +375,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 75,
+   "execution_count": 12,
    "metadata": {},
    "outputs": [
     {
@@ -374,7 +384,7 @@
        "['hamming', 'rectangular', 'hann', 'blackman', 'triang', 'sqrt_hann']"
       ]
      },
-     "execution_count": 75,
+     "execution_count": 12,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -392,7 +402,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 76,
+   "execution_count": 13,
    "metadata": {},
    "outputs": [
     {
@@ -401,7 +411,7 @@
        "(129, 5169, 2)"
       ]
      },
-     "execution_count": 76,
+     "execution_count": 13,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -418,6 +428,25 @@
    "source": [
     "The shape of the resultant STFT is now different. Note that 256 resulted in 129 \n",
     "frequencies of analysis per frame. In general, the rule is `(window_length // 2) + 1`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Time taken: 7.6847 seconds\n"
+     ]
+    }
+   ],
+   "source": [
+    "end_time = time.time()\n",
+    "time_taken = end_time - start_time\n",
+    "print(f'Time taken: {time_taken:.4f} seconds')"
    ]
   }
  ],

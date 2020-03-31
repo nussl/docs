@@ -546,7 +546,9 @@ div.rendered_html tbody tr:hover {
 <span class="c1"># This pattern also affects html_static_path and html_extra_path.</span>
 <span class="n">exclude_patterns</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s1">&#39;_build&#39;</span><span class="p">,</span> <span class="s1">&#39;Thumbs.db&#39;</span><span class="p">,</span> <span class="s1">&#39;.DS_Store&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;**.ipynb_checkpoints&#39;</span><span class="p">,</span> <span class="s1">&#39;*.ipynb&#39;</span><span class="p">]</span>
+    <span class="s1">&#39;**.ipynb_checkpoints&#39;</span><span class="p">,</span> <span class="s1">&#39;*.ipynb&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;stage_docs.py&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;create_and_execute_notebooks.py&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -559,6 +561,7 @@ div.rendered_html tbody tr:hover {
     <span class="s1">&#39;.py&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="n">jupytext</span><span class="o">.</span><span class="n">reads</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s1">&#39;.py&#39;</span><span class="p">),</span>
 <span class="p">}</span>
 <span class="n">nbsphinx_allow_errors</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">highlight_language</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
 </pre></div>
 </div>
 </div>

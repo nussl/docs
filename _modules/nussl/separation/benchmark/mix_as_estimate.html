@@ -163,32 +163,32 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.benchmark.mix_as_estimate</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">SeparationBase</span>
+<span></span>from ..base import SeparationBase
 
-<div class="viewcode-block" id="MixAsEstimate"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.benchmark.MixAsEstimate">[docs]</a><span class="k">class</span> <span class="nc">MixAsEstimate</span><span class="p">(</span><span class="n">SeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This algorithm does nothing but scale the mix by the number of sources. This can</span>
-<span class="sd">    be used to compute the improvement metrics (e.g. improvement in SDR over using the</span>
-<span class="sd">    mixture as the estimate).</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): Signal to separate.</span>
-<span class="sd">        num_sources (int): How many sources to return.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MixAsEstimate"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.benchmark.MixAsEstimate">[docs]</a>class MixAsEstimate(SeparationBase):
+    &quot;&quot;&quot;
+    This algorithm does nothing but scale the mix by the number of sources. This can
+    be used to compute the improvement metrics (e.g. improvement in SDR over using the
+    mixture as the estimate).
+    
+    Args:
+        input_audio_signal (AudioSignal): Signal to separate.
+        num_sources (int): How many sources to return.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_sources</span> <span class="o">=</span> <span class="n">num_sources</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">)</span>
+    def __init__(self, input_audio_signal, num_sources):
+        self.num_sources = num_sources
+        super().__init__(input_audio_signal=input_audio_signal)
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+    def run(self):
+        pass
 
-    <span class="k">def</span> <span class="nf">make_audio_signals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">scalar</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_sources</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span> <span class="o">*</span> <span class="n">scalar</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_sources</span><span class="p">)</span>
-        <span class="p">]</span>
-        <span class="k">return</span> <span class="n">estimates</span></div>
+    def make_audio_signals(self):
+        scalar = 1 / self.num_sources
+        estimates = [
+            self.audio_signal * scalar for i in range(self.num_sources)
+        ]
+        return estimates</div>
 </pre></div>
 
            </div>

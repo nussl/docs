@@ -163,62 +163,62 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.primitive.timbre</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">librosa</span>
+<span></span>import numpy as np
+import librosa
 
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">ClusteringSeparationBase</span><span class="p">,</span> <span class="n">NMFMixin</span>
+from ..base import ClusteringSeparationBase, NMFMixin
 
 
-<div class="viewcode-block" id="TimbreClustering"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.TimbreClustering">[docs]</a><span class="k">class</span> <span class="nc">TimbreClustering</span><span class="p">(</span><span class="n">ClusteringSeparationBase</span><span class="p">,</span> <span class="n">NMFMixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements separation by timbre via NMF with MFCC clustering. The</span>
-<span class="sd">    steps are:</span>
+<div class="viewcode-block" id="TimbreClustering"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.TimbreClustering">[docs]</a>class TimbreClustering(ClusteringSeparationBase, NMFMixin):
+    &quot;&quot;&quot;
+    Implements separation by timbre via NMF with MFCC clustering. The
+    steps are:
 
-<span class="sd">    1. Factorize the magnitude spectrogram of the mixture with NMF.</span>
-<span class="sd">    2. Take MFCC coefficients of each component.</span>
-<span class="sd">    3. Express each time-frequency bin as a combination of components.</span>
-<span class="sd">    4. The features for each time-frequency bin are the weighted combination</span>
-<span class="sd">       of the MFCCs of each component.</span>
-<span class="sd">    5. Cluster each time-frequency bin based on these features.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): Signal to separate.</span>
-<span class="sd">        n_components (int): Number of components to use in the NMF</span>
-<span class="sd">          model. Corresponds to number of spectral templates.</span>
-<span class="sd">        n_mfcc (int): Number of MFCC coefficients to use. Defaults to 13.</span>
-<span class="sd">        nmf_args (dict): Dictionary containing keyword arguments for `NMFMixin.fit`.</span>
-<span class="sd">        kwargs (dict): Extra keyword arguments are passed to ClusteringSeparationBase.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    1. Factorize the magnitude spectrogram of the mixture with NMF.
+    2. Take MFCC coefficients of each component.
+    3. Express each time-frequency bin as a combination of components.
+    4. The features for each time-frequency bin are the weighted combination
+       of the MFCCs of each component.
+    5. Cluster each time-frequency bin based on these features.
+    
+    Args:
+        input_audio_signal (AudioSignal): Signal to separate.
+        n_components (int): Number of components to use in the NMF
+          model. Corresponds to number of spectral templates.
+        n_mfcc (int): Number of MFCC coefficients to use. Defaults to 13.
+        nmf_args (dict): Dictionary containing keyword arguments for `NMFMixin.fit`.
+        kwargs (dict): Extra keyword arguments are passed to ClusteringSeparationBase.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">n_mfcc</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span>
-                 <span class="n">nmf_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span> <span class="o">=</span> <span class="n">n_components</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">nmf_kwargs</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">nmf_kwargs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nmf_kwargs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_mfcc</span> <span class="o">=</span> <span class="n">n_mfcc</span>
+    def __init__(self, input_audio_signal, num_sources, n_components, n_mfcc=13,
+                 nmf_kwargs=None, **kwargs):
+        self.n_components = n_components
+        self.nmf_kwargs = {} if nmf_kwargs is None else nmf_kwargs
+        self.n_mfcc = n_mfcc
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span>
-            <span class="n">num_sources</span><span class="o">=</span><span class="n">num_sources</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        super().__init__(
+            input_audio_signal=input_audio_signal,
+            num_sources=num_sources, **kwargs)
 
-    <span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">model</span><span class="p">,</span> <span class="n">components</span><span class="p">,</span> <span class="n">activations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">nmf_kwargs</span><span class="p">)</span>
-        <span class="n">mel</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">melspectrogram</span><span class="p">(</span>
-            <span class="n">S</span><span class="o">=</span><span class="p">(</span><span class="n">components</span><span class="o">.</span><span class="n">T</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span> <span class="n">sr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">)</span>
-        <span class="n">mfcc</span> <span class="o">=</span> <span class="n">librosa</span><span class="o">.</span><span class="n">feature</span><span class="o">.</span><span class="n">mfcc</span><span class="p">(</span><span class="n">S</span><span class="o">=</span><span class="n">mel</span><span class="p">,</span> <span class="n">n_mfcc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_mfcc</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+    def extract_features(self):
+        model, components, activations = self.fit(
+            self.audio_signal, self.n_components, **self.nmf_kwargs)
+        mel = librosa.feature.melspectrogram(
+            S=(components.T ** 2), sr=self.sample_rate)
+        mfcc = librosa.feature.mfcc(S=mel, n_mfcc=self.n_mfcc).T
 
-        <span class="n">activations</span> <span class="o">=</span> <span class="n">activations</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">components</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_components</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        activations = activations.reshape(self.n_components, -1, 1)
+        components = components.reshape(self.n_components, 1, -1)
 
-        <span class="n">expansion</span> <span class="o">=</span> <span class="n">activations</span> <span class="o">@</span> <span class="n">components</span>
-        <span class="n">expansion</span> <span class="o">=</span> <span class="n">expansion</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="n">expansion</span> <span class="o">@</span> <span class="n">mfcc</span>
+        expansion = activations @ components
+        expansion = expansion.transpose()
+        features = expansion @ mfcc
 
-        <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
-        <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="n">features</span> <span class="o">/</span> <span class="p">(</span><span class="n">norm</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+        features = features.reshape(self.stft.shape + (-1,))
+        norm = np.linalg.norm(features, axis=-1, keepdims=True)
+        features = features / (norm + 1e-8)
 
-        <span class="k">return</span> <span class="n">features</span></div>
+        return features</div>
 </pre></div>
 
            </div>

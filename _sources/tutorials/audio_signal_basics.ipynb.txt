@@ -22,6 +22,17 @@
    "cell_type": "code",
    "execution_count": 1,
    "metadata": {},
+   "outputs": [],
+   "source": [
+    "import nussl\n",
+    "import time\n",
+    "start_time = time.time()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
    "outputs": [
     {
      "name": "stdout",
@@ -32,7 +43,6 @@
     }
    ],
    "source": [
-    "import nussl\n",
     "input_file_path = nussl.efz_utils.download_audio_file(\n",
     "    'schoolboy_fascination_excerpt.wav')"
    ]
@@ -46,7 +56,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 2,
+   "execution_count": 3,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -62,7 +72,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 3,
+   "execution_count": 4,
    "metadata": {},
    "outputs": [
     {
@@ -104,7 +114,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 4,
+   "execution_count": 5,
    "metadata": {},
    "outputs": [
     {
@@ -138,7 +148,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 5,
+   "execution_count": 6,
    "metadata": {},
    "outputs": [
     {
@@ -150,7 +160,7 @@
        "        -0.2156372 , -0.168396  ]], dtype=float32)"
       ]
      },
-     "execution_count": 5,
+     "execution_count": 6,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -161,7 +171,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 6,
+   "execution_count": 7,
    "metadata": {},
    "outputs": [
     {
@@ -170,7 +180,7 @@
        "(2, 661500)"
       ]
      },
-     "execution_count": 6,
+     "execution_count": 7,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -196,7 +206,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 7,
+   "execution_count": 8,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -219,7 +229,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 8,
+   "execution_count": 9,
    "metadata": {},
    "outputs": [
     {
@@ -263,7 +273,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 9,
+   "execution_count": 10,
    "metadata": {},
    "outputs": [
     {
@@ -290,7 +300,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 10,
+   "execution_count": 11,
    "metadata": {},
    "outputs": [
     {
@@ -300,7 +310,7 @@
      "traceback": [
       "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
       "\u001b[0;31mAudioSignalException\u001b[0m                      Traceback (most recent call last)",
-      "\u001b[0;32m<ipython-input-10-2652ece2ee15>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[0;32m----> 1\u001b[0;31m \u001b[0msignal3\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0msignal1\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0msignal2\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[0;32m<ipython-input-11-2652ece2ee15>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[0;32m----> 1\u001b[0;31m \u001b[0msignal3\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0msignal1\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0msignal2\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
       "\u001b[0;32m~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py\u001b[0m in \u001b[0;36m__add__\u001b[0;34m(self, other)\u001b[0m\n\u001b[1;32m   1609\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1610\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m__add__\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1611\u001b[0;31m         \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0madd\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1612\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1613\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m__radd__\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
       "\u001b[0;32m~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py\u001b[0m in \u001b[0;36madd\u001b[0;34m(self, other)\u001b[0m\n\u001b[1;32m   1240\u001b[0m             \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1241\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1242\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_verify_audio_arithmetic\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1243\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1244\u001b[0m         \u001b[0mnew_signal\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mcopy\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdeepcopy\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
       "\u001b[0;32m~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py\u001b[0m in \u001b[0;36m_verify_audio_arithmetic\u001b[0;34m(self, other)\u001b[0m\n\u001b[1;32m   1627\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1628\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m_verify_audio_arithmetic\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1629\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_verify_audio\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1630\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1631\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msignal_length\u001b[0m \u001b[0;34m!=\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msignal_length\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
@@ -327,7 +337,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 11,
+   "execution_count": 12,
    "metadata": {},
    "outputs": [
     {
@@ -355,7 +365,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 12,
+   "execution_count": 13,
    "metadata": {},
    "outputs": [
     {
@@ -365,7 +375,7 @@
      "traceback": [
       "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
       "\u001b[0;31mAudioSignalException\u001b[0m                      Traceback (most recent call last)",
-      "\u001b[0;32m<ipython-input-12-2652ece2ee15>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[0;32m----> 1\u001b[0;31m \u001b[0msignal3\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0msignal1\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0msignal2\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
+      "\u001b[0;32m<ipython-input-13-2652ece2ee15>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[0;32m----> 1\u001b[0;31m \u001b[0msignal3\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0msignal1\u001b[0m \u001b[0;34m+\u001b[0m \u001b[0msignal2\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m",
       "\u001b[0;32m~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py\u001b[0m in \u001b[0;36m__add__\u001b[0;34m(self, other)\u001b[0m\n\u001b[1;32m   1609\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1610\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m__add__\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1611\u001b[0;31m         \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0madd\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1612\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1613\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m__radd__\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
       "\u001b[0;32m~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py\u001b[0m in \u001b[0;36madd\u001b[0;34m(self, other)\u001b[0m\n\u001b[1;32m   1240\u001b[0m             \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1241\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1242\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_verify_audio_arithmetic\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1243\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1244\u001b[0m         \u001b[0mnew_signal\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mcopy\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdeepcopy\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
       "\u001b[0;32m~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py\u001b[0m in \u001b[0;36m_verify_audio_arithmetic\u001b[0;34m(self, other)\u001b[0m\n\u001b[1;32m   1630\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1631\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msignal_length\u001b[0m \u001b[0;34m!=\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0msignal_length\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1632\u001b[0;31m             \u001b[0;32mraise\u001b[0m \u001b[0mAudioSignalException\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'Cannot do arithmetic with signals of different length!'\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1633\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1634\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m__iadd__\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mother\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
@@ -386,7 +396,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 13,
+   "execution_count": 14,
    "metadata": {},
    "outputs": [
     {
@@ -411,7 +421,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 14,
+   "execution_count": 15,
    "metadata": {},
    "outputs": [
     {
@@ -458,7 +468,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 15,
+   "execution_count": 16,
    "metadata": {},
    "outputs": [],
    "source": [
@@ -470,6 +480,25 @@
    "metadata": {},
    "source": [
     "Awesome! Now lets see how we can manipulate the audio in the frequency domain..."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Time taken: 1.5453 seconds\n"
+     ]
+    }
+   ],
+   "source": [
+    "end_time = time.time()\n",
+    "time_taken = end_time - start_time\n",
+    "print(f'Time taken: {time_taken:.4f} seconds')"
    ]
   }
  ],

@@ -163,300 +163,300 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.primitive.repet</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy.fftpack</span> <span class="k">as</span> <span class="nn">scifft</span>
+<span></span>import numpy as np
+import scipy.fftpack as scifft
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span><span class="p">,</span> <span class="n">SeparationException</span>
-<span class="kn">from</span> <span class="nn">..benchmark</span> <span class="kn">import</span> <span class="n">HighLowPassFilter</span>
-<span class="kn">from</span> <span class="nn">...core</span> <span class="kn">import</span> <span class="n">constants</span>
+from .. import MaskSeparationBase, SeparationException
+from ..benchmark import HighLowPassFilter
+from ...core import constants
 
 
-<div class="viewcode-block" id="Repet"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.Repet">[docs]</a><span class="k">class</span> <span class="nc">Repet</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Implements the original REpeating Pattern Extraction Technique algorithm </span>
-<span class="sd">    using the beat spectrum.</span>
+<div class="viewcode-block" id="Repet"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.primitive.Repet">[docs]</a>class Repet(MaskSeparationBase):
+    &quot;&quot;&quot;Implements the original REpeating Pattern Extraction Technique algorithm 
+    using the beat spectrum.
 
-<span class="sd">    REPET is a simple method for separating a repeating background from a </span>
-<span class="sd">    non-repeating foreground in an audio mixture. It assumes a single repeating </span>
-<span class="sd">    period over the whole signal duration, and finds that period based on finding </span>
-<span class="sd">    a peak in the beat spectrum. The period can also be provided exactly, or you</span>
-<span class="sd">    can give ``Repet`` a guess of the min and max period. Once it has a period, </span>
-<span class="sd">    it &quot;overlays&quot; spectrogram sections of length ``period`` to create a median </span>
-<span class="sd">    model (the background).</span>
-<span class="sd">    </span>
-<span class="sd">    References:</span>
+    REPET is a simple method for separating a repeating background from a 
+    non-repeating foreground in an audio mixture. It assumes a single repeating 
+    period over the whole signal duration, and finds that period based on finding 
+    a peak in the beat spectrum. The period can also be provided exactly, or you
+    can give ``Repet`` a guess of the min and max period. Once it has a period, 
+    it &quot;overlays&quot; spectrogram sections of length ``period`` to create a median 
+    model (the background).
+    
+    References:
 
-<span class="sd">    [1] Rafii, Zafar, and Bryan Pardo.</span>
-<span class="sd">        &quot;Repeating pattern extraction technique (REPET): A simple method for </span>
-<span class="sd">        music/voice separation.&quot; IEEE transactions on audio, speech, </span>
-<span class="sd">        and language processing 21.1 (2012): 73-84.</span>
+    [1] Rafii, Zafar, and Bryan Pardo.
+        &quot;Repeating pattern extraction technique (REPET): A simple method for 
+        music/voice separation.&quot; IEEE transactions on audio, speech, 
+        and language processing 21.1 (2012): 73-84.
 
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): Signal to separate.</span>
+    Args:
+        input_audio_signal (AudioSignal): Signal to separate.
 
-<span class="sd">        min_period (float, optional): minimum time to look for repeating period in </span>
-<span class="sd">          terms of seconds.</span>
-<span class="sd">        </span>
-<span class="sd">        max_period (float, optional): maximum time to look for repeating period in </span>
-<span class="sd">          terms of seconds.</span>
-<span class="sd">        </span>
-<span class="sd">        period (float, optional): exact time that the repeating period is </span>
-<span class="sd">          (in seconds).</span>
-<span class="sd">        </span>
-<span class="sd">        high_pass_cutoff (float, optional): value (in Hz) for the high pass </span>
-<span class="sd">          cutoff filter.</span>
-<span class="sd">                        </span>
-<span class="sd">        mask_type (str, optional): Mask type. Defaults to &#39;soft&#39;.</span>
+        min_period (float, optional): minimum time to look for repeating period in 
+          terms of seconds.
+        
+        max_period (float, optional): maximum time to look for repeating period in 
+          terms of seconds.
+        
+        period (float, optional): exact time that the repeating period is 
+          (in seconds).
+        
+        high_pass_cutoff (float, optional): value (in Hz) for the high pass 
+          cutoff filter.
+                        
+        mask_type (str, optional): Mask type. Defaults to &#39;soft&#39;.
 
-<span class="sd">        mask_threshold (float, optional): Masking threshold. Defaults to 0.5.</span>
+        mask_threshold (float, optional): Masking threshold. Defaults to 0.5.
 
-<span class="sd">    &quot;&quot;&quot;</span>
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">min_period</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_period</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">period</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">high_pass_cutoff</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span>
-                 <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+    def __init__(self, input_audio_signal, min_period=None, max_period=None,
+                 period=None, high_pass_cutoff=100.0, mask_type=&#39;soft&#39;,
+                 mask_threshold=0.5):
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span>
-            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
-            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span><span class="p">)</span>
+        super().__init__(
+            input_audio_signal=input_audio_signal,
+            mask_type=mask_type,
+            mask_threshold=mask_threshold)
 
-        <span class="c1"># Check input parameters</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">min_period</span> <span class="ow">or</span> <span class="n">max_period</span><span class="p">)</span> <span class="ow">and</span> <span class="n">period</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span>
-                <span class="s1">&#39;Cannot set both period and (min_period or max_period)!&#39;</span><span class="p">)</span>
+        # Check input parameters
+        if (min_period or max_period) and period:
+            raise SeparationException(
+                &#39;Cannot set both period and (min_period or max_period)!&#39;)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_is_period_converted_to_hops</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">period</span> <span class="o">=</span> <span class="n">period</span>
+        self._is_period_converted_to_hops = False
+        self.period = period
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">period</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">min_period</span> <span class="o">=</span> <span class="n">min_period</span> <span class="k">if</span> <span class="n">min_period</span> <span class="k">else</span> <span class="o">.</span><span class="mi">8</span>
-            <span class="n">max_period</span> <span class="o">=</span> <span class="n">max_period</span> <span class="k">if</span> <span class="n">max_period</span> <span class="k">else</span> <span class="mi">8</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_period</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">max_period</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">signal_duration</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">period</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_period</span><span class="p">(</span><span class="n">period</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_is_period_converted_to_hops</span> <span class="o">=</span> <span class="kc">True</span>
+        if self.period is None:
+            self.min_period = min_period if min_period else .8
+            max_period = max_period if max_period else 8
+            self.max_period = min(max_period, self.audio_signal.signal_duration / 3)
+        else:
+            self.period = self._update_period(period)
+            self._is_period_converted_to_hops = True
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span> <span class="o">=</span> <span class="n">high_pass_cutoff</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">repeating_period</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beat_spectrum</span> <span class="o">=</span> <span class="kc">None</span>
+        self.high_pass_cutoff = high_pass_cutoff
+        self.magnitude_spectrogram = None
+        self.repeating_period = None
+        self.beat_spectrum = None
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">high_low</span> <span class="o">=</span> <span class="n">HighLowPassFilter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span><span class="p">)</span>
-        <span class="n">high_pass_masks</span> <span class="o">=</span> <span class="n">high_low</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    def run(self):
+        high_low = HighLowPassFilter(self.audio_signal, self.high_pass_cutoff)
+        high_pass_masks = high_low.run()
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">)</span>
+        self.magnitude_spectrogram = np.abs(self.stft)
 
-        <span class="n">background_masks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        background_masks = []
+        foreground_masks = []
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">repeating_period</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_repeating_period</span><span class="p">()</span>
+        self.repeating_period = self._calculate_repeating_period()
 
-        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
-            <span class="n">background_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_repeating_mask</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">])</span>
-            <span class="n">foreground_mask</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">background_mask</span>
+        for ch in range(self.audio_signal.num_channels):
+            background_mask = self._compute_repeating_mask(
+                self.magnitude_spectrogram[..., ch])
+            foreground_mask = 1 - background_mask
 
-            <span class="n">background_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">background_mask</span><span class="p">)</span>
-            <span class="n">foreground_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">foreground_mask</span><span class="p">)</span>
+            background_masks.append(background_mask)
+            foreground_masks.append(foreground_mask)
 
-        <span class="n">background_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">foreground_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        background_masks = np.stack(background_masks, axis=-1)
+        foreground_masks = np.stack(foreground_masks, axis=-1)
 
-        <span class="n">_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">foreground_masks</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        _masks = np.stack([background_masks, foreground_masks], axis=-1)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        self.result_masks = []
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        for i in range(_masks.shape[-1]):
+            mask_data = _masks[..., i]
+            if self.mask_type == self.MASKS[&#39;binary&#39;]:
+                mask_data = _masks[..., i] == np.max(_masks, axis=-1)
 
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            if i == 0:
+                mask_data = np.maximum(mask_data, high_pass_masks[i].mask)
+            elif i == 1:
+                mask_data = np.minimum(mask_data, high_pass_masks[i].mask)
 
-            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+            mask = self.mask_type(mask_data)
+            self.result_masks.append(mask)
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span>
+        return self.result_masks
 
-    <span class="k">def</span> <span class="nf">get_beat_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calculates and returns the beat spectrum for the audio signal associated </span>
-<span class="sd">        with this object</span>
+    def get_beat_spectrum(self):
+        &quot;&quot;&quot;
+        Calculates and returns the beat spectrum for the audio signal associated 
+        with this object
 
-<span class="sd">        Returns:</span>
-<span class="sd">            beat_spectrum (np.array): beat spectrum for the audio file</span>
+        Returns:
+            beat_spectrum (np.array): beat spectrum for the audio file
 
-<span class="sd">        Example:</span>
+        Example:
 
-<span class="sd">        .. code-block:: python</span>
-<span class="sd">            :linenos:</span>
-<span class="sd">            </span>
-<span class="sd">            # Set up audio signal</span>
-<span class="sd">            signal = nussl.AudioSignal(&#39;path_to_file.wav&#39;)</span>
+        .. code-block:: python
+            :linenos:
+            
+            # Set up audio signal
+            signal = nussl.AudioSignal(&#39;path_to_file.wav&#39;)
 
-<span class="sd">            # Set up a Repet object</span>
-<span class="sd">            repet = nussl.Repet(signal)</span>
+            # Set up a Repet object
+            repet = nussl.Repet(signal)
 
-<span class="sd">            # I don&#39;t have to run repet to get a beat spectrum for signal</span>
-<span class="sd">            beat_spec = repet.get_beat_spectrum()</span>
-<span class="sd">            </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: Make this multi-channel. The np.mean() reduces the n channels to 1.       </span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beat_spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_beat_spectrum</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span><span class="p">),</span>
-                    <span class="n">axis</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">STFT_CHAN_INDEX</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">beat_spectrum</span>
+            # I don&#39;t have to run repet to get a beat spectrum for signal
+            beat_spec = repet.get_beat_spectrum()
+            
+        &quot;&quot;&quot;
+        # TODO: Make this multi-channel. The np.mean() reduces the n channels to 1.       
+        self.beat_spectrum = self.compute_beat_spectrum(
+            np.mean(np.square(self.magnitude_spectrogram),
+                    axis=constants.STFT_CHAN_INDEX).T
+        )
+        return self.beat_spectrum
 
-    <span class="k">def</span> <span class="nf">_calculate_repeating_period</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># user provided a period, so no calculations to do</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">period</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">period</span>
+    def _calculate_repeating_period(self):
+        # user provided a period, so no calculations to do
+        if self.period is not None:
+            return self.period
 
-        <span class="c1"># get beat spectrum</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">beat_spectrum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_beat_spectrum</span><span class="p">()</span>
+        # get beat spectrum
+        self.beat_spectrum = self.get_beat_spectrum()
 
-        <span class="c1"># update the min and max so they&#39;re in units of time bin indices</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_period_converted_to_hops</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">min_period</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_period</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_period</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_period</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_period</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_period</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_is_period_converted_to_hops</span> <span class="o">=</span> <span class="kc">True</span>
+        # update the min and max so they&#39;re in units of time bin indices
+        if not self._is_period_converted_to_hops:
+            self.min_period = self._update_period(self.min_period)
+            self.max_period = self._update_period(self.max_period)
+            self._is_period_converted_to_hops = True
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">repeating_period</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_repeating_period_simple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">beat_spectrum</span><span class="p">,</span>
-                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">min_period</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_period</span><span class="p">)</span>
+        self.repeating_period = self.find_repeating_period_simple(self.beat_spectrum,
+                                                                  self.min_period, self.max_period)
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeating_period</span>
+        return self.repeating_period
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">compute_beat_spectrum</span><span class="p">(</span><span class="n">power_spectrogram</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Computes the beat spectrum averages (over freq&#39;s) the autocorrelation matrix of a one-sided spectrogram.</span>
+    @staticmethod
+    def compute_beat_spectrum(power_spectrogram):
+        &quot;&quot;&quot; Computes the beat spectrum averages (over freq&#39;s) the autocorrelation matrix of a one-sided spectrogram.
 
-<span class="sd">        The autocorrelation matrix is computed by taking the autocorrelation of each row of the spectrogram and</span>
-<span class="sd">        dismissing the symmetric half.</span>
+        The autocorrelation matrix is computed by taking the autocorrelation of each row of the spectrogram and
+        dismissing the symmetric half.
 
-<span class="sd">        Args:</span>
-<span class="sd">            power_spectrogram (:obj:`np.array`): 2D matrix containing the one-sided power spectrogram of an audio signal</span>
-<span class="sd">            </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            (:obj:`np.array`): array containing the beat spectrum based on the power spectrogram</span>
-<span class="sd">            </span>
-<span class="sd">        See Also:</span>
-<span class="sd">            J Foote&#39;s original derivation of the Beat Spectrum: </span>
-<span class="sd">            Foote, Jonathan, and Shingo Uchihashi. &quot;The beat spectrum: A new approach to rhythm analysis.&quot; </span>
-<span class="sd">            Multimedia and Expo, 2001. ICME 2001. IEEE International Conference on. IEEE, 2001.</span>
-<span class="sd">            (`See PDF here &lt;http://rotorbrain.com/foote/papers/icme2001.pdf&gt;`_)</span>
-<span class="sd">            </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">freq_bins</span><span class="p">,</span> <span class="n">time_bins</span> <span class="o">=</span> <span class="n">power_spectrogram</span><span class="o">.</span><span class="n">shape</span>
+        Args:
+            power_spectrogram (:obj:`np.array`): 2D matrix containing the one-sided power spectrogram of an audio signal
+            
+        Returns:
+            (:obj:`np.array`): array containing the beat spectrum based on the power spectrogram
+            
+        See Also:
+            J Foote&#39;s original derivation of the Beat Spectrum: 
+            Foote, Jonathan, and Shingo Uchihashi. &quot;The beat spectrum: A new approach to rhythm analysis.&quot; 
+            Multimedia and Expo, 2001. ICME 2001. IEEE International Conference on. IEEE, 2001.
+            (`See PDF here &lt;http://rotorbrain.com/foote/papers/icme2001.pdf&gt;`_)
+            
+        &quot;&quot;&quot;
+        freq_bins, time_bins = power_spectrogram.shape
 
-        <span class="c1"># row-wise autocorrelation according to the Wiener-Khinchin theorem</span>
-        <span class="n">power_spectrogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">power_spectrogram</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">power_spectrogram</span><span class="p">)])</span>
+        # row-wise autocorrelation according to the Wiener-Khinchin theorem
+        power_spectrogram = np.vstack([power_spectrogram, np.zeros_like(power_spectrogram)])
 
-        <span class="n">nearest_power_of_two</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">power_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-        <span class="n">pad_amount</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">nearest_power_of_two</span> <span class="o">-</span> <span class="n">power_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">power_spectrogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">power_spectrogram</span><span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">pad_amount</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> <span class="s1">&#39;constant&#39;</span><span class="p">)</span>
-        <span class="n">fft_power_spec</span> <span class="o">=</span> <span class="n">scifft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">power_spectrogram</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">abs_fft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fft_power_spec</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-        <span class="n">autocorrelation_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span>
-            <span class="n">scifft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">abs_fft</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[:</span><span class="n">freq_bins</span><span class="p">,</span> <span class="p">:])</span>  <span class="c1"># ifft over columns</span>
+        nearest_power_of_two = 2 ** np.ceil(np.log(power_spectrogram.shape[0]) / np.log(2))
+        pad_amount = int(nearest_power_of_two - power_spectrogram.shape[0])
+        power_spectrogram = np.pad(power_spectrogram, ((0, pad_amount), (0, 0)), &#39;constant&#39;)
+        fft_power_spec = scifft.fft(power_spectrogram, axis=0)
+        abs_fft = np.abs(fft_power_spec) ** 2
+        autocorrelation_rows = np.real(
+            scifft.ifft(abs_fft, axis=0)[:freq_bins, :])  # ifft over columns
 
-        <span class="c1"># normalization factor</span>
-        <span class="n">norm_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">freq_bins</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="n">time_bins</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">autocorrelation_rows</span> <span class="o">=</span> <span class="n">autocorrelation_rows</span> <span class="o">/</span> <span class="n">norm_factor</span>
+        # normalization factor
+        norm_factor = np.tile(np.arange(freq_bins, 0, -1), (time_bins, 1)).T
+        autocorrelation_rows = autocorrelation_rows / norm_factor
 
-        <span class="c1"># compute the beat spectrum</span>
-        <span class="n">beat_spectrum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">autocorrelation_rows</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># average over frequencies</span>
+        # compute the beat spectrum
+        beat_spectrum = np.mean(autocorrelation_rows, axis=1)
+        # average over frequencies
 
-        <span class="k">return</span> <span class="n">beat_spectrum</span>
+        return beat_spectrum
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">find_repeating_period_simple</span><span class="p">(</span><span class="n">beat_spectrum</span><span class="p">,</span> <span class="n">min_period</span><span class="p">,</span> <span class="n">max_period</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes the repeating period of the sound signal using the beat spectrum.</span>
-<span class="sd">        This algorithm just looks for the max value in the interval </span>
-<span class="sd">        ``[min_period, max_period]``, inclusive. It discards the first value, and </span>
-<span class="sd">        returns the period in units of stft time bins.</span>
+    @staticmethod
+    def find_repeating_period_simple(beat_spectrum, min_period, max_period):
+        &quot;&quot;&quot;
+        Computes the repeating period of the sound signal using the beat spectrum.
+        This algorithm just looks for the max value in the interval 
+        ``[min_period, max_period]``, inclusive. It discards the first value, and 
+        returns the period in units of stft time bins.
 
-<span class="sd">        Args:</span>
-<span class="sd">            beat_spectrum (:obj:`np.array`): input beat spectrum array</span>
-<span class="sd">            min_period (int): minimum possible period value</span>
-<span class="sd">            max_period (int): maximum possible period value</span>
-<span class="sd">            </span>
-<span class="sd">        Returns:</span>
-<span class="sd">             period (int): The period of the sound signal in stft time bins</span>
-<span class="sd">             </span>
-<span class="sd">        See Also:</span>
-<span class="sd">            :func:`find_repeating_period_complex`</span>
-<span class="sd">            </span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">min_period</span><span class="p">,</span> <span class="n">max_period</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">min_period</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_period</span><span class="p">)</span>
-        <span class="c1"># discard the first element of beat_spectrum (lag 0)</span>
-        <span class="n">beat_spectrum</span> <span class="o">=</span> <span class="n">beat_spectrum</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-        <span class="n">beat_spectrum</span> <span class="o">=</span> <span class="n">beat_spectrum</span><span class="p">[</span><span class="n">min_period</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span> <span class="n">max_period</span><span class="p">]</span>
+        Args:
+            beat_spectrum (:obj:`np.array`): input beat spectrum array
+            min_period (int): minimum possible period value
+            max_period (int): maximum possible period value
+            
+        Returns:
+             period (int): The period of the sound signal in stft time bins
+             
+        See Also:
+            :func:`find_repeating_period_complex`
+            
+        &quot;&quot;&quot;
+        min_period, max_period = int(min_period), int(max_period)
+        # discard the first element of beat_spectrum (lag 0)
+        beat_spectrum = beat_spectrum[1:]
+        beat_spectrum = beat_spectrum[min_period - 1: max_period]
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">beat_spectrum</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">SeparationException</span><span class="p">(</span><span class="s1">&#39;min_period is larger than the beat spectrum!&#39;</span><span class="p">)</span>
+        if len(beat_spectrum) == 0:
+            raise SeparationException(&#39;min_period is larger than the beat spectrum!&#39;)
 
-        <span class="n">period</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">beat_spectrum</span><span class="p">)</span> <span class="o">+</span> <span class="n">min_period</span>
+        period = np.argmax(beat_spectrum) + min_period
 
-        <span class="k">return</span> <span class="n">period</span>
+        return period
 
-    <span class="k">def</span> <span class="nf">_compute_repeating_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitude_spectrogram_channel</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes the soft mask for the repeating part using the magnitude </span>
-<span class="sd">        spectrogram and the repeating period</span>
+    def _compute_repeating_mask(self, magnitude_spectrogram_channel):
+        &quot;&quot;&quot;
+        Computes the soft mask for the repeating part using the magnitude 
+        spectrogram and the repeating period
 
-<span class="sd">        Args:</span>
-<span class="sd">            magnitude_spectrogram_channel (:obj:`np.array`): 2D matrix containing the </span>
-<span class="sd">              magnitude spectrogram of a signal</span>
-<span class="sd">            </span>
-<span class="sd">        Returns:</span>
-<span class="sd">            (:obj:`np.array`): 2D matrix (Lf by Lt) containing the soft mask for the </span>
-<span class="sd">              repeating part, elements of M take on values in ``[0, 1]``</span>
+        Args:
+            magnitude_spectrogram_channel (:obj:`np.array`): 2D matrix containing the 
+              magnitude spectrogram of a signal
+            
+        Returns:
+            (:obj:`np.array`): 2D matrix (Lf by Lt) containing the soft mask for the 
+              repeating part, elements of M take on values in ``[0, 1]``
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">period</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeating_period</span>
-        <span class="n">freq_bins</span><span class="p">,</span> <span class="n">time_bins</span> <span class="o">=</span> <span class="n">magnitude_spectrogram_channel</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">n_repetitions</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">time_bins</span><span class="p">)</span> <span class="o">/</span> <span class="n">period</span><span class="p">))</span>
-        <span class="n">one_period</span> <span class="o">=</span> <span class="n">freq_bins</span> <span class="o">*</span> <span class="n">period</span>
+        &quot;&quot;&quot;
+        period = self.repeating_period
+        freq_bins, time_bins = magnitude_spectrogram_channel.shape
+        n_repetitions = int(np.ceil(float(time_bins) / period))
+        one_period = freq_bins * period
 
-        <span class="c1"># Pad to make an integer number of repetitions. Pad with &#39;nan&#39;s to not affect the median.</span>
-        <span class="n">remainder</span> <span class="o">=</span> <span class="p">(</span><span class="n">period</span> <span class="o">*</span> <span class="n">n_repetitions</span><span class="p">)</span> <span class="o">%</span> <span class="n">time_bins</span>
-        <span class="n">mask_reshaped</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">magnitude_spectrogram_channel</span><span class="p">,</span>
-             <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">freq_bins</span><span class="p">,</span> <span class="n">remainder</span><span class="p">))]</span>
-        <span class="p">)</span>
+        # Pad to make an integer number of repetitions. Pad with &#39;nan&#39;s to not affect the median.
+        remainder = (period * n_repetitions) % time_bins
+        mask_reshaped = np.hstack(
+            [magnitude_spectrogram_channel,
+             float(&#39;nan&#39;) * np.zeros((freq_bins, remainder))]
+        )
 
-        <span class="c1"># reshape to take the median of each period</span>
-        <span class="n">mask_reshaped</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">mask_reshaped</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="p">(</span><span class="n">n_repetitions</span><span class="p">,</span> <span class="n">one_period</span><span class="p">))</span>
+        # reshape to take the median of each period
+        mask_reshaped = np.reshape(mask_reshaped.T, (n_repetitions, one_period))
 
-        <span class="c1"># take median of repeating periods before and after the padding</span>
-        <span class="n">median_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">mask_reshaped</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        # take median of repeating periods before and after the padding
+        median_mask = np.nanmedian(mask_reshaped, axis=0)
 
-        <span class="c1"># reshape to it&#39;s original shape</span>
-        <span class="n">median_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">median_mask</span><span class="p">,</span> <span class="p">(</span><span class="n">n_repetitions</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
-            <span class="p">(</span><span class="n">n_repetitions</span> <span class="o">*</span> <span class="n">period</span><span class="p">,</span> <span class="n">freq_bins</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">median_mask</span> <span class="o">=</span> <span class="n">median_mask</span><span class="p">[:,</span> <span class="p">:</span><span class="n">time_bins</span><span class="p">]</span>
+        # reshape to it&#39;s original shape
+        median_mask = np.reshape(
+            np.tile(median_mask, (n_repetitions, 1)),
+            (n_repetitions * period, freq_bins)).T
+        median_mask = median_mask[:, :time_bins]
 
-        <span class="c1"># take minimum of computed mask and original input and scale</span>
-        <span class="n">min_median_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">median_mask</span><span class="p">,</span> <span class="n">magnitude_spectrogram_channel</span><span class="p">)</span>
-        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">min_median_mask</span> <span class="o">+</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-                    <span class="n">magnitude_spectrogram_channel</span> <span class="o">+</span> <span class="n">constants</span><span class="o">.</span><span class="n">EPSILON</span><span class="p">)</span>
+        # take minimum of computed mask and original input and scale
+        min_median_mask = np.minimum(median_mask, magnitude_spectrogram_channel)
+        mask = (min_median_mask + constants.EPSILON) / (
+                    magnitude_spectrogram_channel + constants.EPSILON)
 
-        <span class="k">return</span> <span class="n">mask</span>
+        return mask
 
-    <span class="k">def</span> <span class="nf">_update_period</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">period</span><span class="p">):</span>
-        <span class="n">period</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">period</span><span class="p">)</span>
-        <span class="n">secs_per_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stft_params</span><span class="o">.</span><span class="n">hop_length</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span>
-        <span class="n">bins_in_period</span> <span class="o">=</span> <span class="n">period</span> <span class="o">/</span> <span class="n">secs_per_bin</span>
-        <span class="n">period_in_frames</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">bins_in_period</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">period_in_frames</span></div>
+    def _update_period(self, period):
+        period = float(period)
+        secs_per_bin = self.stft_params.hop_length / self.audio_signal.sample_rate
+        bins_in_period = period / secs_per_bin
+        period_in_frames = int(np.ceil(bins_in_period))
+        return period_in_frames</div>
 </pre></div>
 
            </div>

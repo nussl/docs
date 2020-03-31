@@ -163,139 +163,139 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.factorization.rpca</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span>import numpy as np
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span>
-<span class="kn">from</span> <span class="nn">..benchmark</span> <span class="kn">import</span> <span class="n">HighLowPassFilter</span>
+from .. import MaskSeparationBase
+from ..benchmark import HighLowPassFilter
 
 
-<div class="viewcode-block" id="RPCA"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.factorization.RPCA">[docs]</a><span class="k">class</span> <span class="nc">RPCA</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements foreground/background separation using RPCA.</span>
+<div class="viewcode-block" id="RPCA"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.factorization.RPCA">[docs]</a>class RPCA(MaskSeparationBase):
+    &quot;&quot;&quot;
+    Implements foreground/background separation using RPCA.
 
-<span class="sd">    Huang, Po-Sen, et al. &quot;Singing-voice separation from monaural recordings using </span>
-<span class="sd">    robust principal component analysis.&quot; Acoustics, Speech and Signal Processing </span>
-<span class="sd">    (ICASSP), 2012 IEEE International Conference on. IEEE, 2012.</span>
+    Huang, Po-Sen, et al. &quot;Singing-voice separation from monaural recordings using 
+    robust principal component analysis.&quot; Acoustics, Speech and Signal Processing 
+    (ICASSP), 2012 IEEE International Conference on. IEEE, 2012.
 
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): The AudioSignal object that has the</span>
-<span class="sd">          audio data that RPCA will be run on.</span>
-<span class="sd">        high_pass_cutoff (float, optional): Value (in Hz) for the high pass cutoff </span>
-<span class="sd">          filter. Defaults to 100.</span>
-<span class="sd">        num_iterations (int, optional): how many iterations to run RPCA for. </span>
-<span class="sd">          Defaults to 100.</span>
-<span class="sd">        epsilon (float, optional): Stopping criterion for RPCA convergence. </span>
-<span class="sd">          Defaults to 1e-7.</span>
-<span class="sd">        mask_type (str, optional): Type of mask to use. Defaults to &#39;soft&#39;.</span>
-<span class="sd">        mask_threshold (float, optional): Threshold for mask. Defaults to 0.5.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    Args:
+        input_audio_signal (AudioSignal): The AudioSignal object that has the
+          audio data that RPCA will be run on.
+        high_pass_cutoff (float, optional): Value (in Hz) for the high pass cutoff 
+          filter. Defaults to 100.
+        num_iterations (int, optional): how many iterations to run RPCA for. 
+          Defaults to 100.
+        epsilon (float, optional): Stopping criterion for RPCA convergence. 
+          Defaults to 1e-7.
+        mask_type (str, optional): Type of mask to use. Defaults to &#39;soft&#39;.
+        mask_threshold (float, optional): Threshold for mask. Defaults to 0.5.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">high_pass_cutoff</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">num_iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> 
-                 <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-7</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;soft&#39;</span><span class="p">,</span> <span class="n">mask_threshold</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span> 
-            <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">,</span>
-            <span class="n">mask_threshold</span><span class="o">=</span><span class="n">mask_threshold</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span> <span class="o">=</span> <span class="n">high_pass_cutoff</span>
+    def __init__(self, input_audio_signal, high_pass_cutoff=100, num_iterations=100, 
+                 epsilon=1e-7, mask_type=&#39;soft&#39;, mask_threshold=0.5):
+        super().__init__(
+            input_audio_signal=input_audio_signal, 
+            mask_type=mask_type,
+            mask_threshold=mask_threshold)
+        self.high_pass_cutoff = high_pass_cutoff
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span> <span class="o">=</span> <span class="n">num_iterations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gain</span> <span class="o">=</span> <span class="mi">1</span>
+        self.epsilon = epsilon
+        self.num_iterations = num_iterations
+        self.gain = 1
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="kc">None</span>
+        self.error = None
+        self.magnitude_spectrogram = None
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">high_low</span> <span class="o">=</span> <span class="n">HighLowPassFilter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff</span><span class="p">)</span>
-        <span class="n">high_pass_masks</span> <span class="o">=</span> <span class="n">high_low</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    def run(self):
+        high_low = HighLowPassFilter(self.audio_signal, self.high_pass_cutoff)
+        high_pass_masks = high_low.run()
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="p">)</span>
+        self.magnitude_spectrogram = np.abs(self.stft)
 
-        <span class="n">background_masks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        background_masks = []
+        foreground_masks = []
 
-        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span><span class="p">):</span>
-            <span class="n">background_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_rpca_mask</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">magnitude_spectrogram</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ch</span><span class="p">])</span>
-            <span class="n">foreground_mask</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">background_mask</span>
+        for ch in range(self.audio_signal.num_channels):
+            background_mask = self._compute_rpca_mask(
+                self.magnitude_spectrogram[..., ch])
+            foreground_mask = 1 - background_mask
             
-            <span class="n">background_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">background_mask</span><span class="p">)</span>
-            <span class="n">foreground_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">foreground_mask</span><span class="p">)</span>
+            background_masks.append(background_mask)
+            foreground_masks.append(foreground_mask)
 
-        <span class="n">background_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">foreground_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">foreground_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        background_masks = np.stack(background_masks, axis=-1)
+        foreground_masks = np.stack(foreground_masks, axis=-1)
 
-        <span class="n">_masks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">background_masks</span><span class="p">,</span> <span class="n">foreground_masks</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        _masks = np.stack([background_masks, foreground_masks], axis=-1)
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[]</span>
+        self.result_masks = []
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">_masks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
-            <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">MASKS</span><span class="p">[</span><span class="s1">&#39;binary&#39;</span><span class="p">]:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">_masks</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">_masks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        for i in range(_masks.shape[-1]):
+            mask_data = _masks[..., i]
+            if self.mask_type == self.MASKS[&#39;binary&#39;]:
+                mask_data = _masks[..., i] == np.max(_masks, axis=-1)
             
-            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">mask_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">mask_data</span><span class="p">,</span> <span class="n">high_pass_masks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            if i == 0:
+                mask_data = np.maximum(mask_data, high_pass_masks[i].mask)
+            elif i == 1:
+                mask_data = np.minimum(mask_data, high_pass_masks[i].mask)
             
-            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_type</span><span class="p">(</span><span class="n">mask_data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+            mask = self.mask_type(mask_data)
+            self.result_masks.append(mask)
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span>
+        return self.result_masks
 
-    <span class="k">def</span> <span class="nf">_compute_rpca_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitude_spectrogram</span><span class="p">):</span>
-        <span class="n">low_rank</span><span class="p">,</span> <span class="n">sparse_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decompose</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="p">)</span>
-        <span class="n">bg_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gain</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">sparse_matrix</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">low_rank</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">bg_mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    def _compute_rpca_mask(self, magnitude_spectrogram):
+        low_rank, sparse_matrix = self.decompose(magnitude_spectrogram)
+        bg_mask = self.gain * np.abs(sparse_matrix) &lt;= np.abs(low_rank)
+        return bg_mask.astype(float)
 
-    <span class="k">def</span> <span class="nf">decompose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitude_spectrogram</span><span class="p">):</span>
-        <span class="c1"># compute rule of thumb values of lagrange multiplier and svd-threshold</span>
-        <span class="n">_lambda</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    def decompose(self, magnitude_spectrogram):
+        # compute rule of thumb values of lagrange multiplier and svd-threshold
+        _lambda = 1 / np.sqrt(np.max(magnitude_spectrogram.shape))
 
-        <span class="c1"># initialize low rank and sparse matrices to all zeros</span>
-        <span class="n">low_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">sparse_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        # initialize low rank and sparse matrices to all zeros
+        low_rank = np.zeros(magnitude_spectrogram.shape)
+        sparse_matrix = np.zeros(magnitude_spectrogram.shape)
 
-        <span class="c1"># get singular values for magnitude_spectrogram</span>
-        <span class="n">two_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compute_uv</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">inf_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span> <span class="o">/</span> <span class="n">_lambda</span>
-        <span class="n">dual_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">two_norm</span><span class="p">,</span> <span class="n">inf_norm</span><span class="p">])</span>
-        <span class="n">residuals</span> <span class="o">=</span> <span class="n">magnitude_spectrogram</span> <span class="o">/</span> <span class="n">dual_norm</span>
+        # get singular values for magnitude_spectrogram
+        two_norm = np.linalg.svd(magnitude_spectrogram, full_matrices=False, compute_uv=False)[0]
+        inf_norm = np.linalg.norm(magnitude_spectrogram.flatten(), np.inf) / _lambda
+        dual_norm = np.max([two_norm, inf_norm])
+        residuals = magnitude_spectrogram / dual_norm
 
-        <span class="c1"># tunable parameters</span>
-        <span class="n">mu</span> <span class="o">=</span> <span class="mf">1.25</span> <span class="o">/</span> <span class="n">two_norm</span>
-        <span class="n">mu_bar</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">*</span> <span class="mf">1e7</span>
-        <span class="n">rho</span> <span class="o">=</span> <span class="mf">1.5</span>
+        # tunable parameters
+        mu = 1.25 / two_norm
+        mu_bar = mu * 1e7
+        rho = 1.5
 
-        <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
-        <span class="n">converged</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">num_iteration</span> <span class="o">=</span> <span class="mi">0</span>
+        error = np.inf
+        converged = False
+        num_iteration = 0
 
-        <span class="k">while</span> <span class="ow">not</span> <span class="n">converged</span> <span class="ow">and</span> <span class="n">num_iteration</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_iterations</span><span class="p">:</span>
-            <span class="n">num_iteration</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">low_rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">svd_threshold</span><span class="p">(</span><span class="n">magnitude_spectrogram</span> <span class="o">-</span> <span class="n">sparse_matrix</span> <span class="o">+</span> <span class="n">residuals</span> <span class="o">/</span> <span class="n">mu</span><span class="p">,</span>
-                                          <span class="mi">1</span> <span class="o">/</span> <span class="n">mu</span><span class="p">)</span>
-            <span class="n">sparse_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shrink</span><span class="p">(</span><span class="n">magnitude_spectrogram</span> <span class="o">-</span> <span class="n">low_rank</span> <span class="o">+</span> <span class="n">residuals</span> <span class="o">/</span> <span class="n">mu</span><span class="p">,</span>
-                                        <span class="n">_lambda</span> <span class="o">/</span> <span class="n">mu</span><span class="p">)</span>
-            <span class="n">residuals</span> <span class="o">+=</span> <span class="n">mu</span> <span class="o">*</span> <span class="p">(</span><span class="n">magnitude_spectrogram</span> <span class="o">-</span> <span class="n">low_rank</span> <span class="o">-</span> <span class="n">sparse_matrix</span><span class="p">)</span>
-            <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">([</span><span class="n">mu</span> <span class="o">*</span> <span class="n">rho</span><span class="p">,</span> <span class="n">mu_bar</span><span class="p">])</span>
-            <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">magnitude_spectrogram</span> <span class="o">-</span> <span class="n">low_rank</span> <span class="o">-</span> <span class="n">sparse_matrix</span><span class="p">,</span>
-                                   <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">magnitude_spectrogram</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="s1">&#39;fro&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span><span class="p">:</span>
-                <span class="n">converged</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">error</span>
-        <span class="k">return</span> <span class="n">low_rank</span><span class="p">,</span> <span class="n">sparse_matrix</span>
+        while not converged and num_iteration &lt; self.num_iterations:
+            num_iteration += 1
+            low_rank = self.svd_threshold(magnitude_spectrogram - sparse_matrix + residuals / mu,
+                                          1 / mu)
+            sparse_matrix = self.shrink(magnitude_spectrogram - low_rank + residuals / mu,
+                                        _lambda / mu)
+            residuals += mu * (magnitude_spectrogram - low_rank - sparse_matrix)
+            mu = np.min([mu * rho, mu_bar])
+            error = np.linalg.norm(magnitude_spectrogram - low_rank - sparse_matrix,
+                                   ord=&#39;fro&#39;) / np.linalg.norm(magnitude_spectrogram, ord=&#39;fro&#39;)
+            if error &lt; self.epsilon:
+                converged = True
+        self.error = error
+        return low_rank, sparse_matrix
 
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">shrink</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span> <span class="o">-</span> <span class="n">tau</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    @staticmethod
+    def shrink(matrix, tau):
+        return np.sign(matrix) * np.maximum(np.abs(matrix) - tau, 0)
 
-    <span class="k">def</span> <span class="nf">svd_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
-        <span class="n">u</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">shrunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shrink</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="n">tau</span><span class="p">)</span>
-        <span class="n">thresholded_singular_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">shrunk</span><span class="p">),</span> <span class="n">v</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">thresholded_singular_values</span></div>
+    def svd_threshold(self, matrix, tau):
+        u, sigma, v = np.linalg.svd(matrix, full_matrices=False)
+        shrunk = self.shrink(sigma, tau)
+        thresholded_singular_values = np.dot(u, np.dot(np.diag(shrunk), v))
+        return thresholded_singular_values</div>
 </pre></div>
 
            </div>

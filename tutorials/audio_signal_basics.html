@@ -432,13 +432,23 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="Initialization-from-a-file">
 <h2>Initialization from a file<a class="headerlink" href="#Initialization-from-a-file" title="Permalink to this headline">¶</a></h2>
 <p>It is easy to initialize an AudioSignal object by loading an audio file from a path. First, let’s use the external file zoo to get an audio file to play around with.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">nussl</span>
-<span class="n">input_file_path</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">efz_utils</span><span class="o">.</span><span class="n">download_audio_file</span><span class="p">(</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">input_file_path</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">efz_utils</span><span class="o">.</span><span class="n">download_audio_file</span><span class="p">(</span>
     <span class="s1">&#39;schoolboy_fascination_excerpt.wav&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -453,7 +463,7 @@ Matching file found at /Users/prem/.nussl/audio/schoolboy_fascination_excerpt.wa
 </div>
 <p>Now let’s initialize it an AudioSignal object with the audio.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -463,7 +473,7 @@ Matching file found at /Users/prem/.nussl/audio/schoolboy_fascination_excerpt.wa
 </div>
 <p>Now the AudioSignal object is ready with all of the information about our the signal. Let’s also embed the audio signal in a playable object right inside this notebook so we can listen to it! We can also look at its attributes by printing it.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -491,7 +501,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 </div>
 <p>AudioSignals pack in a lot of useful functionality. For example:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -519,7 +529,7 @@ Root mean square energy: 0.1136
 </div>
 <p>The actual signal data is in <code class="docutils literal notranslate"><span class="pre">signal1.audio_data</span></code>. It’s just a numpy array, so we can use it as such:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -528,7 +538,7 @@ Root mean square energy: 0.1136
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -540,7 +550,7 @@ array([[ 0.00213623, -0.04547119, -0.0513916 , ..., -0.24395752,
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -549,7 +559,7 @@ array([[ 0.00213623, -0.04547119, -0.0513916 , ..., -0.24395752,
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -567,7 +577,7 @@ array([[ 0.00213623, -0.04547119, -0.0513916 , ..., -0.24395752,
 <h2>Initialization from a numpy array<a class="headerlink" href="#Initialization-from-a-numpy-array" title="Permalink to this headline">¶</a></h2>
 <p>Another common way to initialize an AudioSignal object is by passing in a numpy array. Let’s first make a single channel signal within a numpy array.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -584,7 +594,7 @@ array([[ 0.00213623, -0.04547119, -0.0513916 , ..., -0.24395752,
 </div>
 <p>Cool! Now let’s put this into a new AudioSignal object.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -614,7 +624,7 @@ AudioSignal (unlabeled): 2.000 sec @ path unknown, 44100 Hz, 1 ch.
 </div>
 <p>Note that we had to give a sample rate. If no sample rate is given, then the following is used:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -635,7 +645,7 @@ Default sample rate: 44100
 <h2>Other basic manipulations<a class="headerlink" href="#Other-basic-manipulations" title="Permalink to this headline">¶</a></h2>
 <p>If we want to add the audio data in these two signals, it’s simple. But there are some gotchas:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -650,7 +660,7 @@ Default sample rate: 44100
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">AudioSignalException</span>                      Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-10-2652ece2ee15&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-fg">&lt;ipython-input-11-2652ece2ee15&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
 <span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>signal3 <span class="ansi-blue-fg">=</span> signal1 <span class="ansi-blue-fg">+</span> signal2
 
 <span class="ansi-green-fg">~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py</span> in <span class="ansi-cyan-fg">__add__</span><span class="ansi-blue-fg">(self, other)</span>
@@ -687,7 +697,7 @@ Default sample rate: 44100
 <p>Uh oh! I guess it doesn’t make sense to add a stereo signal (<code class="docutils literal notranslate"><span class="pre">signal1</span></code>) and mono signal (<code class="docutils literal notranslate"><span class="pre">signal2</span></code>). But if we really want to add these two signals, we can make one of them mono.</p>
 <p><em>nussl</em> does this by simply averaging the two channels at every sample. We have to explicitly tell <em>nussl</em> that we are okay with <code class="docutils literal notranslate"><span class="pre">to_mono()</span></code> changing <code class="docutils literal notranslate"><span class="pre">audio_data</span></code>. We do that like this:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -705,7 +715,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 </div>
 <p>If we hadn’t set <code class="docutils literal notranslate"><span class="pre">overwrite=True</span></code> then <code class="docutils literal notranslate"><span class="pre">to_mono()</span></code> would just return a new audio signal that is an exact copy of <code class="docutils literal notranslate"><span class="pre">signal1</span></code> except it is mono. You will see this pattern come up again. In certain places, :class:<code class="docutils literal notranslate"><span class="pre">AudioSignal</span></code>:’s default behavior is to overwrite its internal data, and in other places the default is to <strong>not</strong> overwrite data. See the reference pages for more info. Let’s try:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -720,7 +730,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 <div class="highlight"><pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">AudioSignalException</span>                      Traceback (most recent call last)
-<span class="ansi-green-fg">&lt;ipython-input-12-2652ece2ee15&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-fg">&lt;ipython-input-13-2652ece2ee15&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
 <span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>signal3 <span class="ansi-blue-fg">=</span> signal1 <span class="ansi-blue-fg">+</span> signal2
 
 <span class="ansi-green-fg">~/Dropbox/research/nussl_refactor/nussl/core/audio_signal.py</span> in <span class="ansi-cyan-fg">__add__</span><span class="ansi-blue-fg">(self, other)</span>
@@ -749,7 +759,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 </div>
 <p>Uh oh! Let’s fix this by truncating the longer <code class="docutils literal notranslate"><span class="pre">signal1</span></code> to match <code class="docutils literal notranslate"><span class="pre">signal2</span></code> duration in seconds.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -768,7 +778,7 @@ AudioSignal (unlabeled): 2.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascinat
 </div>
 <p>Now we can finally add them. The adding of these two signals clips, so let’s also peak normalize the audio data.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -799,7 +809,7 @@ AudioSignal (unlabeled): 2.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascinat
 <p>No exceptions this time! Great! <code class="docutils literal notranslate"><span class="pre">signal3</span></code> is now a new AudioSignal object. We can similarly subtract two signals.</p>
 <p>Let’s write this to a file:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -808,6 +818,25 @@ AudioSignal (unlabeled): 2.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascinat
 </div>
 </div>
 <p>Awesome! Now lets see how we can manipulate the audio in the frequency domain…</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">time_taken</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Time taken: </span><span class="si">{</span><span class="n">time_taken</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> seconds&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Time taken: 1.5453 seconds
+</pre></div></div>
+</div>
 </div>
 </div>
 

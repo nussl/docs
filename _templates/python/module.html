@@ -195,7 +195,7 @@
 ======={{ “=” * obj.name|length }}</p>
 <p>{% if obj.docstring %}
 .. autoapi-nested-parse:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{{</span> <span class="n">obj</span><span class="o">.</span><span class="n">docstring</span><span class="o">|</span><span class="n">prepare_docstring</span><span class="o">|</span><span class="n">indent</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="p">}}</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>{{ obj.docstring|prepare_docstring|indent(3) }}
 </pre></div>
 </div>
 <p>{% endif %}</p>
@@ -205,8 +205,8 @@
 Subpackages
 ———–
 .. toctree:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">:</span><span class="n">titlesonly</span><span class="p">:</span>
-<span class="p">:</span><span class="n">maxdepth</span><span class="p">:</span> <span class="mi">3</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>:titlesonly:
+:maxdepth: 3
 </pre></div>
 </div>
 <dl class="simple">
@@ -222,8 +222,8 @@ Subpackages
 Submodules
 ———-
 .. toctree:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">:</span><span class="n">titlesonly</span><span class="p">:</span>
-<span class="p">:</span><span class="n">maxdepth</span><span class="p">:</span> <span class="mi">1</span>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>:titlesonly:
+:maxdepth: 1
 </pre></div>
 </div>
 <dl class="simple">

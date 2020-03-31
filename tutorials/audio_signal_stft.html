@@ -432,13 +432,23 @@ div.rendered_html tbody tr:hover {
 <div class="section" id="STFT-Basics">
 <h2>STFT Basics<a class="headerlink" href="#STFT-Basics" title="Permalink to this headline">¶</a></h2>
 <p>Let’s reinitialize <code class="docutils literal notranslate"><span class="pre">signal1</span></code> from the previous page. We should be able to get frequency domain data by looking at <code class="docutils literal notranslate"><span class="pre">signal1.stft_data</span></code>. Let’s try that.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[58]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">nussl</span>
-<span class="n">input_file_path</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">efz_utils</span><span class="o">.</span><span class="n">download_audio_file</span><span class="p">(</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">input_file_path</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">efz_utils</span><span class="o">.</span><span class="n">download_audio_file</span><span class="p">(</span>
     <span class="s1">&#39;schoolboy_fascination_excerpt.wav&#39;</span><span class="p">)</span>
 <span class="n">signal1</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">AudioSignal</span><span class="p">(</span><span class="n">input_file_path</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;STFT Data:&#39;</span><span class="p">,</span> <span class="n">signal1</span><span class="o">.</span><span class="n">stft_data</span><span class="p">)</span>
@@ -456,7 +466,7 @@ STFT Data: None
 </div>
 <p>Whoops! Because this object was initialized from a .wav file (i.e., time-series data), this :class:<code class="docutils literal notranslate"><span class="pre">AudioSignal</span></code>: object has no frequency domain data by default. To populate it with frequency data we do thusly:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[59]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -477,7 +487,7 @@ STFT Data: None
 <p>By inspecting the shape we see that the first dimension represents the number of FFT bins taken at each hop, the second represents the length of our signal (in hops), and the third dimension is number of channels.</p>
 <p>We can also get power spectrogram data from our signal as well. As we would expect, this is the same shape as <code class="docutils literal notranslate"><span class="pre">signal1.stft_data</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -497,7 +507,7 @@ STFT Data: None
 </div>
 <p>Let’s take a look at the spectrogram, using some helpful functions from <code class="docutils literal notranslate"><span class="pre">nussl.utils</span></code>, with different settings on the <code class="docutils literal notranslate"><span class="pre">y_axis</span></code>.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[61]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -525,7 +535,7 @@ STFT Data: None
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_audio_signal_stft_7_0.png" src="../_images/tutorials_audio_signal_stft_7_0.png" />
+<img alt="../_images/tutorials_audio_signal_stft_8_0.png" src="../_images/tutorials_audio_signal_stft_8_0.png" />
 </div>
 </div>
 </div>
@@ -534,7 +544,7 @@ STFT Data: None
 <p>Let’s do something a little more interesting with our :class:<code class="docutils literal notranslate"><span class="pre">AudioSignal</span></code>: object. Since <code class="docutils literal notranslate"><span class="pre">signal1.stft_data</span></code> is just a regular numpy array, we can access and manipulate it as such. So let’s implement a low pass filter by creating a new :class:<code class="docutils literal notranslate"><span class="pre">AudioSignal</span></code>: object and leaving <code class="docutils literal notranslate"><span class="pre">signal1</span></code> unaltered.</p>
 <p>Let’s eliminate all frequencies above about 400 Hz in our signal.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[69]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -550,7 +560,7 @@ STFT Data: None
 </div>
 <p>Okay, so now we have low passed STFT data in the numpy array <code class="docutils literal notranslate"><span class="pre">lp_stft</span></code>. Now we are going to see how we can initialize a new :class:<code class="docutils literal notranslate"><span class="pre">AudioSignal</span></code>: object using this data. Let’s make a copy of the original signal, <code class="docutils literal notranslate"><span class="pre">signal1</span></code>, using its helper function <code class="docutils literal notranslate"><span class="pre">make_copy_with_stft_data</span></code>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[70]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -569,7 +579,7 @@ Audio Data: None
 </div>
 <p>Easy-peasy! Now <code class="docutils literal notranslate"><span class="pre">signal1_lp</span></code> is a new :class:<code class="docutils literal notranslate"><span class="pre">AudioSignal</span></code>: object that has been initialized with STFT data instead of time series data. But there’s no audio data to listen to! Before we can hear the result, we need to do an Inverse STFT to get back time-series data:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[71]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -598,7 +608,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 </div>
 <p>Let’s check out what the spectrogram looks like.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[72]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -615,7 +625,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorials_audio_signal_stft_15_0.png" src="../_images/tutorials_audio_signal_stft_15_0.png" />
+<img alt="../_images/tutorials_audio_signal_stft_16_0.png" src="../_images/tutorials_audio_signal_stft_16_0.png" />
 </div>
 </div>
 <p>Cool beans!</p>
@@ -630,7 +640,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 </ol>
 <p>These three parameters are grouped into a <code class="docutils literal notranslate"><span class="pre">namedtuple</span></code> object that belongs to every AudioSignal object. This is the <code class="docutils literal notranslate"><span class="pre">STFTParams</span></code> object:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -639,7 +649,7 @@ AudioSignal (unlabeled): 15.000 sec @ /Users/prem/.nussl/audio/schoolboy_fascina
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -649,7 +659,7 @@ nussl.core.audio_signal.STFTParams
 </div>
 <p>When we created the audio signals above, the STFT parameters were built on initialization:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[74]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -658,7 +668,7 @@ nussl.core.audio_signal.STFTParams
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[74]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -668,7 +678,7 @@ STFTParams(window_length=2048, hop_length=512, window_type=&#39;sqrt_hann&#39;)
 </div>
 <p>The STFT parameters are built using helpful defaults based on properties of the audo signal. 32 millisecond windows are used with an 8 millisecond hop between windows. At 44100 Hz, this results in 2048 for the window length and 512 for the hop length. The window type is the <code class="docutils literal notranslate"><span class="pre">sqrt_hann</span></code> window, which generally has better separation performance. There are many windows that can be used:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[75]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -677,7 +687,7 @@ STFTParams(window_length=2048, hop_length=512, window_type=&#39;sqrt_hann&#39;)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[75]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -687,7 +697,7 @@ STFTParams(window_length=2048, hop_length=512, window_type=&#39;sqrt_hann&#39;)
 </div>
 <p>An AudioSignal’s STFT parameters can be set after the fact. Let’s change the one for signal1:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -698,7 +708,7 @@ STFTParams(window_length=2048, hop_length=512, window_type=&#39;sqrt_hann&#39;)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -707,6 +717,25 @@ STFTParams(window_length=2048, hop_length=512, window_type=&#39;sqrt_hann&#39;)
 </pre></div></div>
 </div>
 <p>The shape of the resultant STFT is now different. Note that 256 resulted in 129 frequencies of analysis per frame. In general, the rule is <code class="docutils literal notranslate"><span class="pre">(window_length</span> <span class="pre">//</span> <span class="pre">2)</span> <span class="pre">+</span> <span class="pre">1</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">time_taken</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Time taken: </span><span class="si">{</span><span class="n">time_taken</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> seconds&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Time taken: 7.6847 seconds
+</pre></div></div>
+</div>
 </div>
 </div>
 

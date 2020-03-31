@@ -163,188 +163,188 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.ml.train.closures</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span></span>import copy
 
-<span class="kn">import</span> <span class="nn">torch</span>
+import torch
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">loss</span>
-<span class="kn">from</span> <span class="nn">.trainer</span> <span class="kn">import</span> <span class="n">BackwardsEvents</span>
-
-
-<div class="viewcode-block" id="Closure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure">[docs]</a><span class="k">class</span> <span class="nc">Closure</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Closures are used with ignite Engines to train a model given an optimizer </span>
-<span class="sd">    and a set of loss functions. Closures perform forward passes of models given </span>
-<span class="sd">    the input data. The loss is computed via ``self.compute_loss``. </span>
-<span class="sd">    The forward pass is implemented via the objects ``__call__`` function. </span>
-
-<span class="sd">    This closure object provides a way to define the loss functions you want to</span>
-<span class="sd">    use to train your model as a loss dictionary that is structured as follows:</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        loss_dictionary = {</span>
-<span class="sd">            &#39;LossClassName&#39;: {</span>
-<span class="sd">                &#39;weight&#39;: [how much to weight the loss in the sum, defaults to 1],</span>
-<span class="sd">                &#39;keys&#39;: [key mapping items in dictionary to arguments to loss],</span>
-<span class="sd">                &#39;args&#39;: [any positional arguments to the loss class],</span>
-<span class="sd">                &#39;kwargs&#39;: [keyword arguments to the loss class],</span>
-<span class="sd">            }</span>
-<span class="sd">        }</span>
-
-<span class="sd">    The keys value will default to ``LossClassName.DEFAULT_KEYS``, which can be</span>
-<span class="sd">    found in ``nussl.ml.train.loss`` within each available class. Here&#39;s an example</span>
-<span class="sd">    of a Chimera loss combining deep clustering with permutation invariant L1 loss:</span>
-
-<span class="sd">    .. code-block:: python </span>
-
-<span class="sd">        loss_dictionary = {</span>
-<span class="sd">            &#39;DeepClusteringLoss&#39;: {</span>
-<span class="sd">                &#39;weight&#39;: .2,</span>
-<span class="sd">            },</span>
-<span class="sd">            &#39;PermutationInvariantLoss&#39;: {</span>
-<span class="sd">                &#39;weight&#39;: .8,</span>
-<span class="sd">                &#39;args&#39;: [&#39;L1Loss&#39;]</span>
-<span class="sd">            }</span>
-<span class="sd">        }</span>
-
-<span class="sd">    If you have your own loss function classes you wish to use, you can pass those</span>
-<span class="sd">    into the loss dictionary and make them discoverable by the closure by using</span>
-<span class="sd">    `ml.register_loss.`</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        loss_dictionary (dict): Dictionary of losses described above.</span>
-
-<span class="sd">    See also:</span>
-<span class="sd">        ml.register_loss to register your loss functions with this closure.</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_dictionary</span><span class="p">):</span>
-        <span class="n">loss_dictionary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_loss_dictionary</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">loss_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">loss_class</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-            <span class="n">weight</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;weight&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span>
-            <span class="n">keys</span> <span class="o">=</span> <span class="n">loss_class</span><span class="o">.</span><span class="n">DEFAULT_KEYS</span> <span class="k">if</span> <span class="s1">&#39;keys&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;keys&#39;</span><span class="p">]</span>
-            <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="s1">&#39;args&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="s1">&#39;kwargs&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">else</span> <span class="n">val</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;CombinationInvariantLoss&#39;</span><span class="p">,</span> <span class="s1">&#39;PermutationInvariantLoss&#39;</span><span class="p">]:</span>
-                <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])()</span>
-
-            <span class="n">_loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">loss_class</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">weight</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_loss</span><span class="p">)</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_validate_loss_dictionary</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
-                <span class="s2">&quot;loss_dictionary must be a dictionary specifying the &quot;</span>
-                <span class="s2">&quot;class and arguments for each loss function! &quot;</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">loss_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">loss</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Loss function </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found in loss which has </span><span class="si">{</span><span class="nb">dir</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
-                    <span class="s2">&quot;Each key in loss dictionary must point to a dict!&quot;</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">val_key</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">val_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span> <span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="s1">&#39;kwargs&#39;</span><span class="p">]:</span>
-                    <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in loss_dictionary not in [&#39;weight&#39;, &#39;args&#39;, &#39;kwargs&#39;&quot;</span><span class="p">)</span>
-
-                <span class="k">elif</span> <span class="n">val_key</span> <span class="o">==</span> <span class="s1">&#39;weight&#39;</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
-                        <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weight can only be an int or a float&quot;</span><span class="p">)</span>
-
-                <span class="k">elif</span> <span class="n">val_key</span> <span class="o">==</span> <span class="s1">&#39;args&#39;</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
-                        <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;args must be a list&quot;</span><span class="p">)</span>
-
-                <span class="k">elif</span> <span class="n">val_key</span> <span class="o">==</span> <span class="s1">&#39;kwargs&#39;</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">[</span><span class="n">val_key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                        <span class="k">raise</span> <span class="n">ClosureException</span><span class="p">(</span><span class="s2">&quot;kwargs must be a dict&quot;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-
-<div class="viewcode-block" id="Closure.compute_loss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure.compute_loss">[docs]</a>    <span class="k">def</span> <span class="nf">compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
-        <span class="n">loss_output</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">output</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-        <span class="n">loss_output</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-
-        <span class="k">for</span> <span class="n">loss_obj</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="p">:</span>
-            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">keys</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span> <span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span>
-            <span class="n">loss_output</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_obj</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="n">loss_output</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span> <span class="o">*</span> <span class="n">loss_output</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">loss_output</span></div></div>
+from . import loss
+from .trainer import BackwardsEvents
 
 
-<div class="viewcode-block" id="TrainClosure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.TrainClosure">[docs]</a><span class="k">class</span> <span class="nc">TrainClosure</span><span class="p">(</span><span class="n">Closure</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This closure takes an optimization step on a SeparationModel object given a</span>
-<span class="sd">    loss.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        loss_dictionary (dict): Dictionary containing loss functions and specification.</span>
-<span class="sd">        optimizer (torch Optimizer): Optimizer to use to train the model.</span>
-<span class="sd">        model (SeparationModel): The model to be trained.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Closure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure">[docs]</a>class Closure(object):
+    &quot;&quot;&quot;
+    Closures are used with ignite Engines to train a model given an optimizer 
+    and a set of loss functions. Closures perform forward passes of models given 
+    the input data. The loss is computed via ``self.compute_loss``. 
+    The forward pass is implemented via the objects ``__call__`` function. 
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_dictionary</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+    This closure object provides a way to define the loss functions you want to
+    use to train your model as a loss dictionary that is structured as follows:
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+    .. code-block:: python
 
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        loss_dictionary = {
+            &#39;LossClassName&#39;: {
+                &#39;weight&#39;: [how much to weight the loss in the sum, defaults to 1],
+                &#39;keys&#39;: [key mapping items in dictionary to arguments to loss],
+                &#39;args&#39;: [any positional arguments to the loss class],
+                &#39;kwargs&#39;: [keyword arguments to the loss class],
+            }
+        }
 
-        <span class="n">loss_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-        <span class="n">loss_</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">engine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">engine</span><span class="o">.</span><span class="n">fire_event</span><span class="p">(</span><span class="n">BackwardsEvents</span><span class="o">.</span><span class="n">BACKWARDS_COMPLETED</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-        <span class="n">loss_</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">loss_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">loss_</span><span class="p">}</span>
+    The keys value will default to ``LossClassName.DEFAULT_KEYS``, which can be
+    found in ``nussl.ml.train.loss`` within each available class. Here&#39;s an example
+    of a Chimera loss combining deep clustering with permutation invariant L1 loss:
 
-        <span class="k">return</span> <span class="n">loss_</span></div>
+    .. code-block:: python 
+
+        loss_dictionary = {
+            &#39;DeepClusteringLoss&#39;: {
+                &#39;weight&#39;: .2,
+            },
+            &#39;PermutationInvariantLoss&#39;: {
+                &#39;weight&#39;: .8,
+                &#39;args&#39;: [&#39;L1Loss&#39;]
+            }
+        }
+
+    If you have your own loss function classes you wish to use, you can pass those
+    into the loss dictionary and make them discoverable by the closure by using
+    `ml.register_loss.`
+
+    Args:
+        loss_dictionary (dict): Dictionary of losses described above.
+
+    See also:
+        ml.register_loss to register your loss functions with this closure.
+
+    &quot;&quot;&quot;
+
+    def __init__(self, loss_dictionary):
+        loss_dictionary = self._validate_loss_dictionary(loss_dictionary)
+
+        self.losses = []
+        for key, val in loss_dictionary.items():
+            loss_class = getattr(loss, key)
+            weight = 1 if &#39;weight&#39; not in val else val[&#39;weight&#39;]
+            keys = loss_class.DEFAULT_KEYS if &#39;keys&#39; not in val else val[&#39;keys&#39;]
+            args = [] if &#39;args&#39; not in val else val[&#39;args&#39;]
+            kwargs = {} if &#39;kwargs&#39; not in val else val[&#39;kwargs&#39;]
+            if key in [&#39;CombinationInvariantLoss&#39;, &#39;PermutationInvariantLoss&#39;]:
+                args[0] = getattr(loss, args[0])()
+
+            _loss = (loss_class(*args, **kwargs), weight, keys, key)
+            self.losses.append(_loss)
+
+    @staticmethod
+    def _validate_loss_dictionary(loss_dictionary):
+        if not isinstance(loss_dictionary, dict):
+            raise ClosureException(
+                &quot;loss_dictionary must be a dictionary specifying the &quot;
+                &quot;class and arguments for each loss function! &quot;)
+
+        for key, val in loss_dictionary.items():
+            if key not in dir(loss):
+                raise ClosureException(
+                    f&quot;Loss function {key} not found in loss which has {dir(loss)}&quot;)
+
+            if not isinstance(val, dict):
+                raise ClosureException(
+                    &quot;Each key in loss dictionary must point to a dict!&quot;)
+
+            for val_key in val:
+                if val_key not in [&#39;weight&#39;, &#39;keys&#39;, &#39;args&#39;, &#39;kwargs&#39;]:
+                    raise ClosureException(
+                        f&quot;{key} in loss_dictionary not in [&#39;weight&#39;, &#39;args&#39;, &#39;kwargs&#39;&quot;)
+
+                elif val_key == &#39;weight&#39;:
+                    if not isinstance(val[val_key], float) and not isinstance(val[val_key], int):
+                        raise ClosureException(f&quot;weight can only be an int or a float&quot;)
+
+                elif val_key == &#39;args&#39;:
+                    if not isinstance(val[val_key], list):
+                        raise ClosureException(f&quot;args must be a list&quot;)
+
+                elif val_key == &#39;kwargs&#39;:
+                    if not isinstance(val[val_key], dict):
+                        raise ClosureException(&quot;kwargs must be a dict&quot;)
+
+        return copy.deepcopy(loss_dictionary)
+
+    def __call__(self, engine, data):
+        raise NotImplementedError()
+
+<div class="viewcode-block" id="Closure.compute_loss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure.compute_loss">[docs]</a>    def compute_loss(self, output, target):
+        loss_output = {}
+        output.update(target)
+        loss_output[&#39;loss&#39;] = 0
+
+        for loss_obj, weight, keys, name in self.losses:
+            kwargs = {keys[k]: output[k] for k in keys}
+            loss_output[name] = loss_obj(**kwargs)
+            loss_output[&#39;loss&#39;] += weight * loss_output[name]
+        return loss_output</div></div>
 
 
-<div class="viewcode-block" id="ValidationClosure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.ValidationClosure">[docs]</a><span class="k">class</span> <span class="nc">ValidationClosure</span><span class="p">(</span><span class="n">Closure</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This closure validates the model on some data dictionary.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        loss_dictionary (dict): Dictionary containing loss functions and specification.</span>
-<span class="sd">        model (SeparationModel): The model to be validated.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TrainClosure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.TrainClosure">[docs]</a>class TrainClosure(Closure):
+    &quot;&quot;&quot;
+    This closure takes an optimization step on a SeparationModel object given a
+    loss.
+    
+    Args:
+        loss_dictionary (dict): Dictionary containing loss functions and specification.
+        optimizer (torch Optimizer): Optimizer to use to train the model.
+        model (SeparationModel): The model to be trained.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_dictionary</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">loss_dictionary</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+    def __init__(self, loss_dictionary, optimizer, model):
+        super().__init__(loss_dictionary)
+        self.optimizer = optimizer
+        self.model = model
 
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">engine</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-            <span class="n">loss_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_loss</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-            <span class="n">loss_</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">loss_</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">loss_</span><span class="p">}</span>
-        <span class="k">return</span> <span class="n">loss_</span></div>
+    def __call__(self, engine, data):
+        self.model.train()
+        self.optimizer.zero_grad()
+
+        output = self.model(data)
+
+        loss_ = self.compute_loss(output, data)
+        loss_[&#39;loss&#39;].backward()
+        if engine is not None:
+            engine.fire_event(BackwardsEvents.BACKWARDS_COMPLETED)
+        self.optimizer.step()
+        loss_ = {key: loss_[key].item() for key in loss_}
+
+        return loss_</div>
 
 
-<div class="viewcode-block" id="ClosureException"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.ClosureException">[docs]</a><span class="k">class</span> <span class="nc">ClosureException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; </span>
-<span class="sd">    Exception class for errors when working with closures in nussl.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">pass</span></div>
+<div class="viewcode-block" id="ValidationClosure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.ValidationClosure">[docs]</a>class ValidationClosure(Closure):
+    &quot;&quot;&quot;
+    This closure validates the model on some data dictionary.
+    
+    Args:
+        loss_dictionary (dict): Dictionary containing loss functions and specification.
+        model (SeparationModel): The model to be validated.
+    &quot;&quot;&quot;
+
+    def __init__(self, loss_dictionary, model):
+        super().__init__(loss_dictionary)
+        self.model = model
+
+    def __call__(self, engine, data):
+        with torch.no_grad():
+            self.model.eval()
+            output = self.model(data)
+            loss_ = self.compute_loss(output, data)
+            loss_ = {key: loss_[key].item() for key in loss_}
+        return loss_</div>
+
+
+<div class="viewcode-block" id="ClosureException"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.ClosureException">[docs]</a>class ClosureException(Exception):
+    &quot;&quot;&quot; 
+    Exception class for errors when working with closures in nussl.
+    &quot;&quot;&quot;
+    pass</div>
 </pre></div>
 
            </div>

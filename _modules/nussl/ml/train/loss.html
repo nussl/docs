@@ -163,204 +163,204 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.ml.train.loss</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">combinations</span>
+<span></span>from itertools import permutations, combinations
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-
-
-<div class="viewcode-block" id="L1Loss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.L1Loss">[docs]</a><span class="k">class</span> <span class="nc">L1Loss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">L1Loss</span><span class="p">):</span>
-    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">:</span> <span class="s1">&#39;target&#39;</span><span class="p">}</span></div>
+import torch
+import torch.nn as nn
 
 
-<div class="viewcode-block" id="MSELoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.MSELoss">[docs]</a><span class="k">class</span> <span class="nc">MSELoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">):</span>
-    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">:</span> <span class="s1">&#39;target&#39;</span><span class="p">}</span></div>
+<div class="viewcode-block" id="L1Loss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.L1Loss">[docs]</a>class L1Loss(nn.L1Loss):
+    DEFAULT_KEYS = {&#39;estimates&#39;: &#39;input&#39;, &#39;source_magnitudes&#39;: &#39;target&#39;}</div>
 
 
-<div class="viewcode-block" id="KLDivLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.KLDivLoss">[docs]</a><span class="k">class</span> <span class="nc">KLDivLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">KLDivLoss</span><span class="p">):</span>
-    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">:</span> <span class="s1">&#39;target&#39;</span><span class="p">}</span></div>
+<div class="viewcode-block" id="MSELoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.MSELoss">[docs]</a>class MSELoss(nn.MSELoss):
+    DEFAULT_KEYS = {&#39;estimates&#39;: &#39;input&#39;, &#39;source_magnitudes&#39;: &#39;target&#39;}</div>
 
 
-<div class="viewcode-block" id="SISDRLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.SISDRLoss">[docs]</a><span class="k">class</span> <span class="nc">SISDRLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Computes the Scale-Invariant Source-to-Distortion Ratio between a batch</span>
-<span class="sd">    of estimated and reference audio signals. Used in end-to-end networks.</span>
-<span class="sd">    This is essentially a batch PyTorch version of the function </span>
-<span class="sd">    ``nussl.evaluation.bss_eval.scale_bss_eval``.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        scaling (bool, optional): Whether to use scale-invariant (True) or</span>
-<span class="sd">          scale-dependent SDR. Defaults to True.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;references&#39;</span><span class="p">:</span> <span class="s1">&#39;references&#39;</span><span class="p">}</span>
+<div class="viewcode-block" id="KLDivLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.KLDivLoss">[docs]</a>class KLDivLoss(nn.KLDivLoss):
+    DEFAULT_KEYS = {&#39;estimates&#39;: &#39;input&#39;, &#39;source_magnitudes&#39;: &#39;target&#39;}</div>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaling</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scaling</span> <span class="o">=</span> <span class="n">scaling</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span> <span class="o">=</span> <span class="n">reduction</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-<div class="viewcode-block" id="SISDRLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.SISDRLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">references</span><span class="p">):</span>
-        <span class="n">references_projection</span> <span class="o">=</span> <span class="n">references</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">@</span> <span class="n">references</span>
-
-        <span class="n">references_projection</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span>
-            <span class="n">references_projection</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<div class="viewcode-block" id="SISDRLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.SISDRLoss">[docs]</a>class SISDRLoss(nn.Module):
+    &quot;&quot;&quot;
+    Computes the Scale-Invariant Source-to-Distortion Ratio between a batch
+    of estimated and reference audio signals. Used in end-to-end networks.
+    This is essentially a batch PyTorch version of the function 
+    ``nussl.evaluation.bss_eval.scale_bss_eval``.
     
-        <span class="n">references_on_estimates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">diagonal</span><span class="p">(</span>
-            <span class="n">references</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">@</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">dim1</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim2</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    Args:
+        scaling (bool, optional): Whether to use scale-invariant (True) or
+          scale-dependent SDR. Defaults to True.
+    &quot;&quot;&quot;
+    DEFAULT_KEYS = {&#39;estimates&#39;: &#39;estimates&#39;, &#39;references&#39;: &#39;references&#39;}
 
-        <span class="n">scale</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">references_on_estimates</span> <span class="o">/</span> <span class="n">references_projection</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaling</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+    def __init__(self, scaling=True, reduction=&#39;mean&#39;):
+        self.scaling = scaling
+        self.reduction = reduction
+        super().__init__()
 
-        <span class="n">e_true</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">references</span>
-        <span class="n">e_res</span> <span class="o">=</span> <span class="n">estimates</span> <span class="o">-</span> <span class="n">e_true</span>
+<div class="viewcode-block" id="SISDRLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.SISDRLoss.forward">[docs]</a>    def forward(self, estimates, references):
+        references_projection = references.transpose(2, 1) @ references
 
-        <span class="n">signal</span> <span class="o">=</span> <span class="p">(</span><span class="n">e_true</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">e_res</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        references_projection = torch.diagonal(
+            references_projection, dim1=-2, dim2=-1)
+    
+        references_on_estimates = torch.diagonal(
+            references.transpose(2, 1) @ estimates, dim1=-2, dim2=-1)
 
-        <span class="n">sdr</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">signal</span> <span class="o">/</span> <span class="n">noise</span><span class="p">)</span>
+        scale = (
+            (references_on_estimates / references_projection).unsqueeze(1)
+            if self.scaling else 1)
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">:</span>
-            <span class="n">sdr</span> <span class="o">=</span> <span class="n">sdr</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduction</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">:</span>
-            <span class="n">sdr</span> <span class="o">=</span> <span class="n">sdr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="c1"># go negative so it&#39;s a loss</span>
-        <span class="k">return</span> <span class="o">-</span><span class="n">sdr</span></div></div>
+        e_true = scale * references
+        e_res = estimates - e_true
 
+        signal = (e_true ** 2).sum(dim=1)
+        noise = (e_res ** 2).sum(dim=1)
 
-<div class="viewcode-block" id="DeepClusteringLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.DeepClusteringLoss">[docs]</a><span class="k">class</span> <span class="nc">DeepClusteringLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Computes the deep clustering loss with weights. Equation (7) in [1].</span>
+        sdr = 10 * torch.log10(signal / noise)
 
-<span class="sd">    References:</span>
-
-<span class="sd">    [1] Wang, Z. Q., Le Roux, J., &amp; Hershey, J. R. (2018, April).</span>
-<span class="sd">        Alternative Objective Functions for Deep Clustering.</span>
-<span class="sd">        In Proc. IEEE International Conference on Acoustics,  Speech</span>
-<span class="sd">        and Signal Processing (ICASSP).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;embedding&#39;</span><span class="p">:</span> <span class="s1">&#39;embedding&#39;</span><span class="p">,</span> 
-        <span class="s1">&#39;ideal_binary_mask&#39;</span><span class="p">:</span> <span class="s1">&#39;assignments&#39;</span><span class="p">,</span> 
-        <span class="s1">&#39;weights&#39;</span><span class="p">:</span> <span class="s1">&#39;weights&#39;</span>
-    <span class="p">}</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">DeepClusteringLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-
-<div class="viewcode-block" id="DeepClusteringLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.DeepClusteringLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embedding</span><span class="p">,</span> <span class="n">assignments</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">embedding_size</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">num_sources</span> <span class="o">=</span> <span class="n">assignments</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-        <span class="c1"># make everything unit norm</span>
-        <span class="n">embedding</span> <span class="o">=</span> <span class="n">embedding</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">embedding_size</span><span class="p">)</span>
-        <span class="n">embedding</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">embedding</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-        <span class="n">assignments</span> <span class="o">=</span> <span class="n">assignments</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">)</span>
-        <span class="n">assignments</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">assignments</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-
-        <span class="n">norm</span> <span class="o">=</span> <span class="p">(((</span><span class="n">weights</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span>
-
-        <span class="n">assignments</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="n">assignments</span>
-        <span class="n">embedding</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">*</span> <span class="n">embedding</span>
-
-        <span class="n">vTv</span> <span class="o">=</span> <span class="p">((</span><span class="n">embedding</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">@</span> <span class="n">embedding</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">vTy</span> <span class="o">=</span> <span class="p">((</span><span class="n">embedding</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">@</span> <span class="n">assignments</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">yTy</span> <span class="o">=</span> <span class="p">((</span><span class="n">assignments</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">@</span> <span class="n">assignments</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">vTv</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">vTy</span> <span class="o">+</span> <span class="n">yTy</span><span class="p">)</span> <span class="o">/</span> <span class="n">norm</span>
-        <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span></div></div>
+        if self.reduction == &#39;mean&#39;:
+            sdr = sdr.mean()
+        elif self.reduction == &#39;sum&#39;:
+            sdr = sdr.sum()
+        # go negative so it&#39;s a loss
+        return -sdr</div></div>
 
 
-<div class="viewcode-block" id="PermutationInvariantLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.PermutationInvariantLoss">[docs]</a><span class="k">class</span> <span class="nc">PermutationInvariantLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Computes the Permutation Invariant Loss (PIT) [1] by permuting the estimated </span>
-<span class="sd">    sources and the reference sources. Takes the best permutation and only backprops</span>
-<span class="sd">    the loss from that.</span>
+<div class="viewcode-block" id="DeepClusteringLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.DeepClusteringLoss">[docs]</a>class DeepClusteringLoss(nn.Module):
+    &quot;&quot;&quot;
+    Computes the deep clustering loss with weights. Equation (7) in [1].
 
-<span class="sd">    For when you&#39;re trying to match the estimates to the sources but you don&#39;t </span>
-<span class="sd">    know the order in which your model outputs the estimates.</span>
+    References:
 
-<span class="sd">    References:</span>
-<span class="sd">    </span>
-<span class="sd">    [1] Yu, Dong, Morten Kolbæk, Zheng-Hua Tan, and Jesper Jensen. </span>
-<span class="sd">        &quot;Permutation invariant training of deep models for speaker-independent </span>
-<span class="sd">        multi-talker speech separation.&quot; In 2017 IEEE International Conference on </span>
-<span class="sd">        Acoustics, Speech and Signal Processing (ICASSP), pp. 241-245. IEEE, 2017.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">:</span> <span class="s1">&#39;targets&#39;</span><span class="p">}</span>
+    [1] Wang, Z. Q., Le Roux, J., &amp; Hershey, J. R. (2018, April).
+        Alternative Objective Functions for Deep Clustering.
+        In Proc. IEEE International Conference on Acoustics,  Speech
+        and Signal Processing (ICASSP).
+    &quot;&quot;&quot;
+    DEFAULT_KEYS = {
+        &#39;embedding&#39;: &#39;embedding&#39;, 
+        &#39;ideal_binary_mask&#39;: &#39;assignments&#39;, 
+        &#39;weights&#39;: &#39;weights&#39;
+    }
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_function</span><span class="p">):</span>
+    def __init__(self):
+        super(DeepClusteringLoss, self).__init__()
+
+<div class="viewcode-block" id="DeepClusteringLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.DeepClusteringLoss.forward">[docs]</a>    def forward(self, embedding, assignments, weights):
+        batch_size = embedding.shape[0]
+        embedding_size = embedding.shape[-1]
+        num_sources = assignments.shape[-1]
+
+        weights = weights.view(batch_size, -1, 1)
+
+        # make everything unit norm
+        embedding = embedding.view(batch_size, -1, embedding_size)
+        embedding = nn.functional.normalize(embedding, dim=-1, p=2)
+
+        assignments = assignments.view(batch_size, -1, num_sources)
+        assignments = nn.functional.normalize(assignments, dim=-1, p=2)
+
+        norm = (((weights.reshape(batch_size, -1)) ** 2).sum(dim=1) ** 2) + 1e-8
+
+        assignments = weights * assignments
+        embedding = weights * embedding
+
+        vTv = ((embedding.transpose(2, 1) @ embedding) ** 2).reshape(
+            batch_size, -1).sum(dim=-1)
+        vTy = ((embedding.transpose(2, 1) @ assignments) ** 2).reshape(
+            batch_size, -1).sum(dim=-1)
+        yTy = ((assignments.transpose(2, 1) @ assignments) ** 2).reshape(
+            batch_size, -1).sum(dim=-1)
+        loss = (vTv - 2 * vTy + yTy) / norm
+        return loss.mean()</div></div>
+
+
+<div class="viewcode-block" id="PermutationInvariantLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.PermutationInvariantLoss">[docs]</a>class PermutationInvariantLoss(nn.Module):
+    &quot;&quot;&quot;
+    Computes the Permutation Invariant Loss (PIT) [1] by permuting the estimated 
+    sources and the reference sources. Takes the best permutation and only backprops
+    the loss from that.
+
+    For when you&#39;re trying to match the estimates to the sources but you don&#39;t 
+    know the order in which your model outputs the estimates.
+
+    References:
+    
+    [1] Yu, Dong, Morten Kolbæk, Zheng-Hua Tan, and Jesper Jensen. 
+        &quot;Permutation invariant training of deep models for speaker-independent 
+        multi-talker speech separation.&quot; In 2017 IEEE International Conference on 
+        Acoustics, Speech and Signal Processing (ICASSP), pp. 241-245. IEEE, 2017.
+    &quot;&quot;&quot;
+    DEFAULT_KEYS = {&#39;estimates&#39;: &#39;estimates&#39;, &#39;source_magnitudes&#39;: &#39;targets&#39;}
+
+    def __init__(self, loss_function):
         
-        <span class="nb">super</span><span class="p">(</span><span class="n">PermutationInvariantLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span> <span class="o">=</span> <span class="n">loss_function</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="o">.</span><span class="n">reduction</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+        super(PermutationInvariantLoss, self).__init__()
+        self.loss_function = loss_function
+        self.loss_function.reduction = &#39;none&#39;
         
-<div class="viewcode-block" id="PermutationInvariantLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.PermutationInvariantLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
-        <span class="n">num_batch</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">num_sources</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_batch</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">)</span>
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_batch</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_sources</span><span class="p">)</span>
+<div class="viewcode-block" id="PermutationInvariantLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.PermutationInvariantLoss.forward">[docs]</a>    def forward(self, estimates, targets):
+        num_batch = estimates.shape[0]
+        num_sources = estimates.shape[-1]
+        estimates = estimates.view(num_batch, -1, num_sources)
+        targets = targets.view(num_batch, -1, num_sources)
         
-        <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">permutations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_sources</span><span class="p">)):</span>
-            <span class="n">_targets</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="p">)]</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">_targets</span><span class="p">)</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">])</span>
-            <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+        losses = []
+        for p in permutations(range(num_sources)):
+            _targets = targets[..., list(p)]
+            loss = self.loss_function(estimates, _targets)
+            loss = loss.mean(dim=[-1, -2])
+            losses.append(loss)
         
-        <span class="n">losses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">losses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">loss</span></div></div>
+        losses = torch.stack(losses, dim=-1)
+        losses = torch.min(losses, dim=-1)[0]
+        loss = torch.mean(losses)
+        return loss</div></div>
 
 
-<div class="viewcode-block" id="CombinationInvariantLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.CombinationInvariantLoss">[docs]</a><span class="k">class</span> <span class="nc">CombinationInvariantLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Variant on Permutation Invariant Loss where instead a combination of the</span>
-<span class="sd">    sources output by the model are used. This way a model can output more </span>
-<span class="sd">    sources than there are in the ground truth. A subset of the output sources</span>
-<span class="sd">    will be compared using Permutation Invariant Loss with the ground truth</span>
-<span class="sd">    estimates.</span>
+<div class="viewcode-block" id="CombinationInvariantLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.CombinationInvariantLoss">[docs]</a>class CombinationInvariantLoss(nn.Module):
+    &quot;&quot;&quot;
+    Variant on Permutation Invariant Loss where instead a combination of the
+    sources output by the model are used. This way a model can output more 
+    sources than there are in the ground truth. A subset of the output sources
+    will be compared using Permutation Invariant Loss with the ground truth
+    estimates.
 
-<span class="sd">    For when you&#39;re trying to match the estimates to the sources but you don&#39;t </span>
-<span class="sd">    know the order in which your model outputs the estimates AND you are </span>
-<span class="sd">    outputting more estimates then there are sources.</span>
+    For when you&#39;re trying to match the estimates to the sources but you don&#39;t 
+    know the order in which your model outputs the estimates AND you are 
+    outputting more estimates then there are sources.
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">DEFAULT_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;estimates&#39;</span><span class="p">:</span> <span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;source_magnitudes&#39;</span><span class="p">:</span> <span class="s1">&#39;targets&#39;</span><span class="p">}</span>
+    &quot;&quot;&quot;
+    DEFAULT_KEYS = {&#39;estimates&#39;: &#39;estimates&#39;, &#39;source_magnitudes&#39;: &#39;targets&#39;}
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss_function</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">CombinationInvariantLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span> <span class="o">=</span> <span class="n">loss_function</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="o">.</span><span class="n">reduction</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+    def __init__(self, loss_function):
+        super(CombinationInvariantLoss, self).__init__()
+        self.loss_function = loss_function
+        self.loss_function.reduction = &#39;none&#39;
         
-<div class="viewcode-block" id="CombinationInvariantLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.CombinationInvariantLoss.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
-        <span class="n">num_batch</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">num_target_sources</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">num_estimate_sources</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<div class="viewcode-block" id="CombinationInvariantLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.CombinationInvariantLoss.forward">[docs]</a>    def forward(self, estimates, targets):
+        num_batch = estimates.shape[0]
+        num_target_sources = targets.shape[-1]
+        num_estimate_sources = estimates.shape[-1]
         
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_batch</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_estimate_sources</span><span class="p">)</span>
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">num_batch</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_target_sources</span><span class="p">)</span>
+        estimates = estimates.view(num_batch, -1, num_estimate_sources)
+        targets = targets.view(num_batch, -1, num_target_sources)
         
-        <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_estimate_sources</span><span class="p">),</span> <span class="n">num_target_sources</span><span class="p">):</span>
-            <span class="n">_estimates</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">c</span><span class="p">)]</span>
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">permutations</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_target_sources</span><span class="p">)):</span>
-                <span class="n">_targets</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="p">)]</span>
-                <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="p">(</span><span class="n">_estimates</span><span class="p">,</span> <span class="n">_targets</span><span class="p">)</span>
-                <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">])</span>
-                <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+        losses = []
+        for c in combinations(range(num_estimate_sources), num_target_sources):
+            _estimates = estimates[..., list(c)]
+            for p in permutations(range(num_target_sources)):
+                _targets = targets[..., list(p)]
+                loss = self.loss_function(_estimates, _targets)
+                loss = loss.mean(dim=[-1, -2])
+                losses.append(loss)
         
-        <span class="n">losses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">losses</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">loss</span></div></div>
+        losses = torch.stack(losses, dim=-1)
+        losses = torch.min(losses, dim=-1)[0]
+        loss = torch.mean(losses)
+        return loss</div></div>
 </pre></div>
 
            </div>

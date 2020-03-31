@@ -163,40 +163,40 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.benchmark.high_low_pass_filter</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span>import numpy as np
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">MaskSeparationBase</span>
+from .. import MaskSeparationBase
 
 
-<div class="viewcode-block" id="HighLowPassFilter"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.benchmark.HighLowPassFilter">[docs]</a><span class="k">class</span> <span class="nc">HighLowPassFilter</span><span class="p">(</span><span class="n">MaskSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements a super simple separation algorithm that just masks everything below</span>
-<span class="sd">    the specified hz. It does this by zeroing out the associated FFT bins via a mask to</span>
-<span class="sd">    produce the &quot;high&quot; source, and the residual is the &quot;low&quot; source.</span>
-<span class="sd">    </span>
-<span class="sd">    Args:</span>
-<span class="sd">        input_audio_signal (AudioSignal): Signal to separate.</span>
-<span class="sd">        high_pass_cutoff_hz (float): Cutoff in Hz. Will be rounded off </span>
-<span class="sd">        mask_type (str, optional): Mask type. Defaults to &#39;binary&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="HighLowPassFilter"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.benchmark.HighLowPassFilter">[docs]</a>class HighLowPassFilter(MaskSeparationBase):
+    &quot;&quot;&quot;
+    Implements a super simple separation algorithm that just masks everything below
+    the specified hz. It does this by zeroing out the associated FFT bins via a mask to
+    produce the &quot;high&quot; source, and the residual is the &quot;low&quot; source.
+    
+    Args:
+        input_audio_signal (AudioSignal): Signal to separate.
+        high_pass_cutoff_hz (float): Cutoff in Hz. Will be rounded off 
+        mask_type (str, optional): Mask type. Defaults to &#39;binary&#39;.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">high_pass_cutoff_hz</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="s1">&#39;binary&#39;</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">input_audio_signal</span><span class="o">=</span><span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">mask_type</span><span class="o">=</span><span class="n">mask_type</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff_hz</span> <span class="o">=</span> <span class="n">high_pass_cutoff_hz</span>
+    def __init__(self, input_audio_signal, high_pass_cutoff_hz, mask_type=&#39;binary&#39;):
+        super().__init__(input_audio_signal=input_audio_signal, mask_type=mask_type)
+        self.high_pass_cutoff_hz = high_pass_cutoff_hz
 
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Compute the spectrogram and find the closest frequency bin to the cutoff freq</span>
-        <span class="n">closest_freq_bin</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">freq_vector</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">high_pass_cutoff_hz</span><span class="p">)</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+    def run(self):
+        # Compute the spectrogram and find the closest frequency bin to the cutoff freq
+        closest_freq_bin = (
+            np.abs(self.audio_signal.freq_vector - self.high_pass_cutoff_hz)
+        ).argmin()
 
-        <span class="c1"># Make masks</span>
-        <span class="n">low_pass_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ones_mask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stft</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="n">low_pass_mask</span><span class="o">.</span><span class="n">mask</span><span class="p">[</span><span class="n">closest_freq_bin</span><span class="p">:,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">high_pass_mask</span> <span class="o">=</span> <span class="n">low_pass_mask</span><span class="o">.</span><span class="n">invert_mask</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span> <span class="o">=</span> <span class="p">[</span><span class="n">low_pass_mask</span><span class="p">,</span> <span class="n">high_pass_mask</span><span class="p">]</span>
+        # Make masks
+        low_pass_mask = self.ones_mask(self.stft.shape)
+        low_pass_mask.mask[closest_freq_bin:, ...] = 0
+        high_pass_mask = low_pass_mask.invert_mask()
+        self.result_masks = [low_pass_mask, high_pass_mask]
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_masks</span></div>
+        return self.result_masks</div>
 </pre></div>
 
            </div>

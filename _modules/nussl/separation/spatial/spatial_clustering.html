@@ -163,33 +163,33 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.spatial.spatial_clustering</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span>import numpy as np
 
-<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">ClusteringSeparationBase</span>
+from ..base import ClusteringSeparationBase
 
 
-<div class="viewcode-block" id="SpatialClustering"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.spatial.SpatialClustering">[docs]</a><span class="k">class</span> <span class="nc">SpatialClustering</span><span class="p">(</span><span class="n">ClusteringSeparationBase</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Implements clustering on IPD/ILD features between the first two channels.</span>
+<div class="viewcode-block" id="SpatialClustering"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.spatial.SpatialClustering">[docs]</a>class SpatialClustering(ClusteringSeparationBase):
+    &quot;&quot;&quot;
+    Implements clustering on IPD/ILD features between the first two channels.
 
-<span class="sd">    IPD/ILD features are inter-phase difference and inter-level difference</span>
-<span class="sd">    features. Sounds coming from different directions will naturally cluster</span>
-<span class="sd">    in IPD/ILD space. </span>
+    IPD/ILD features are inter-phase difference and inter-level difference
+    features. Sounds coming from different directions will naturally cluster
+    in IPD/ILD space. 
 
-<span class="sd">    Subclasses ClusteringSeparationBase which actually handles all of the</span>
-<span class="sd">    clustering functionality behind this function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">ipd</span><span class="p">,</span> <span class="n">ild</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">ipd_ild_features</span><span class="p">()</span>
-        <span class="n">num_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">num_channels</span>
+    Subclasses ClusteringSeparationBase which actually handles all of the
+    clustering functionality behind this function.
+    &quot;&quot;&quot;
+    def extract_features(self):
+        ipd, ild = self.audio_signal.ipd_ild_features()
+        num_channels = self.audio_signal.num_channels
         
-        <span class="n">features</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">[</span><span class="n">ipd</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">)],</span>
-            <span class="p">[</span><span class="n">ild</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">)]</span>
-        <span class="p">]</span>
-        <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>   
+        features = [
+            [ipd for _ in range(num_channels)],
+            [ild for _ in range(num_channels)]
+        ]
+        features = np.array(features).transpose(2, 3, 1, 0)   
 
-        <span class="k">return</span> <span class="n">features</span></div>
+        return features</div>
 </pre></div>
 
            </div>

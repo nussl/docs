@@ -163,127 +163,127 @@
            <div itemprop="articleBody">
             
   <h1>Source code for nussl.separation.base.separation_base</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span></span>import copy
+import warnings
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+import numpy as np
 
-<span class="kn">from</span> <span class="nn">...</span> <span class="kn">import</span> <span class="n">AudioSignal</span>
+from ... import AudioSignal
 
 
-<div class="viewcode-block" id="SeparationBase"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.SeparationBase">[docs]</a><span class="k">class</span> <span class="nc">SeparationBase</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Base class for all separation algorithms in nussl.</span>
+<div class="viewcode-block" id="SeparationBase"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.SeparationBase">[docs]</a>class SeparationBase(object):
+    &quot;&quot;&quot;Base class for all separation algorithms in nussl.
 
-<span class="sd">    Do not call this. It will not do anything.</span>
+    Do not call this. It will not do anything.
 
-<span class="sd">    Parameters:</span>
-<span class="sd">        input_audio_signal (AudioSignal). AudioSignal` object.</span>
-<span class="sd">                            This will always be a copy of the provided AudioSignal object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    Parameters:
+        input_audio_signal (AudioSignal). AudioSignal` object.
+                            This will always be a copy of the provided AudioSignal object.
+    &quot;&quot;&quot;
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span> <span class="o">=</span> <span class="n">input_audio_signal</span>
+    def __init__(self, input_audio_signal):
+        self.audio_signal = input_audio_signal
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">sample_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        (int): Sample rate of :attr:`audio_signal`.</span>
-<span class="sd">        Literally :attr:`audio_signal.sample_rate`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">sample_rate</span>
+    @property
+    def sample_rate(self):
+        &quot;&quot;&quot;
+        (int): Sample rate of :attr:`audio_signal`.
+        Literally :attr:`audio_signal.sample_rate`.
+        &quot;&quot;&quot;
+        return self.audio_signal.sample_rate
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">stft_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        STFTParams object containing the STFT parameters of the copied AudioSignal.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_params</span>
+    @property
+    def stft_params(self):
+        &quot;&quot;&quot;
+        STFTParams object containing the STFT parameters of the copied AudioSignal.
+        &quot;&quot;&quot;
+        return self.audio_signal.stft_params
 
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">audio_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Copy of AudioSignal that is made on initialization.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_audio_signal</span>
+    @property
+    def audio_signal(self):
+        &quot;&quot;&quot;
+        Copy of AudioSignal that is made on initialization.
+        &quot;&quot;&quot;
+        return self._audio_signal
 
-    <span class="k">def</span> <span class="nf">_preprocess_audio_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This function should be implemented by the subclass. It can do things like</span>
-<span class="sd">        take the STFT of the audio signal, or resample it to a desired sample rate,</span>
-<span class="sd">        build the input data for a deep model, etc. Here, it does nothing.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
+    def _preprocess_audio_signal(self):
+        &quot;&quot;&quot;
+        This function should be implemented by the subclass. It can do things like
+        take the STFT of the audio signal, or resample it to a desired sample rate,
+        build the input data for a deep model, etc. Here, it does nothing.
+        &quot;&quot;&quot;
+        pass
 
-    <span class="nd">@audio_signal</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">audio_signal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_audio_signal</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        When setting the AudioSignal object for a separation algorithm (which</span>
-<span class="sd">        can happen on initialization or later one), it is copied on set so</span>
-<span class="sd">        as to not alter the data within the original audio signal. If the</span>
-<span class="sd">        AudioSignal object has data, then it the function `_preprocess_audio_signal`</span>
-<span class="sd">        is run, which is implemented by the subclass. </span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            input_audio_signal ([type]): [description]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_audio_signal</span><span class="p">,</span> <span class="n">AudioSignal</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;input_audio_signal is not an AudioSignal object!&#39;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_audio_signal</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">input_audio_signal</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">has_data</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;input_audio_signal has no data!&#39;</span><span class="p">)</span>
-
-                <span class="c1"># initialize to empty arrays so that we don&#39;t crash randomly</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">audio_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="o">.</span><span class="n">stft_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[]])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_preprocess_audio_signal</span><span class="p">()</span>
-
-<div class="viewcode-block" id="SeparationBase.run"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.SeparationBase.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs separation algorithm.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            NotImplementedError: Cannot call base class</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Cannot call base class.&#39;</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="SeparationBase.make_audio_signals"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.SeparationBase.make_audio_signals">[docs]</a>    <span class="k">def</span> <span class="nf">make_audio_signals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Makes :class:`audio_signal.AudioSignal` objects after separation algorithm is run</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            NotImplementedError: Cannot call base class</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Cannot call base class.&#39;</span><span class="p">)</span></div>
-
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">audio_signal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">audio_signal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span> <span class="o">=</span> <span class="n">audio_signal</span>
+    @audio_signal.setter
+    def audio_signal(self, input_audio_signal):
+        &quot;&quot;&quot;
+        When setting the AudioSignal object for a separation algorithm (which
+        can happen on initialization or later one), it is copied on set so
+        as to not alter the data within the original audio signal. If the
+        AudioSignal object has data, then it the function `_preprocess_audio_signal`
+        is run, which is implemented by the subclass. 
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_audio_signals</span><span class="p">()</span>
+        Args:
+            input_audio_signal ([type]): [description]
+        &quot;&quot;&quot;
+        if not isinstance(input_audio_signal, AudioSignal):
+            raise ValueError(&#39;input_audio_signal is not an AudioSignal object!&#39;)
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">audio_signal</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        self._audio_signal = copy.deepcopy(input_audio_signal)
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]):</span>
-                    <span class="k">return</span> <span class="kc">False</span>
-            <span class="k">elif</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
-                <span class="k">return</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="kc">True</span>
+        if self.audio_signal is not None:
+            if not self.audio_signal.has_data:
+                warnings.warn(&#39;input_audio_signal has no data!&#39;)
 
-    <span class="k">def</span> <span class="fm">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span></div>
+                # initialize to empty arrays so that we don&#39;t crash randomly
+                self.audio_signal.audio_data = np.array([])
+                self.audio_signal.stft_data = np.array([[]])
+            else:
+                self._preprocess_audio_signal()
+
+<div class="viewcode-block" id="SeparationBase.run"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.SeparationBase.run">[docs]</a>    def run(self):
+        &quot;&quot;&quot;
+        Runs separation algorithm.
+
+        Raises:
+            NotImplementedError: Cannot call base class
+        &quot;&quot;&quot;
+        raise NotImplementedError(&#39;Cannot call base class.&#39;)</div>
+
+<div class="viewcode-block" id="SeparationBase.make_audio_signals"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.SeparationBase.make_audio_signals">[docs]</a>    def make_audio_signals(self):
+        &quot;&quot;&quot;
+        Makes :class:`audio_signal.AudioSignal` objects after separation algorithm is run
+
+        Raises:
+            NotImplementedError: Cannot call base class
+        &quot;&quot;&quot;
+        raise NotImplementedError(&#39;Cannot call base class.&#39;)</div>
+
+    def __call__(self, *args, audio_signal=None, **kwargs):
+        if audio_signal is not None:
+            self.audio_signal = audio_signal
+        
+        self.run(*args, **kwargs)
+        return self.make_audio_signals()
+
+    def __repr__(self):
+        return f&quot;{self.__class__.__name__} on {str(self.audio_signal)}&quot;
+
+    def __eq__(self, other):
+        for k, v in list(self.__dict__.items()):
+            if isinstance(v, np.ndarray):
+                if not np.array_equal(v, other.__dict__[k]):
+                    return False
+            elif v != other.__dict__[k]:
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self == other</div>
 
 
-<span class="k">class</span> <span class="nc">SeparationException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-    <span class="k">pass</span>
+class SeparationException(Exception):
+    pass
 </pre></div>
 
            </div>
