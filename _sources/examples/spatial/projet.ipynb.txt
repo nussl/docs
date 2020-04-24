@@ -169,7 +169,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Time taken: 45.9384 seconds\n"
+      "Time taken: 43.8166 seconds\n"
      ]
     }
    ],

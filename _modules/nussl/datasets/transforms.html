@@ -180,6 +180,10 @@ from sklearn.preprocessing import OneHotEncoder
 
 from .. import utils
 
+# This is for when you&#39;re running multiple
+# training threads
+if hasattr(numcodecs, &#39;blosc&#39;):
+    numcodecs.blosc.use_threads = False
 
 def compute_ideal_binary_mask(source_magnitudes):
     ibm = (
@@ -194,7 +198,6 @@ def compute_ideal_binary_mask(source_magnitudes):
 # Keys that correspond to the time-frequency representations after being passed through
 # the transforms here.
 time_frequency_keys = [&#39;mix_magnitude&#39;, &#39;source_magnitudes&#39;, &#39;ideal_binary_mask&#39;, &#39;weights&#39;]
-
 
 <div class="viewcode-block" id="SumSources"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.SumSources">[docs]</a>class SumSources(object):
     &quot;&quot;&quot;
@@ -364,7 +367,7 @@ time_frequency_keys = [&#39;mix_magnitude&#39;, &#39;source_magnitudes&#39;, &#3
     Args:
         mix_key (str, optional): The key to look for in data for the mixture AudioSignal. 
           Defaults to &#39;mix&#39;.
-        source_key (str, optional): The key to look for in the data containing the list of
+        source_key (str, optional): The key to look for in the data containing the dict of
           source AudioSignals. Defaults to &#39;sources&#39;.
     
     Raises:
@@ -690,8 +693,7 @@ time_frequency_keys = [&#39;mix_magnitude&#39;, &#39;source_magnitudes&#39;, &#3
         if is_tensor:
             pad_func = torch.nn.functional.pad
             pad_tuple = [0 for _ in range(2 * len(shape))]
-            pad_tuple[2 * self.time_dim] = 0
-            pad_tuple[2 * self.time_dim + 1] = pad_amount
+            pad_tuple[2 * self.time_dim] = pad_amount
             pad_tuple = pad_tuple[::-1]
         else:
             pad_func = np.pad
@@ -701,7 +703,7 @@ time_frequency_keys = [&#39;mix_magnitude&#39;, &#39;source_magnitudes&#39;, &#3
 
     def __call__(self, data):
         offset, pad_amount = self._get_offset(
-            data, time_frequency_keys[0])
+            data, self.time_frequency_keys[0])
 
         for key in data:
             if key in self.time_frequency_keys:
@@ -790,7 +792,8 @@ time_frequency_keys = [&#39;mix_magnitude&#39;, &#39;source_magnitudes&#39;, &#3
     def _open_cache(self, location):
         if self.overwrite:
             self.cache = zarr.open(location, mode=&#39;w&#39;, shape=(self.cache_size,),
-                                   chunks=(1,), dtype=object, object_codec=numcodecs.Pickle(),
+                                   chunks=(1,), dtype=object, 
+                                   object_codec=numcodecs.Pickle(),
                                    synchronizer=zarr.ThreadSynchronizer())
         else:
             if os.path.exists(location):
@@ -813,6 +816,47 @@ time_frequency_keys = [&#39;mix_magnitude&#39;, &#39;source_magnitudes&#39;, &#3
                 f&quot;Maybe you haven&#39;t written to index {index} yet in &quot;
                 f&quot;the cache?&quot;)
 
+        return data</div>
+
+<div class="viewcode-block" id="GetAudio"><a class="viewcode-back" href="../../../datasets.html#nussl.datasets.transforms.GetAudio">[docs]</a>class GetAudio(object):
+    &quot;&quot;&quot;
+    Extracts the audio from each signal in `mix_key` and `source_key`. 
+    These will be at new keys, called `mix_audio` and `source_audio`.
+    Can be used for training end-to-end models.
+    
+    Args:
+        mix_key (str, optional): The key to look for in data for the mixture AudioSignal. 
+          Defaults to &#39;mix&#39;.
+        source_key (str, optional): The key to look for in the data containing the dict of
+          source AudioSignals. Defaults to &#39;sources&#39;.
+    &quot;&quot;&quot;
+    def __init__(self, mix_key=&#39;mix&#39;, source_key=&#39;sources&#39;):
+        self.mix_key = mix_key
+        self.source_key = source_key
+
+    def __call__(self, data):
+        if self.mix_key not in data:
+            raise TransformException(
+                f&quot;Expected {self.mix_key} in dictionary &quot;
+                f&quot;passed to this Transform! Got {list(data.keys())}.&quot;
+            )
+        
+        mix = data[self.mix_key]
+        data[&#39;mix_audio&#39;] = mix.audio_data
+
+        if self.source_key not in data:
+            return data
+
+        _sources = data[self.source_key]
+        source_names = sorted(list(_sources.keys()))
+        
+        source_audio = []
+        for key in source_names:
+            source_audio.append(_sources[key].audio_data)
+        # sources on last axis
+        source_audio = np.stack(source_audio, axis=-1)
+
+        data[&#39;source_audio&#39;] = source_audio
         return data</div>
 
 

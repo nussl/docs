@@ -104,6 +104,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#scale-invariant-bsseval">Scale invariant BSSEval</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bssevalv4-museval">BSSEvalV4 (museval)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#precision-and-recall-on-masks">Precision and recall on masks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#aggregators">Aggregators</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="ml.html">Machine Learning</a></li>
@@ -478,8 +479,8 @@ object in both self.true_sources_list and self.estimated_sources_list.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.BSSEvalScale.evaluate_helper" title="nussl.evaluation.BSSEvalScale.evaluate_helper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_helper</span></code></a>(references, estimates[, scaling])</p></td>
-<td><p>Implements evaluation using scale-invariant BSSEval metrics [1].</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.evaluation.BSSEvalScale.evaluate_helper" title="nussl.evaluation.BSSEvalScale.evaluate_helper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_helper</span></code></a>(references, estimates[, …])</p></td>
+<td><p>Implements evaluation using new BSSEval metrics [1].</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#nussl.evaluation.BSSEvalScale.preprocess" title="nussl.evaluation.BSSEvalScale.preprocess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocess</span></code></a>()</p></td>
 <td><p>Scale invariant metrics expects zero-mean centered references and sources.</p></td>
@@ -488,8 +489,31 @@ object in both self.true_sources_list and self.estimated_sources_list.</p>
 </table>
 <dl class="method">
 <dt id="nussl.evaluation.BSSEvalScale.evaluate_helper">
-<code class="sig-name descname">evaluate_helper</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">scaling=True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvalScale.evaluate_helper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvalScale.evaluate_helper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Implements evaluation using scale-invariant BSSEval metrics [1].</p>
+<code class="sig-name descname">evaluate_helper</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">compute_sir_sar=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#BSSEvalScale.evaluate_helper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.BSSEvalScale.evaluate_helper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements evaluation using new BSSEval metrics [1]. This computes every
+metric described in [1], including:</p>
+<ul class="simple">
+<li><p>SI-SDR: Scale-invariant source-to-distortion ratio. Higher is better.</p></li>
+<li><p>SI-SIR: Scale-invariant source-to-interference ratio. Higher is better.</p></li>
+<li><p>SI-SAR: Scale-invariant source-to-artifact ratio. Higher is better.</p></li>
+<li><p>SD-SDR: Scale-dependent source-to-distortion ratio. Higher is better.</p></li>
+<li><p>SNR: Signal-to-noise ratio. Higher is better.</p></li>
+<li><p>SRR: The source-to-rescaled-source ratio. This corresponds to
+a term that punishes the estimate if its scale is off relative
+to the reference. This is an unnumbered equation in [1], but
+is the term on page 2, second column, second to last line:
+||s - alpha*s||**2. s is factored out. Higher is better.</p></li>
+<li><p>SI-SDRi: Improvement in SI-SDR over using the mixture as the estimate. Higher
+is better.</p></li>
+<li><p>SD-SDRi: Improvement in SD-SDR over using the mixture as the estimate. Higher
+is better.</p></li>
+<li><p>SNRi: Improvement in SNR over using the mixture as the estimate. Higher is
+better.</p></li>
+</ul>
+<p>Note:</p>
+<p>If <cite>compute_sir_sar = False</cite>, then you’ll get <cite>np.nan</cite> for SI-SIR and
+SI-SAR!</p>
+<p>References:</p>
 <p>[1] Le Roux, J., Wisdom, S., Erdogan, H., &amp; Hershey, J. R.
 (2019, May). SDR–half-baked or well done?. In ICASSP 2019-2019 IEEE
 International Conference on Acoustics, Speech and Signal
@@ -506,26 +530,52 @@ Processing (ICASSP) (pp. 626-630). IEEE.</p>
 
 <dl class="function">
 <dt id="nussl.evaluation.scale_bss_eval">
-<code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">scale_bss_eval</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimates</em>, <em class="sig-param">idx</em>, <em class="sig-param">scaling=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#scale_bss_eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.scale_bss_eval" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes SDR, SIR, SAR for references[idx] relative to the
+<code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">scale_bss_eval</code><span class="sig-paren">(</span><em class="sig-param">references</em>, <em class="sig-param">estimate</em>, <em class="sig-param">mixture</em>, <em class="sig-param">idx</em>, <em class="sig-param">compute_sir_sar=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/bss_eval.html#scale_bss_eval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.scale_bss_eval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes metrics for references[idx] relative to the
 chosen estimates. This only works for mono audio. Each
 channel should be done independently when calling this
 function. Lovingly borrowed from Gordon Wichern and
 Jonathan Le Roux at Mitsubishi Electric Research Labs.</p>
+<p>This returns 9 numbers (in this order):</p>
+<ul class="simple">
+<li><p>SI-SDR: Scale-invariant source-to-distortion ratio. Higher is better.</p></li>
+<li><p>SI-SIR: Scale-invariant source-to-interference ratio. Higher is better.</p></li>
+<li><p>SI-SAR: Scale-invariant source-to-artifact ratio. Higher is better.</p></li>
+<li><p>SD-SDR: Scale-dependent source-to-distortion ratio. Higher is better.</p></li>
+<li><p>SNR: Signal-to-noise ratio. Higher is better.</p></li>
+<li><p>SRR: The source-to-rescaled-source ratio. This corresponds to
+a term that punishes the estimate if its scale is off relative
+to the reference. This is an unnumbered equation in [1], but
+is the term on page 2, second column, second to last line:
+||s - alpha*s||**2. s here is factored out. Higher is better.</p></li>
+<li><p>SI-SDRi: Improvement in SI-SDR over using the mixture as the estimate.</p></li>
+<li><p>SD-SDRi: Improvement in SD-SDR over using the mixture as the estimate.</p></li>
+<li><p>SNRi: Improvement in SNR over using the mixture as the estimate.</p></li>
+</ul>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Le Roux, J., Wisdom, S., Erdogan, H., &amp; Hershey, J. R.</dt><dd><p>(2019, May). SDR–half-baked or well done?. In ICASSP 2019-2019 IEEE
+International Conference on Acoustics, Speech and Signal
+Processing (ICASSP) (pp. 626-630). IEEE.</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>references</strong> (<em>np.ndarray</em>) – object containing the</p></li>
-<li><p><strong>data. Of shape</strong> (<em>estimates</em>) – </p></li>
-<li><p><strong>estimates</strong> (<em>np.ndarray</em>) – object containing the</p></li>
-<li><p><strong>data. Of shape</strong> – </p></li>
-<li><p><strong>idx</strong> (<em>int</em>) – Which estimates to compute metrics for.</p></li>
-<li><p><strong>scaling</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use scale-invariant (True) or</p></li>
-<li><p><strong>scale-dependent</strong> (<em>False</em>) – </p></li>
+<li><p><strong>references</strong> (<em>np.ndarray</em>) – object containing the
+references data. Of shape (n_samples, n_sources).</p></li>
+<li><p><strong>estimate</strong> (<em>np.ndarray</em>) – object containing the
+estimate data. Of shape (n_samples, 1).</p></li>
+<li><p><strong>mixture</strong> (<em>np.ndarray</em>) – objct containingthe
+mixture data. Of shape (n_samples, 1).</p></li>
+<li><p><strong>idx</strong> (<em>int</em>) – Which reference to compute metrics against.</p></li>
+<li><p><strong>compute_sir_sar</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to compute SIR/SAR
+metrics, which can be computationally expensive and may not be
+relevant for your evaluation. Defaults to True</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>SDR, SIR, SAR if inputs are numpy arrays.</p>
+<dd class="field-even"><p>SI-SDR, SI-SIR, SI-SAR, SD-SDR, SNR, SRR, SI-SDRi, SD-SDRi, SNRi</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>tuple</p>
@@ -652,6 +702,51 @@ and processes them into numpy arrays that have shape
 </div>
 </dd></dl>
 
+</dd></dl>
+
+</div>
+<div class="section" id="aggregators">
+<h2>Aggregators<a class="headerlink" href="#aggregators" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="nussl.evaluation.aggregate_score_files">
+<code class="sig-prename descclassname">nussl.evaluation.</code><code class="sig-name descname">aggregate_score_files</code><span class="sig-paren">(</span><em class="sig-param">json_files</em>, <em class="sig-param">aggregator=&lt;function nanmedian&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/evaluation/report_card.html#aggregate_score_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.evaluation.aggregate_score_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a list of json files output by an Evaluation method in nussl
+and aggregates all the metrics into a Pandas dataframe. Sample
+output:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>                        SDR        SIR        SAR
+drums  oracle0.json   9.086025  15.025801  10.362709
+       random0.json  -6.539877  -6.087538   3.508338
+       oracle1.json   9.591432  14.335700  11.365882
+       random1.json  -1.358840  -0.993666   9.577297
+bass   oracle0.json   7.936720  12.843092   9.631929
+       random0.json  -4.190299  -3.730649   5.802003
+       oracle1.json   8.581090  12.513445  10.831370
+       random1.json   0.365171   0.697621  11.693103
+other  oracle0.json   2.024207   6.133359   4.158805
+       random0.json  -9.857085  -9.481909   0.965199
+       oracle1.json   3.961383   6.861785   7.085745
+       random1.json  -4.042277  -3.707997   7.260934
+vocals oracle0.json  12.169686  16.650161  14.085037
+       random0.json  -2.440166  -1.884026   6.760966
+       oracle1.json  12.409913  16.248470  14.725983
+       random1.json   1.609577   1.958037  12.738970
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_files</strong> (<em>list</em>) – List of JSON files that will be parsed for metrics.</p></li>
+<li><p><strong>aggregator</strong> (<em>[</em><em>type</em><em>]</em><em>, </em><em>optional</em>) – How to aggregate results within a single
+track. Defaults to np.median.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Pandas dataframe containing the aggregated metrics.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>

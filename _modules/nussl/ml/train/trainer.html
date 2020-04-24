@@ -174,6 +174,8 @@ import time
 
 from ignite.engine import Events, Engine
 from ignite.handlers import Timer
+from ignite.contrib.handlers import ProgressBar
+from ignite.metrics import RunningAverage
 from torch.utils.tensorboard import SummaryWriter
 import torch
 from torch import nn
@@ -197,7 +199,7 @@ from nussl import datasets
     BACKWARDS_COMPLETED = &#39;backwards_completed&#39;</div>
 
 
-<div class="viewcode-block" id="cache_dataset"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.cache_dataset">[docs]</a>def cache_dataset(dataset, log_frequency=.1):
+<div class="viewcode-block" id="cache_dataset"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.cache_dataset">[docs]</a>def cache_dataset(dataset):
     &quot;&quot;&quot;
     Runs through an entire dataset and caches it if there nussl.datasets.transforms.Cache
     is in dataset.transform. If there is no caching, or dataset.cache_populated = True,
@@ -209,24 +211,13 @@ from nussl import datasets
     Args:
         dataset (nussl.datasets.BaseDataset): Must be a subclass of 
           `nussl.datasets.BaseDataset`.
-
-        log_frequency (float, optional): How often to log progress, as a fraction between
-          0.0 and 1.0 of the total dataset length. Defaults to .1 
-          (10x over the course of caching).
     &quot;&quot;&quot;
 
     def dummy_process(engine, data):
         pass
 
     cache = Engine(dummy_process)
-    log_frequency = max(int(len(dataset) * log_frequency), 1)
-
-    @cache.on(Events.ITERATION_STARTED(every=log_frequency))
-    def log_progress(engine):
-        logging.info(
-            f&quot;Cached {engine.state.iteration} / &quot;
-            f&quot;{engine.state.epoch_length} batches&quot;)
-
+    ProgressBar().attach(cache)
     cache.run(dataset)
     dataset.cache_populated = True</div>
 
@@ -267,9 +258,8 @@ from nussl import datasets
     # Before a batch starts, the items should be float and moved to the 
     # correct device, for both training and validation. Checks to make
     # sure &quot;cuda&quot; is available if user requested cuda.
+    device = device if torch.cuda.is_available() else &#39;cpu&#39;
     device = torch.device(device)
-    if not torch.cuda.is_available():
-        device = torch.device(&#39;cpu&#39;)
 
     def prepare_batch(engine):
         batch = engine.state.batch
@@ -508,24 +498,49 @@ from nussl import datasets
         logging.info(logging_str)</div>
 
 
-<div class="viewcode-block" id="add_tensorboard_handler"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_tensorboard_handler">[docs]</a>def add_tensorboard_handler(output_folder, engine):
+<div class="viewcode-block" id="add_progress_bar_handler"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_progress_bar_handler">[docs]</a>def add_progress_bar_handler(*engines):
+    &quot;&quot;&quot;
+    Adds a progress bar to each engine. Keeps track of a running
+    average of the loss as well.
+    
+    Usage::
+
+    .. code-block:: python
+
+        tr_engine, val_engine = ...
+        add_progress_bar_handler(tr_engine, val_engine)
+    &quot;&quot;&quot;
+    for engine in engines:
+        output_transform = lambda x: x[&#39;loss&#39;]
+        RunningAverage(output_transform=output_transform).attach(engine, &#39;avg_loss&#39;)
+        ProgressBar().attach(engine, [&#39;avg_loss&#39;])</div>
+        
+
+<div class="viewcode-block" id="add_tensorboard_handler"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.add_tensorboard_handler">[docs]</a>def add_tensorboard_handler(tensorboard_folder, engine, every_iteration=False):
     &quot;&quot;&quot;
     Every key in engine.state.epoch_history[-1] is logged to TensorBoard.
     
     Args:
-        output_folder (str): Where the tensorboard logs should go. The output
-          logs will go into a subfolder &#39;tensorboard&#39;.
-
+        tensorboard_folder (str): Where the tensorboard logs should go.
         trainer (ignite.Engine): The engine to log.
+        every_iteration (bool, optional): Whether to also log the values at every 
+          iteration.
     &quot;&quot;&quot;
 
     @engine.on(ValidationEvents.VALIDATION_COMPLETED)
     def log_to_tensorboard(engine):
-        writer = SummaryWriter(
-            os.path.join(output_folder, &#39;tensorboard&#39;))
+        writer = SummaryWriter(tensorboard_folder)
         for key in engine.state.epoch_history:
             writer.add_scalar(
-                key, engine.state.epoch_history[key][-1], engine.state.epoch)</div>
+                key, engine.state.epoch_history[key][-1], engine.state.epoch)
+
+    if every_iteration:
+        @engine.on(Events.ITERATION_COMPLETED)
+        def log_iteration_to_tensorboard(engine):
+            writer = SummaryWriter(tensorboard_folder)
+            for key in engine.state.iter_history:
+                writer.add_scalar(
+                    key, engine.state.iter_history[key][-1], engine.state.iteration)</div>
 </pre></div>
 
            </div>

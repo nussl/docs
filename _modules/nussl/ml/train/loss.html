@@ -171,52 +171,71 @@
 import torch
 import torch.nn as nn
 
-
 <div class="viewcode-block" id="L1Loss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.L1Loss">[docs]</a>class L1Loss(nn.L1Loss):
     DEFAULT_KEYS = {&#39;estimates&#39;: &#39;input&#39;, &#39;source_magnitudes&#39;: &#39;target&#39;}</div>
-
 
 <div class="viewcode-block" id="MSELoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.MSELoss">[docs]</a>class MSELoss(nn.MSELoss):
     DEFAULT_KEYS = {&#39;estimates&#39;: &#39;input&#39;, &#39;source_magnitudes&#39;: &#39;target&#39;}</div>
 
-
 <div class="viewcode-block" id="KLDivLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.KLDivLoss">[docs]</a>class KLDivLoss(nn.KLDivLoss):
     DEFAULT_KEYS = {&#39;estimates&#39;: &#39;input&#39;, &#39;source_magnitudes&#39;: &#39;target&#39;}</div>
-
 
 <div class="viewcode-block" id="SISDRLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.SISDRLoss">[docs]</a>class SISDRLoss(nn.Module):
     &quot;&quot;&quot;
     Computes the Scale-Invariant Source-to-Distortion Ratio between a batch
     of estimated and reference audio signals. Used in end-to-end networks.
     This is essentially a batch PyTorch version of the function 
-    ``nussl.evaluation.bss_eval.scale_bss_eval``.
+    ``nussl.evaluation.bss_eval.scale_bss_eval`` and can be used to compute
+    SI-SDR or SNR.
     
     Args:
         scaling (bool, optional): Whether to use scale-invariant (True) or
-          scale-dependent SDR. Defaults to True.
+          signal-to-noise ratio (False). Defaults to True.
+        return_scaling (bool, optional): Whether to only return the scaling
+          factor that the estimate gets scaled by relative to the reference. 
+          This is just for monitoring this value during training, don&#39;t actually
+          train with it! Defaults to False.
+        reduction (str, optional): How to reduce across the batch (either &#39;mean&#39;, 
+          &#39;sum&#39;, or none). Defaults to &#39;mean&#39;.
+        zero_mean (bool, optional): Zero mean the references and estimates before
+          computing the loss. Defaults to True.
     &quot;&quot;&quot;
-    DEFAULT_KEYS = {&#39;estimates&#39;: &#39;estimates&#39;, &#39;references&#39;: &#39;references&#39;}
+    DEFAULT_KEYS = {&#39;audio&#39;: &#39;estimates&#39;, &#39;source_audio&#39;: &#39;references&#39;}
 
-    def __init__(self, scaling=True, reduction=&#39;mean&#39;):
+    def __init__(self, scaling=True, return_scaling=False, reduction=&#39;mean&#39;, 
+                 zero_mean=True):
         self.scaling = scaling
         self.reduction = reduction
+        self.zero_mean = zero_mean
+        self.return_scaling = return_scaling
         super().__init__()
 
 <div class="viewcode-block" id="SISDRLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.SISDRLoss.forward">[docs]</a>    def forward(self, estimates, references):
-        references_projection = references.transpose(2, 1) @ references
-
-        references_projection = torch.diagonal(
-            references_projection, dim1=-2, dim2=-1)
-    
-        references_on_estimates = torch.diagonal(
-            references.transpose(2, 1) @ estimates, dim1=-2, dim2=-1)
+        eps = 1e-10
+        # num_batch, num_samples, num_sources
+        _shape = references.shape
+        references = references.view(-1, _shape[-2], _shape[-1])
+        estimates = estimates.view(-1, _shape[-2], _shape[-1])
+        # samples now on axis 1
+        if self.zero_mean:
+            mean_reference = references.mean(dim=1, keepdim=True)
+            mean_estimate = estimates.mean(dim=1, keepdim=True)
+        else:
+            mean_reference = 0
+            mean_estimate = 0
+        
+        _references = references - mean_reference
+        _estimates = estimates - mean_estimate
+        
+        references_projection = (_references ** 2).sum(dim=-2) + eps
+        references_on_estimates = (_estimates * _references).sum(dim=-2) + eps
 
         scale = (
             (references_on_estimates / references_projection).unsqueeze(1)
             if self.scaling else 1)
 
-        e_true = scale * references
-        e_res = estimates - e_true
+        e_true = scale * _references
+        e_res = _estimates - e_true
 
         signal = (e_true ** 2).sum(dim=1)
         noise = (e_res ** 2).sum(dim=1)
@@ -227,6 +246,8 @@ import torch.nn as nn
             sdr = sdr.mean()
         elif self.reduction == &#39;sum&#39;:
             sdr = sdr.sum()
+        if self.return_scaling:
+            return scale
         # go negative so it&#39;s a loss
         return -sdr</div></div>
 
@@ -259,7 +280,7 @@ import torch.nn as nn
         weights = weights.view(batch_size, -1, 1)
 
         # make everything unit norm
-        embedding = embedding.view(batch_size, -1, embedding_size)
+        embedding = embedding.reshape(batch_size, -1, embedding_size)
         embedding = nn.functional.normalize(embedding, dim=-1, p=2)
 
         assignments = assignments.view(batch_size, -1, num_sources)
@@ -279,6 +300,66 @@ import torch.nn as nn
         loss = (vTv - 2 * vTy + yTy) / norm
         return loss.mean()</div></div>
 
+<div class="viewcode-block" id="WhitenedKMeansLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.WhitenedKMeansLoss">[docs]</a>class WhitenedKMeansLoss(nn.Module):
+    &quot;&quot;&quot;
+    Computes the whitened K-Means loss with weights. Equation (6) in [1].
+
+    References:
+
+    [1] Wang, Z. Q., Le Roux, J., &amp; Hershey, J. R. (2018, April).
+        Alternative Objective Functions for Deep Clustering.
+        In Proc. IEEE International Conference on Acoustics,  Speech
+        and Signal Processing (ICASSP).
+    &quot;&quot;&quot;
+    DEFAULT_KEYS = {
+        &#39;embedding&#39;: &#39;embedding&#39;, 
+        &#39;ideal_binary_mask&#39;: &#39;assignments&#39;, 
+        &#39;weights&#39;: &#39;weights&#39;
+    }
+
+    def __init__(self):
+        super(WhitenedKMeansLoss, self).__init__()
+
+<div class="viewcode-block" id="WhitenedKMeansLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.WhitenedKMeansLoss.forward">[docs]</a>    def forward(self, embedding, assignments, weights):
+        batch_size = embedding.shape[0]
+        embedding_size = embedding.shape[-1]
+        num_sources = assignments.shape[-1]
+
+        weights = weights.view(batch_size, -1, 1)
+
+        # make everything unit norm
+        embedding = embedding.reshape(batch_size, -1, embedding_size)
+        embedding = nn.functional.normalize(embedding, dim=-1, p=2)
+
+        assignments = assignments.view(batch_size, -1, num_sources)
+        assignments = nn.functional.normalize(assignments, dim=-1, p=2)
+
+        assignments = weights * assignments
+        embedding = weights * embedding
+
+        embedding_dim_identity = torch.eye(
+            embedding_size, device=embedding.device).float()
+        source_dim_identity = torch.eye(
+            num_sources, device=embedding.device).float()
+
+        vTv = (embedding.transpose(2, 1) @ embedding)
+        vTy = (embedding.transpose(2, 1) @ assignments)
+        yTy = (assignments.transpose(2, 1) @ assignments)
+
+        ivTv = torch.inverse(vTv + embedding_dim_identity)
+        iyTy = torch.inverse(yTy + source_dim_identity)
+
+        ivTv_vTy = ivTv @ vTy
+        vTy_iyTy = vTy @ iyTy
+
+        # tr(AB) = sum(A^T o B) 
+        # where o denotes element-wise product
+        # this is the trace trick
+        # http://andreweckford.blogspot.com/2009/09/trace-tricks.html
+        trace = (ivTv_vTy * vTy_iyTy).sum()
+        D = (embedding_size + num_sources) * batch_size
+        loss = D - 2 * trace
+        return loss / batch_size</div></div>
 
 <div class="viewcode-block" id="PermutationInvariantLoss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.PermutationInvariantLoss">[docs]</a>class PermutationInvariantLoss(nn.Module):
     &quot;&quot;&quot;
@@ -307,8 +388,8 @@ import torch.nn as nn
 <div class="viewcode-block" id="PermutationInvariantLoss.forward"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.loss.PermutationInvariantLoss.forward">[docs]</a>    def forward(self, estimates, targets):
         num_batch = estimates.shape[0]
         num_sources = estimates.shape[-1]
-        estimates = estimates.view(num_batch, -1, num_sources)
-        targets = targets.view(num_batch, -1, num_sources)
+        estimates = estimates.reshape(num_batch, -1, num_sources)
+        targets = targets.reshape(num_batch, -1, num_sources)
         
         losses = []
         for p in permutations(range(num_sources)):
@@ -348,8 +429,8 @@ import torch.nn as nn
         num_target_sources = targets.shape[-1]
         num_estimate_sources = estimates.shape[-1]
         
-        estimates = estimates.view(num_batch, -1, num_estimate_sources)
-        targets = targets.view(num_batch, -1, num_target_sources)
+        estimates = estimates.reshape(num_batch, -1, num_estimate_sources)
+        targets = targets.reshape(num_batch, -1, num_target_sources)
         
         losses = []
         for c in combinations(range(num_estimate_sources), num_target_sources):

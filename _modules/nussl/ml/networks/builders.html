@@ -454,6 +454,441 @@ depending on input size, it&#39;s good to work this out in a function like those
     }
 
     return config</div>
+
+<div class="viewcode-block" id="build_open_unmix_like"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.builders.build_open_unmix_like">[docs]</a>def build_open_unmix_like(num_features, hidden_size, num_layers, 
+                          bidirectional, dropout, num_sources,
+                          num_audio_channels=1, add_embedding=False,
+                          embedding_size=20, embedding_activation=&#39;sigmoid&#39;,
+                          rnn_type=&#39;lstm&#39;, mix_key=&#39;mix_magnitude&#39;):
+    &quot;&quot;&quot;
+    This is a builder for an open-unmix LIKE (UMX) architecture for music source
+    separation. 
+    
+    The architecture is not exactly the same but is very similar for the
+    most part. This architecture also has the option of having an embedding space
+    attached to it, making it a UMX + Chimera network that you can regularize with
+    a deep clustering loss.
+    
+    Args:
+        num_features (int): Number of features in the input spectrogram (usually means
+          window length of STFT // 2 + 1.)
+        hidden_size (int): Hidden size of the RNN. Will be hidden_size // 2 if bidirectional is True.
+        num_layers (int): Number of layers in the RNN.
+        bidirectional (int): Whether the RNN is bidirectional.
+        dropout (float): Amount of dropout to be used between layers of RNN.
+        num_sources (int): Number of sources to create masks for.
+        num_audio_channels (int): Number of audio channels in input (e.g. mono or stereo).
+          Defaults to 1.
+        add_embedding (bool): Whether or not to add an embedding layer to this to make this a 
+          Chimera network. If True, then ``embedding_size`` and ``embedding_activation`` will
+          be used to define this.
+        embedding_size (int): Embedding dimensionality of the deep clustering network. 
+        embedding_activation (list of str): Activation of the embedding (&#39;sigmoid&#39;, &#39;softmax&#39;, etc.). 
+          See ``nussl.ml.networks.modules.Embedding``.
+        rnn_type (str, optional): RNN type, either &#39;lstm&#39; or &#39;gru&#39;. Defaults to &#39;lstm&#39;.
+        mix_key (str, optional): The key to look for in the input dictionary that contains
+          the mixture spectrogram. Defaults to &#39;mix_magnitude&#39;.
+    
+    Returns:
+        dict: An OpenUnmix-like configuration that can be passed to
+          SeparationModel.
+    &quot;&quot;&quot;
+    # define the building blocks
+    modules = {
+        mix_key: {},
+        &#39;projection&#39;: {
+            &#39;class&#39;: &#39;Embedding&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: hidden_size,
+                &#39;hidden_size&#39;: num_features * num_audio_channels,
+                &#39;embedding_size&#39;: 1,
+                &#39;activation&#39;: &#39;none&#39;,
+                &#39;num_audio_channels&#39;: 1,
+                &#39;bias&#39;: False,
+                &#39;reshape&#39;: False,
+                &#39;dim_to_embed&#39;: [2, 3]
+            }
+        },
+        &#39;recurrent_stack&#39;: {
+            &#39;class&#39;: &#39;RecurrentStack&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: hidden_size,
+                &#39;hidden_size&#39;: (
+                    hidden_size // 2 
+                    if bidirectional 
+                    else hidden_size
+                ),
+                &#39;num_layers&#39;: num_layers,
+                &#39;bidirectional&#39;: bidirectional,
+                &#39;dropout&#39;: dropout,
+                &#39;rnn_type&#39;: rnn_type
+            }
+        },
+        &#39;skip_connection&#39;: {
+            &#39;class&#39;: &#39;Concatenate&#39;,
+            &#39;args&#39;: {
+                &#39;dim&#39;: -1
+            }
+        },
+        &#39;input_scalar&#39;: {
+            &#39;class&#39;: &#39;BatchNorm&#39;
+        },
+        &#39;output_scalar&#39;: {
+            &#39;class&#39;: &#39;BatchNorm&#39;
+        },
+        &#39;bn1&#39;: {
+            &#39;class&#39;: &#39;BatchNorm&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: hidden_size
+            }
+        },
+        &#39;bn2&#39;: {
+            &#39;class&#39;: &#39;BatchNorm&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: hidden_size
+            }
+        },
+        &#39;bn3&#39;: {
+            &#39;class&#39;: &#39;BatchNorm&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: num_features
+            }
+        },
+        &#39;tanh_before_lstm&#39;: {
+            &#39;class&#39;: &#39;Tanh&#39; 
+        },
+        &#39;mask&#39;: {
+            &#39;class&#39;: &#39;ReLU&#39;
+        },
+        &#39;dense_after_lstm&#39;: {
+            &#39;class&#39;: &#39;Linear&#39;,
+            &#39;args&#39;: {
+                &#39;in_features&#39;: 2 * hidden_size,
+                &#39;out_features&#39;: hidden_size,
+                &#39;bias&#39;: False
+            }
+        },
+        &#39;inverse_projection&#39;: {
+            &#39;class&#39;: &#39;Embedding&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: num_features,
+                &#39;hidden_size&#39;: hidden_size,
+                &#39;embedding_size&#39;: num_sources,
+                &#39;activation&#39;: &#39;none&#39;,
+                &#39;num_audio_channels&#39;: num_audio_channels,
+                &#39;bias&#39;: False,
+                &#39;reshape&#39;: True,
+                &#39;dim_to_embed&#39;: -1
+            }
+        },
+        &#39;estimates&#39;: {
+            &#39;class&#39;: &#39;Mask&#39;,
+        }
+    }
+
+    # define the topology
+    connections = [
+        [&#39;input_scalar&#39;, [mix_key]],
+        [&#39;projection&#39;, [&#39;input_scalar&#39;]],
+        [&#39;bn1&#39;, [&#39;projection&#39;]],
+        [&#39;tanh_before_lstm&#39;, [&#39;bn1&#39;]],
+        [&#39;recurrent_stack&#39;, [&#39;tanh_before_lstm&#39;]],
+        [&#39;skip_connection&#39;, [&#39;recurrent_stack&#39;, &#39;tanh_before_lstm&#39;]],
+        [&#39;dense_after_lstm&#39;, [&#39;skip_connection&#39;]],
+        [&#39;bn2&#39;, [&#39;dense_after_lstm&#39;]],
+        [&#39;inverse_projection&#39;, [&#39;bn2&#39;]],
+        [&#39;bn3&#39;, [&#39;inverse_projection&#39;]],
+        [&#39;output_scalar&#39;, [&#39;bn3&#39;]],
+        [&#39;mask&#39;, [&#39;output_scalar&#39;]],
+        [&#39;estimates&#39;, [&#39;mask&#39;, mix_key]]
+    ]
+    
+    # define the outputs
+    output = [&#39;estimates&#39;, &#39;mask&#39;]
+    
+    if add_embedding:
+        modules[&#39;embedding&#39;] = {
+            &#39;class&#39;: &#39;Embedding&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: num_features,
+                &#39;hidden_size&#39;: hidden_size,
+                &#39;embedding_size&#39;: embedding_size,
+                &#39;activation&#39;: embedding_activation,
+                &#39;num_audio_channels&#39;: num_audio_channels,
+                &#39;bias&#39;: True,
+                &#39;reshape&#39;: True,
+                &#39;dim_to_embed&#39;: -1
+            }
+        }
+        connections.append([&#39;embedding&#39;, [&#39;bn2&#39;]])
+        output.append(&#39;embedding&#39;)
+
+    # put it together
+    config = {
+        &#39;modules&#39;: modules,
+        &#39;connections&#39;: connections,
+        &#39;output&#39;: output
+    }
+
+    return config</div>
+
+<div class="viewcode-block" id="build_recurrent_end_to_end"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.builders.build_recurrent_end_to_end">[docs]</a>def build_recurrent_end_to_end(num_filters, filter_length, hop_length, window_type, 
+                               hidden_size, num_layers, bidirectional, dropout, 
+                               num_sources, mask_activation, num_audio_channels=1,
+                               mask_complex=False, trainable=False, rnn_type=&#39;lstm&#39;, 
+                               mix_key=&#39;mix_audio&#39;, normalization_class=&#39;BatchNorm&#39;):
+    &quot;&quot;&quot;
+    Builds a config for a BLSTM-based network that operates on the time-series. 
+    Uses an STFT within the network and can apply the mixture phase to
+    the estimate, or can learn a mask on the phase as well as the magnitude.
+    
+    Args:
+        num_filters (int): Number of learnable filters in the front end network.
+        filter_length (int): Length of the filters.
+        hop_length (int): Hop length between frames.
+        window_type (str): Type of windowing function on apply to each frame.
+        hidden_size (int): Hidden size of the RNN.
+        num_layers (int): Number of layers in the RNN.
+        bidirectional (int): Whether the RNN is bidirectional.
+        dropout (float): Amount of dropout to be used between layers of RNN.
+        num_sources (int): Number of sources to create masks for. 
+        mask_activation (list of str): Activation of the mask (&#39;sigmoid&#39;, &#39;softmax&#39;, etc.). 
+          See ``nussl.ml.networks.modules.Embedding``.
+        num_audio_channels (int): Number of audio channels in input (e.g. mono or stereo).
+          Defaults to 1.
+        mask_complex (bool, optional): Whether to also place a mask on the complex part, or
+          whether to just use the mixture phase.
+        trainable (bool, optional): Whether to learn the filters, which start from a 
+          Fourier basis.
+        rnn_type (str, optional): RNN type, either &#39;lstm&#39; or &#39;gru&#39;. Defaults to &#39;lstm&#39;.
+        normalization_class (str, optional): Type of normalization to apply, either
+          &#39;InstanceNorm&#39; or &#39;BatchNorm&#39;. Defaults to &#39;BatchNorm&#39;.
+        mix_key (str, optional): The key to look for in the input dictionary that contains
+          the mixture spectrogram. Defaults to &#39;mix_magnitude&#39;.
+    
+    Returns:
+        dict: A recurrent end-to-end network configuration that can be passed to
+          SeparationModel.
+    &quot;&quot;&quot;
+    
+    cutoff = num_filters // 2 + 1
+    num_features = 2 * cutoff if mask_complex else cutoff
+
+    # define the building blocks
+    modules = {
+        mix_key: {},
+        &#39;audio&#39;: {
+            &#39;class&#39;: &#39;STFT&#39;,
+            &#39;args&#39;: {
+                &#39;num_filters&#39;: num_filters,
+                &#39;filter_length&#39;: filter_length,
+                &#39;hop_length&#39;: hop_length,
+                &#39;window_type&#39;: window_type,
+                &#39;requires_grad&#39;: trainable
+            }
+        },
+        &#39;log_spectrogram&#39;: {
+            &#39;class&#39;: &#39;AmplitudeToDB&#39;
+        },
+        &#39;normalization&#39;: {
+            &#39;class&#39;: normalization_class
+        },
+        &#39;split&#39;: {
+            &#39;class&#39;: &#39;Split&#39;,
+            &#39;args&#39;: {
+                &#39;split_sizes&#39;: (cutoff, cutoff),
+                &#39;dim&#39;: 2
+            }
+        },
+        &#39;concatenate&#39;: {
+            &#39;class&#39;: &#39;Concatenate&#39;,
+            &#39;args&#39;: {
+                &#39;dim&#39;: 2
+            }
+        },
+        &#39;expand&#39;: {
+            &#39;class&#39;: &#39;Expand&#39;,
+        },
+        &#39;recurrent_stack&#39;: {
+            &#39;class&#39;: &#39;RecurrentStack&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: num_features,
+                &#39;hidden_size&#39;: hidden_size,
+                &#39;num_layers&#39;: num_layers,
+                &#39;bidirectional&#39;: bidirectional,
+                &#39;dropout&#39;: dropout,
+                &#39;rnn_type&#39;: rnn_type
+            }
+        },
+        &#39;mask&#39;: {
+            &#39;class&#39;: &#39;Embedding&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: num_features,
+                &#39;hidden_size&#39;: hidden_size * 2 if bidirectional else hidden_size,
+                &#39;embedding_size&#39;: num_sources,
+                &#39;activation&#39;: mask_activation,
+                &#39;num_audio_channels&#39;: num_audio_channels
+            }
+        },
+        &#39;estimates&#39;: {
+            &#39;class&#39;: &#39;Mask&#39;,
+        },
+    }
+    
+    # define the topology
+    if not mask_complex:
+        connections = [
+            [&#39;audio&#39;, [mix_key, {&#39;direction&#39;: &#39;transform&#39;}]],
+            [&#39;split&#39;, [&#39;audio&#39;,]],
+            [&#39;log_spectrogram&#39;, [&#39;split:0&#39;, ]],
+            [&#39;normalization&#39;, [&#39;log_spectrogram&#39;]],
+            [&#39;recurrent_stack&#39;, [&#39;normalization&#39;, ]],
+            [&#39;mask&#39;, [&#39;recurrent_stack&#39;, ]],
+            [&#39;estimates&#39;, [&#39;mask&#39;, &#39;split:0&#39;]],
+            [&#39;expand&#39;, [&#39;mask&#39;, &#39;split:1&#39;]],
+            [&#39;concatenate&#39;, [&#39;estimates&#39;, &#39;expand&#39;]],
+            [&#39;audio&#39;, [&#39;concatenate&#39;, {&#39;direction&#39;: &#39;inverse&#39;}]]
+        ]
+    else:
+        connections = [
+            [&#39;audio&#39;, [mix_key, {&#39;direction&#39;: &#39;transform&#39;}]],
+            [&#39;normalization&#39;, [&#39;audio&#39;]],
+            [&#39;recurrent_stack&#39;, [&#39;normalization&#39;, ]],
+            [&#39;mask&#39;, [&#39;recurrent_stack&#39;, ]],
+            [&#39;estimates&#39;, [&#39;mask&#39;, &#39;audio&#39;]],
+            [&#39;audio&#39;, [&#39;estimates&#39;, {&#39;direction&#39;: &#39;inverse&#39;}]]
+        ]
+
+    # define the outputs
+    output = [&#39;audio&#39;, &#39;mask&#39;]
+
+    # put it together
+    config = {
+        &#39;modules&#39;: modules,
+        &#39;connections&#39;: connections,
+        &#39;output&#39;: output
+    }
+
+    return config</div>
+
+<div class="viewcode-block" id="build_dual_path_recurrent_end_to_end"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.networks.builders.build_dual_path_recurrent_end_to_end">[docs]</a>def build_dual_path_recurrent_end_to_end(
+        num_filters, filter_length, hop_length, 
+        chunk_size, hop_size, hidden_size, num_layers, 
+        bidirectional, bottleneck_size,
+        num_sources, mask_activation, num_audio_channels=1,
+        window_type=&#39;sqrt_hann&#39;, skip_connection=False,
+        rnn_type=&#39;lstm&#39;, mix_key=&#39;mix_audio&#39;):
+    &quot;&quot;&quot;
+    Builds a config for a dual path recurrent network that operates on the 
+    time-series. Uses a learned filterbank within the network.
+    
+    Args:
+        num_filters (int): Number of learnable filters in the front end network.
+        filter_length (int): Length of the filters.
+        hop_length (int): Hop length between frames.
+        window_type (str): Type of windowing function on apply to each frame.
+        hidden_size (int): Hidden size of the RNN.
+        num_layers (int): Number of layers in the RNN.
+        bidirectional (int): Whether the RNN is bidirectional.
+        dropout (float): Amount of dropout to be used between layers of RNN.
+        num_sources (int): Number of sources to create masks for. 
+        mask_activation (list of str): Activation of the mask (&#39;sigmoid&#39;, &#39;softmax&#39;, etc.). 
+          See ``nussl.ml.networks.modules.Embedding``.
+        num_audio_channels (int): Number of audio channels in input (e.g. mono or stereo).
+          Defaults to 1.
+        rnn_type (str, optional): RNN type, either &#39;lstm&#39; or &#39;gru&#39;. Defaults to &#39;lstm&#39;.
+        normalization_class (str, optional): Type of normalization to apply, either
+          &#39;InstanceNorm&#39; or &#39;BatchNorm&#39;. Defaults to &#39;BatchNorm&#39;.
+        mix_key (str, optional): The key to look for in the input dictionary that contains
+          the mixture spectrogram. Defaults to &#39;mix_magnitude&#39;.
+    
+    Returns:
+        dict: A TASNet configuration that can be passed to
+          SeparationModel.
+    &quot;&quot;&quot;
+    
+    # define the building blocks
+    recurrent_hidden_size = hidden_size // 2 if bidirectional else hidden_size
+    recurrent_stack = {
+        &#39;class&#39;: &#39;RecurrentStack&#39;,
+        &#39;args&#39;: {
+            &#39;num_features&#39;: bottleneck_size,
+            &#39;hidden_size&#39;: recurrent_hidden_size,
+            &#39;num_layers&#39;: 1,
+            &#39;bidirectional&#39;: bidirectional,
+            &#39;dropout&#39;: 0.0,
+            &#39;rnn_type&#39;: rnn_type,
+            &#39;batch_first&#39;: True
+        }
+    }
+
+    modules = {
+        mix_key: {},
+        &#39;audio&#39;: {
+            &#39;class&#39;: &#39;LearnedFilterBank&#39;,
+            &#39;args&#39;: {
+                &#39;num_filters&#39;: num_filters,
+                &#39;filter_length&#39;: filter_length,
+                &#39;hop_length&#39;: hop_length,
+                &#39;window_type&#39;: window_type,
+                &#39;requires_grad&#39;: True
+            }
+        },
+        &#39;mixture_weights&#39;: {
+            &#39;class&#39;: &#39;ReLU&#39;
+        },
+        &#39;dual_path&#39;: {
+            &#39;class&#39;: &#39;DualPath&#39;,
+            &#39;args&#39;: {
+                &#39;num_layers&#39;: num_layers,
+                &#39;chunk_size&#39;: chunk_size,
+                &#39;hop_size&#39;: hop_size,
+                &#39;skip_connection&#39;: skip_connection,
+                &#39;in_features&#39;: num_filters,
+                &#39;bottleneck_size&#39;: bottleneck_size,
+                # rest are args to DualPathBlock
+                &#39;hidden_size&#39;: hidden_size,
+                &#39;intra_processor&#39;: recurrent_stack,
+                &#39;inter_processor&#39;: recurrent_stack,
+            } 
+        },
+        &#39;mask&#39;: {
+            &#39;class&#39;: &#39;Embedding&#39;,
+            &#39;args&#39;: {
+                &#39;num_features&#39;: num_filters,
+                &#39;hidden_size&#39;: num_filters,
+                &#39;embedding_size&#39;: num_sources,
+                &#39;activation&#39;: mask_activation,
+                &#39;num_audio_channels&#39;: num_audio_channels,
+                &#39;dim_to_embed&#39;: [2, 3],
+            }
+        },
+        &#39;estimates&#39;: {
+            &#39;class&#39;: &#39;Mask&#39;,
+        },
+    }
+    
+    # define the topology
+    connections = [
+        [&#39;audio&#39;, [mix_key, {&#39;direction&#39;: &#39;transform&#39;}]],
+        [&#39;mixture_weights&#39;, [&#39;audio&#39;]],
+        [&#39;dual_path&#39;, [&#39;mixture_weights&#39;, ]],
+        [&#39;mask&#39;, [&#39;dual_path&#39;, ]],
+        [&#39;estimates&#39;, [&#39;mask&#39;, &#39;mixture_weights&#39;]],
+        [&#39;audio&#39;, [&#39;estimates&#39;, {&#39;direction&#39;: &#39;inverse&#39;}]]
+    ]
+
+    # define the outputs
+    output = [&#39;audio&#39;, &#39;mask&#39;]
+
+    # put it together
+    config = {
+        &#39;modules&#39;: modules,
+        &#39;connections&#39;: connections,
+        &#39;output&#39;: output
+    }
+
+    return config</div>
 </pre></div>
 
            </div>

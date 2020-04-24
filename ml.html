@@ -103,6 +103,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#separationmodel">SeparationModel</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.modules">Building blocks for SeparationModel</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.networks.builders">Helpers for common deep networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.confidence">Confidence measures</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#module-nussl.ml.train">Training</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#id1">Training</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-nussl.ml.train.loss">Loss functions</a></li>
@@ -219,7 +220,7 @@
 <h2>SeparationModel<a class="headerlink" href="#separationmodel" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="nussl.ml.SeparationModel">
-<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.</code><code class="sig-name descname">SeparationModel</code><span class="sig-paren">(</span><em class="sig-param">config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/separation_model.html#SeparationModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.SeparationModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.</code><code class="sig-name descname">SeparationModel</code><span class="sig-paren">(</span><em class="sig-param">config</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/separation_model.html#SeparationModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.SeparationModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>SeparationModel takes a configuration file or dictionary that describes the model
 structure, which is some combination of MelProjection, Embedding, RecurrentStack,
 ConvolutionalStack, and other modules found in <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules</span></code>.</p>
@@ -322,17 +323,112 @@ depending on input size, it’s good to work this out in a function like those b
 <col style="width: 90%" />
 </colgroup>
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_dual_path_recurrent_end_to_end" title="nussl.ml.networks.builders.build_dual_path_recurrent_end_to_end"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_dual_path_recurrent_end_to_end</span></code></a>(…[, …])</p></td>
+<td><p>Builds a config for a dual path recurrent network that operates on the time-series.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_open_unmix_like" title="nussl.ml.networks.builders.build_open_unmix_like"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_open_unmix_like</span></code></a>(num_features, …[, …])</p></td>
+<td><p>This is a builder for an open-unmix LIKE (UMX) architecture for music source separation.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_chimera" title="nussl.ml.networks.builders.build_recurrent_chimera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_chimera</span></code></a>(num_features, …[, …])</p></td>
 <td><p>Builds a config for a Chimera network that can be passed to SeparationModel.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_dpcl" title="nussl.ml.networks.builders.build_recurrent_dpcl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_dpcl</span></code></a>(num_features, …[, …])</p></td>
 <td><p>Builds a config for a deep clustering network that can be passed to SeparationModel.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_mask_inference" title="nussl.ml.networks.builders.build_recurrent_mask_inference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_mask_inference</span></code></a>(num_features, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_end_to_end" title="nussl.ml.networks.builders.build_recurrent_end_to_end"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_end_to_end</span></code></a>(num_filters, …)</p></td>
+<td><p>Builds a config for a BLSTM-based network that operates on the time-series.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.networks.builders.build_recurrent_mask_inference" title="nussl.ml.networks.builders.build_recurrent_mask_inference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_recurrent_mask_inference</span></code></a>(num_features, …)</p></td>
 <td><p>Builds a config for a mask inference network that can be passed to SeparationModel.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="function">
+<dt id="nussl.ml.networks.builders.build_dual_path_recurrent_end_to_end">
+<code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_dual_path_recurrent_end_to_end</code><span class="sig-paren">(</span><em class="sig-param">num_filters</em>, <em class="sig-param">filter_length</em>, <em class="sig-param">hop_length</em>, <em class="sig-param">chunk_size</em>, <em class="sig-param">hop_size</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">bottleneck_size</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">mask_activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">window_type='sqrt_hann'</em>, <em class="sig-param">skip_connection=False</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">mix_key='mix_audio'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_dual_path_recurrent_end_to_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_dual_path_recurrent_end_to_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a config for a dual path recurrent network that operates on the
+time-series. Uses a learned filterbank within the network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_filters</strong> (<em>int</em>) – Number of learnable filters in the front end network.</p></li>
+<li><p><strong>filter_length</strong> (<em>int</em>) – Length of the filters.</p></li>
+<li><p><strong>hop_length</strong> (<em>int</em>) – Hop length between frames.</p></li>
+<li><p><strong>window_type</strong> (<em>str</em>) – Type of windowing function on apply to each frame.</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – Hidden size of the RNN.</p></li>
+<li><p><strong>num_layers</strong> (<em>int</em>) – Number of layers in the RNN.</p></li>
+<li><p><strong>bidirectional</strong> (<em>int</em>) – Whether the RNN is bidirectional.</p></li>
+<li><p><strong>dropout</strong> (<em>float</em>) – Amount of dropout to be used between layers of RNN.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to create masks for.</p></li>
+<li><p><strong>mask_activation</strong> (<em>list of str</em>) – Activation of the mask (‘sigmoid’, ‘softmax’, etc.).
+See <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules.Embedding</span></code>.</p></li>
+<li><p><strong>num_audio_channels</strong> (<em>int</em>) – Number of audio channels in input (e.g. mono or stereo).
+Defaults to 1.</p></li>
+<li><p><strong>rnn_type</strong> (<em>str</em><em>, </em><em>optional</em>) – RNN type, either ‘lstm’ or ‘gru’. Defaults to ‘lstm’.</p></li>
+<li><p><strong>normalization_class</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of normalization to apply, either
+‘InstanceNorm’ or ‘BatchNorm’. Defaults to ‘BatchNorm’.</p></li>
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the input dictionary that contains
+the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A TASNet configuration that can be passed to</dt><dd><p>SeparationModel.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.networks.builders.build_open_unmix_like">
+<code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_open_unmix_like</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">add_embedding=False</em>, <em class="sig-param">embedding_size=20</em>, <em class="sig-param">embedding_activation='sigmoid'</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">mix_key='mix_magnitude'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_open_unmix_like"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_open_unmix_like" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a builder for an open-unmix LIKE (UMX) architecture for music source
+separation.</p>
+<p>The architecture is not exactly the same but is very similar for the
+most part. This architecture also has the option of having an embedding space
+attached to it, making it a UMX + Chimera network that you can regularize with
+a deep clustering loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_features</strong> (<em>int</em>) – Number of features in the input spectrogram (usually means
+window length of STFT // 2 + 1.)</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – Hidden size of the RNN. Will be hidden_size // 2 if bidirectional is True.</p></li>
+<li><p><strong>num_layers</strong> (<em>int</em>) – Number of layers in the RNN.</p></li>
+<li><p><strong>bidirectional</strong> (<em>int</em>) – Whether the RNN is bidirectional.</p></li>
+<li><p><strong>dropout</strong> (<em>float</em>) – Amount of dropout to be used between layers of RNN.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to create masks for.</p></li>
+<li><p><strong>num_audio_channels</strong> (<em>int</em>) – Number of audio channels in input (e.g. mono or stereo).
+Defaults to 1.</p></li>
+<li><p><strong>add_embedding</strong> (<em>bool</em>) – Whether or not to add an embedding layer to this to make this a
+Chimera network. If True, then <code class="docutils literal notranslate"><span class="pre">embedding_size</span></code> and <code class="docutils literal notranslate"><span class="pre">embedding_activation</span></code> will
+be used to define this.</p></li>
+<li><p><strong>embedding_size</strong> (<em>int</em>) – Embedding dimensionality of the deep clustering network.</p></li>
+<li><p><strong>embedding_activation</strong> (<em>list of str</em>) – Activation of the embedding (‘sigmoid’, ‘softmax’, etc.).
+See <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules.Embedding</span></code>.</p></li>
+<li><p><strong>rnn_type</strong> (<em>str</em><em>, </em><em>optional</em>) – RNN type, either ‘lstm’ or ‘gru’. Defaults to ‘lstm’.</p></li>
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the input dictionary that contains
+the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An OpenUnmix-like configuration that can be passed to</dt><dd><p>SeparationModel.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="function">
 <dt id="nussl.ml.networks.builders.build_recurrent_chimera">
 <code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_recurrent_chimera</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">embedding_size</em>, <em class="sig-param">embedding_activation</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">mask_activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">normalization_class='BatchNorm'</em>, <em class="sig-param">mix_key='mix_magnitude'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_recurrent_chimera"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_recurrent_chimera" title="Permalink to this definition">¶</a></dt>
@@ -420,6 +516,52 @@ the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
 </dd></dl>
 
 <dl class="function">
+<dt id="nussl.ml.networks.builders.build_recurrent_end_to_end">
+<code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_recurrent_end_to_end</code><span class="sig-paren">(</span><em class="sig-param">num_filters</em>, <em class="sig-param">filter_length</em>, <em class="sig-param">hop_length</em>, <em class="sig-param">window_type</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">mask_activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">mask_complex=False</em>, <em class="sig-param">trainable=False</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">mix_key='mix_audio'</em>, <em class="sig-param">normalization_class='BatchNorm'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_recurrent_end_to_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_recurrent_end_to_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a config for a BLSTM-based network that operates on the time-series.
+Uses an STFT within the network and can apply the mixture phase to
+the estimate, or can learn a mask on the phase as well as the magnitude.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_filters</strong> (<em>int</em>) – Number of learnable filters in the front end network.</p></li>
+<li><p><strong>filter_length</strong> (<em>int</em>) – Length of the filters.</p></li>
+<li><p><strong>hop_length</strong> (<em>int</em>) – Hop length between frames.</p></li>
+<li><p><strong>window_type</strong> (<em>str</em>) – Type of windowing function on apply to each frame.</p></li>
+<li><p><strong>hidden_size</strong> (<em>int</em>) – Hidden size of the RNN.</p></li>
+<li><p><strong>num_layers</strong> (<em>int</em>) – Number of layers in the RNN.</p></li>
+<li><p><strong>bidirectional</strong> (<em>int</em>) – Whether the RNN is bidirectional.</p></li>
+<li><p><strong>dropout</strong> (<em>float</em>) – Amount of dropout to be used between layers of RNN.</p></li>
+<li><p><strong>num_sources</strong> (<em>int</em>) – Number of sources to create masks for.</p></li>
+<li><p><strong>mask_activation</strong> (<em>list of str</em>) – Activation of the mask (‘sigmoid’, ‘softmax’, etc.).
+See <code class="docutils literal notranslate"><span class="pre">nussl.ml.networks.modules.Embedding</span></code>.</p></li>
+<li><p><strong>num_audio_channels</strong> (<em>int</em>) – Number of audio channels in input (e.g. mono or stereo).
+Defaults to 1.</p></li>
+<li><p><strong>mask_complex</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to also place a mask on the complex part, or
+whether to just use the mixture phase.</p></li>
+<li><p><strong>trainable</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to learn the filters, which start from a
+Fourier basis.</p></li>
+<li><p><strong>rnn_type</strong> (<em>str</em><em>, </em><em>optional</em>) – RNN type, either ‘lstm’ or ‘gru’. Defaults to ‘lstm’.</p></li>
+<li><p><strong>normalization_class</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of normalization to apply, either
+‘InstanceNorm’ or ‘BatchNorm’. Defaults to ‘BatchNorm’.</p></li>
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the input dictionary that contains
+the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A recurrent end-to-end network configuration that can be passed to</dt><dd><p>SeparationModel.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="nussl.ml.networks.builders.build_recurrent_mask_inference">
 <code class="sig-prename descclassname">nussl.ml.networks.builders.</code><code class="sig-name descname">build_recurrent_mask_inference</code><span class="sig-paren">(</span><em class="sig-param">num_features</em>, <em class="sig-param">hidden_size</em>, <em class="sig-param">num_layers</em>, <em class="sig-param">bidirectional</em>, <em class="sig-param">dropout</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">mask_activation</em>, <em class="sig-param">num_audio_channels=1</em>, <em class="sig-param">rnn_type='lstm'</em>, <em class="sig-param">normalization_class='BatchNorm'</em>, <em class="sig-param">mix_key='mix_magnitude'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/networks/builders.html#build_recurrent_mask_inference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.networks.builders.build_recurrent_mask_inference" title="Permalink to this definition">¶</a></dt>
 <dd><p>Builds a config for a mask inference network that can be passed to
@@ -455,6 +597,291 @@ the mixture spectrogram. Defaults to ‘mix_magnitude’.</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-nussl.ml.confidence">
+<span id="confidence-measures"></span><h2>Confidence measures<a class="headerlink" href="#module-nussl.ml.confidence" title="Permalink to this headline">¶</a></h2>
+<p>There are ways to measure the quality of a separated source without
+requiring ground truth. These functions operate on the output of
+clustering-based separation algorithms and work by analyzing
+the clusterability of the feature space used to generate the
+separated sources.</p>
+<p><strong>Functions</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.confidence.dpcl_classic_confidence" title="nussl.ml.confidence.dpcl_classic_confidence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dpcl_classic_confidence</span></code></a>(audio_signal, …[, …])</p></td>
+<td><p>Computes the clusterability in two steps:</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.confidence.jensen_shannon_confidence" title="nussl.ml.confidence.jensen_shannon_confidence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jensen_shannon_confidence</span></code></a>(audio_signal, …)</p></td>
+<td><p>Calculates the clusterability of a space by comparing a K-cluster GMM with a 1-cluster GMM on the same features.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.confidence.jensen_shannon_divergence" title="nussl.ml.confidence.jensen_shannon_divergence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jensen_shannon_divergence</span></code></a>(gmm_p, gmm_q[, …])</p></td>
+<td><p>Compute Jensen-Shannon (JS) divergence between two Gaussian Mixture Models via sampling.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.confidence.loudness_confidence" title="nussl.ml.confidence.loudness_confidence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loudness_confidence</span></code></a>(audio_signal, features, …)</p></td>
+<td><p>Computes the clusterability of the feature space by comparing the absolute size of each cluster.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.confidence.posterior_confidence" title="nussl.ml.confidence.posterior_confidence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior_confidence</span></code></a>(audio_signal, features, …)</p></td>
+<td><p>Calculates the clusterability of an embedding space by looking at the strength of the assignments of each point to a specific cluster.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.confidence.silhouette_confidence" title="nussl.ml.confidence.silhouette_confidence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">silhouette_confidence</span></code></a>(audio_signal, …[, …])</p></td>
+<td><p>Uses the silhouette score to compute the clusterability of the feature space.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.confidence.whitened_kmeans_confidence" title="nussl.ml.confidence.whitened_kmeans_confidence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">whitened_kmeans_confidence</span></code></a>(audio_signal, …)</p></td>
+<td><p>Computes the clusterability in two steps:</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="function">
+<dt id="nussl.ml.confidence.dpcl_classic_confidence">
+<code class="sig-prename descclassname">nussl.ml.confidence.</code><code class="sig-name descname">dpcl_classic_confidence</code><span class="sig-paren">(</span><em class="sig-param">audio_signal</em>, <em class="sig-param">features</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">threshold=95</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/confidence.html#dpcl_classic_confidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.confidence.dpcl_classic_confidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the clusterability in two steps:</p>
+<ol class="arabic simple">
+<li><p>Cluster the feature space using KMeans into assignments</p></li>
+<li><p>Compute the classic deep clustering loss between the features and the assignments.</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object which will be used to compute
+the mask over which to compute the confidence measure. This can be None, if
+and only if <code class="docutils literal notranslate"><span class="pre">representation</span></code> is passed as a keyword argument to this
+function.</p></li>
+<li><p><strong>features</strong> (<em>np.ndarray</em>) – Numpy array containing the features to be clustered.
+Should have the same dimensions as the representation.</p></li>
+<li><p><strong>n_sources</strong> (<em>int</em>) – Number of sources to cluster the features into.</p></li>
+<li><p><strong>threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold by loudness. Points below the threshold are
+excluded from being used in the confidence measure. Defaults to 95.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to <cite>_get_loud_bins_mask</cite>. Namely, representation can
+go here as a keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Confidence given by deep clustering loss.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.confidence.jensen_shannon_confidence">
+<code class="sig-prename descclassname">nussl.ml.confidence.</code><code class="sig-name descname">jensen_shannon_confidence</code><span class="sig-paren">(</span><em class="sig-param">audio_signal</em>, <em class="sig-param">features</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">threshold=95</em>, <em class="sig-param">n_samples=100000</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/confidence.html#jensen_shannon_confidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.confidence.jensen_shannon_confidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the clusterability of a space by comparing a K-cluster GMM
+with a 1-cluster GMM on the same features. This function fits two
+GMMs to all of the points that are above the specified threshold (defaults
+to 95: 95th percentile of all the data). This saves on computation time and
+also allows one to have the confidence measure only focus on the louder
+more perceptually important points.</p>
+<p>References:</p>
+<p>Seetharaman, Prem, Gordon Wichern, Jonathan Le Roux, and Bryan Pardo.
+“Bootstrapping Single-Channel Source Separation via Unsupervised Spatial
+Clustering on Stereo Mixtures”. 44th International Conference on Acoustics,
+Speech, and Signal Processing, Brighton, UK, May, 2019</p>
+<p>Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition.
+Diss. Northwestern University, 2019.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object which will be used to compute
+the mask over which to compute the confidence measure. This can be None, if
+and only if <code class="docutils literal notranslate"><span class="pre">representation</span></code> is passed as a keyword argument to this
+function.</p></li>
+<li><p><strong>features</strong> (<em>np.ndarray</em>) – Numpy array containing the features to be clustered.
+Should have the same dimensions as the representation.</p></li>
+<li><p><strong>n_sources</strong> (<em>int</em>) – Number of sources to cluster the features into.</p></li>
+<li><p><strong>threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold by loudness. Points below the threshold are
+excluded from being used in the confidence measure. Defaults to 95.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to <cite>_get_loud_bins_mask</cite>. Namely, representation can
+go here as a keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Confidence given by Jensen-Shannon divergence.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.confidence.jensen_shannon_divergence">
+<code class="sig-prename descclassname">nussl.ml.confidence.</code><code class="sig-name descname">jensen_shannon_divergence</code><span class="sig-paren">(</span><em class="sig-param">gmm_p</em>, <em class="sig-param">gmm_q</em>, <em class="sig-param">n_samples=100000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/confidence.html#jensen_shannon_divergence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.confidence.jensen_shannon_divergence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute Jensen-Shannon (JS) divergence between two Gaussian Mixture Models via
+sampling. JS divergence is also known as symmetric Kullback-Leibler divergence.
+JS divergence has no closed form in general for GMMs, thus we use sampling to
+compute it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gmm_p</strong> (<em>GaussianMixture</em>) – A GaussianMixture class fit to some data.</p></li>
+<li><p><strong>gmm_q</strong> (<em>GaussianMixture</em>) – Another GaussianMixture class fit to some data.</p></li>
+<li><p><strong>n_samples</strong> (<em>int</em>) – Number of samples to use to estimate JS divergence.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>JS divergence between gmm_p and gmm_q</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.confidence.loudness_confidence">
+<code class="sig-prename descclassname">nussl.ml.confidence.</code><code class="sig-name descname">loudness_confidence</code><span class="sig-paren">(</span><em class="sig-param">audio_signal</em>, <em class="sig-param">features</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">threshold=95</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/confidence.html#loudness_confidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.confidence.loudness_confidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the clusterability of the feature space by comparing the absolute
+size of each cluster.</p>
+<p>References:</p>
+<p>Seetharaman, Prem, Gordon Wichern, Jonathan Le Roux, and Bryan Pardo.
+“Bootstrapping Single-Channel Source Separation via Unsupervised Spatial
+Clustering on Stereo Mixtures”. 44th International Conference on Acoustics,
+Speech, and Signal Processing, Brighton, UK, May, 2019</p>
+<p>Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition.
+Diss. Northwestern University, 2019.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object which will be used to compute
+the mask over which to compute the confidence measure. This can be None, if
+and only if <code class="docutils literal notranslate"><span class="pre">representation</span></code> is passed as a keyword argument to this
+function.</p></li>
+<li><p><strong>features</strong> (<em>np.ndarray</em>) – Numpy array containing the features to be clustered.
+Should have the same dimensions as the representation.</p></li>
+<li><p><strong>n_sources</strong> (<em>int</em>) – Number of sources to cluster the features into.</p></li>
+<li><p><strong>threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold by loudness. Points below the threshold are
+excluded from being used in the confidence measure. Defaults to 95.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to <cite>_get_loud_bins_mask</cite>. Namely, representation can
+go here as a keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Confidence given by size of smallest cluster.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.confidence.posterior_confidence">
+<code class="sig-prename descclassname">nussl.ml.confidence.</code><code class="sig-name descname">posterior_confidence</code><span class="sig-paren">(</span><em class="sig-param">audio_signal</em>, <em class="sig-param">features</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">threshold=95</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/confidence.html#posterior_confidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.confidence.posterior_confidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the clusterability of an embedding space by looking at the
+strength of the assignments of each point to a specific cluster. The
+more points that are “in between” clusters (e.g. no strong assignmment),
+the lower the clusterability.</p>
+<p>References:</p>
+<p>Seetharaman, Prem, Gordon Wichern, Jonathan Le Roux, and Bryan Pardo.
+“Bootstrapping Single-Channel Source Separation via Unsupervised Spatial
+Clustering on Stereo Mixtures”. 44th International Conference on Acoustics,
+Speech, and Signal Processing, Brighton, UK, May, 2019</p>
+<p>Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition.
+Diss. Northwestern University, 2019.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object which will be used to compute
+the mask over which to compute the confidence measure. This can be None, if
+and only if <code class="docutils literal notranslate"><span class="pre">representation</span></code> is passed as a keyword argument to this
+function.</p></li>
+<li><p><strong>features</strong> (<em>np.ndarray</em>) – Numpy array containing the features to be clustered.
+Should have the same dimensions as the representation.</p></li>
+<li><p><strong>n_sources</strong> (<em>int</em>) – Number of sources to cluster the features into.</p></li>
+<li><p><strong>threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold by loudness. Points below the threshold are
+excluded from being used in the confidence measure. Defaults to 95.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to <cite>_get_loud_bins_mask</cite>. Namely, representation can
+go here as a keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Confidence given by posteriors.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.confidence.silhouette_confidence">
+<code class="sig-prename descclassname">nussl.ml.confidence.</code><code class="sig-name descname">silhouette_confidence</code><span class="sig-paren">(</span><em class="sig-param">audio_signal</em>, <em class="sig-param">features</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">threshold=95</em>, <em class="sig-param">max_points=1000</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/confidence.html#silhouette_confidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.confidence.silhouette_confidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses the silhouette score to compute the clusterability of the feature space.</p>
+<p>The Silhouette Coefficient is calculated using the
+mean intra-cluster distance (a) and the mean nearest-cluster distance (b)
+for each sample. The Silhouette Coefficient for a sample is (b - a) / max(a, b).
+To clarify, b is the distance between a sample and the nearest cluster
+that the sample is not a part of. Note that Silhouette Coefficient is
+only defined if number of labels is 2 &lt;= n_labels &lt;= n_samples - 1.</p>
+<p>References:</p>
+<p>Seetharaman, Prem. Bootstrapping the Learning Process for Computer Audition.
+Diss. Northwestern University, 2019.</p>
+<p>Peter J. Rousseeuw (1987). “Silhouettes: a Graphical Aid to the
+Interpretation and Validation of Cluster Analysis”. Computational and
+Applied Mathematics 20: 53-65.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object which will be used to compute
+the mask over which to compute the confidence measure. This can be None, if
+and only if <code class="docutils literal notranslate"><span class="pre">representation</span></code> is passed as a keyword argument to this
+function.</p></li>
+<li><p><strong>features</strong> (<em>np.ndarray</em>) – Numpy array containing the features to be clustered.
+Should have the same dimensions as the representation.</p></li>
+<li><p><strong>n_sources</strong> (<em>int</em>) – Number of sources to cluster the features into.</p></li>
+<li><p><strong>threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold by loudness. Points below the threshold are
+excluded from being used in the confidence measure. Defaults to 95.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to <cite>_get_loud_bins_mask</cite>. Namely, representation can
+go here as a keyword argument.</p></li>
+<li><p><strong>max_points</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of points to compute the Silhouette
+score for. Silhouette score is a costly operation. Defaults to 1000.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Confidence given by Silhouette score.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="nussl.ml.confidence.whitened_kmeans_confidence">
+<code class="sig-prename descclassname">nussl.ml.confidence.</code><code class="sig-name descname">whitened_kmeans_confidence</code><span class="sig-paren">(</span><em class="sig-param">audio_signal</em>, <em class="sig-param">features</em>, <em class="sig-param">num_sources</em>, <em class="sig-param">threshold=95</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/confidence.html#whitened_kmeans_confidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.confidence.whitened_kmeans_confidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the clusterability in two steps:</p>
+<ol class="arabic simple">
+<li><p>Cluster the feature space using KMeans into assignments</p></li>
+<li><p>Compute the Whitened K-Means loss between the features and the assignments.</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>audio_signal</strong> (<a class="reference internal" href="core.html#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><em>AudioSignal</em></a>) – AudioSignal object which will be used to compute
+the mask over which to compute the confidence measure. This can be None, if
+and only if <code class="docutils literal notranslate"><span class="pre">representation</span></code> is passed as a keyword argument to this
+function.</p></li>
+<li><p><strong>features</strong> (<em>np.ndarray</em>) – Numpy array containing the features to be clustered.
+Should have the same dimensions as the representation.</p></li>
+<li><p><strong>n_sources</strong> (<em>int</em>) – Number of sources to cluster the features into.</p></li>
+<li><p><strong>threshold</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold by loudness. Points below the threshold are
+excluded from being used in the confidence measure. Defaults to 95.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to <cite>_get_loud_bins_mask</cite>. Namely, representation can
+go here as a keyword argument.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Confidence given by whitened k-means loss.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
 </dd>
 </dl>
 </dd></dl>
@@ -496,14 +923,15 @@ validating a single batch. Defaults to None.</p></li>
 
 <dl class="function">
 <dt id="nussl.ml.train.add_tensorboard_handler">
-<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">add_tensorboard_handler</code><span class="sig-paren">(</span><em class="sig-param">output_folder</em>, <em class="sig-param">engine</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#add_tensorboard_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.add_tensorboard_handler" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">add_tensorboard_handler</code><span class="sig-paren">(</span><em class="sig-param">tensorboard_folder</em>, <em class="sig-param">engine</em>, <em class="sig-param">every_iteration=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#add_tensorboard_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.add_tensorboard_handler" title="Permalink to this definition">¶</a></dt>
 <dd><p>Every key in engine.state.epoch_history[-1] is logged to TensorBoard.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>output_folder</strong> (<em>str</em>) – Where the tensorboard logs should go. The output
-logs will go into a subfolder ‘tensorboard’.</p></li>
+<li><p><strong>tensorboard_folder</strong> (<em>str</em>) – Where the tensorboard logs should go.</p></li>
 <li><p><strong>trainer</strong> (<em>ignite.Engine</em>) – The engine to log.</p></li>
+<li><p><strong>every_iteration</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to also log the values at every
+iteration.</p></li>
 </ul>
 </dd>
 </dl>
@@ -511,7 +939,7 @@ logs will go into a subfolder ‘tensorboard’.</p></li>
 
 <dl class="function">
 <dt id="nussl.ml.train.cache_dataset">
-<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">cache_dataset</code><span class="sig-paren">(</span><em class="sig-param">dataset</em>, <em class="sig-param">log_frequency=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#cache_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.cache_dataset" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">cache_dataset</code><span class="sig-paren">(</span><em class="sig-param">dataset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#cache_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.cache_dataset" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs through an entire dataset and caches it if there nussl.datasets.transforms.Cache
 is in dataset.transform. If there is no caching, or dataset.cache_populated = True,
 then this function just iterates through the dataset and does nothing.</p>
@@ -519,13 +947,8 @@ then this function just iterates through the dataset and does nothing.</p>
 a <cite>nussl.datasets.BaseDataset</cite> object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> (<a class="reference internal" href="datasets.html#nussl.datasets.BaseDataset" title="nussl.datasets.BaseDataset"><em>nussl.datasets.BaseDataset</em></a>) – Must be a subclass of
-<cite>nussl.datasets.BaseDataset</cite>.</p></li>
-<li><p><strong>log_frequency</strong> (<em>float</em><em>, </em><em>optional</em>) – How often to log progress, as a fraction between
-0.0 and 1.0 of the total dataset length. Defaults to .1
-(10x over the course of caching).</p></li>
-</ul>
+<dd class="field-odd"><p><strong>dataset</strong> (<a class="reference internal" href="datasets.html#nussl.datasets.BaseDataset" title="nussl.datasets.BaseDataset"><em>nussl.datasets.BaseDataset</em></a>) – Must be a subclass of
+<cite>nussl.datasets.BaseDataset</cite>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -597,6 +1020,21 @@ Defaults to None.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="function">
+<dt id="nussl.ml.train.add_progress_bar_handler">
+<code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">add_progress_bar_handler</code><span class="sig-paren">(</span><em class="sig-param">*engines</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#add_progress_bar_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.add_progress_bar_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a progress bar to each engine. Keeps track of a running
+average of the loss as well.</p>
+<p>Usage:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>.. code-block:: python
+</pre></div>
+</div>
+<blockquote>
+<div><p>tr_engine, val_engine = …
+add_progress_bar_handler(tr_engine, val_engine)</p>
+</div></blockquote>
+</dd></dl>
+
 <dl class="class">
 <dt id="nussl.ml.train.ValidationEvents">
 <em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.</code><code class="sig-name descname">ValidationEvents</code><a class="reference internal" href="_modules/nussl/ml/train/trainer.html#ValidationEvents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.ValidationEvents" title="Permalink to this definition">¶</a></dt>
@@ -652,8 +1090,11 @@ Defaults to None.</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.loss.PermutationInvariantLoss" title="nussl.ml.train.loss.PermutationInvariantLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PermutationInvariantLoss</span></code></a>(loss_function)</p></td>
 <td><p>Computes the Permutation Invariant Loss (PIT) [1] by permuting the estimated sources and the reference sources.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.SISDRLoss" title="nussl.ml.train.loss.SISDRLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SISDRLoss</span></code></a>([scaling, reduction])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.SISDRLoss" title="nussl.ml.train.loss.SISDRLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SISDRLoss</span></code></a>([scaling, return_scaling, …])</p></td>
 <td><p>Computes the Scale-Invariant Source-to-Distortion Ratio between a batch of estimated and reference audio signals.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.loss.WhitenedKMeansLoss" title="nussl.ml.train.loss.WhitenedKMeansLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WhitenedKMeansLoss</span></code></a>()</p></td>
+<td><p>Computes the whitened K-Means loss with weights.</p></td>
 </tr>
 </tbody>
 </table>
@@ -897,15 +1338,26 @@ registered hooks while the latter silently ignores them.</p>
 
 <dl class="class">
 <dt id="nussl.ml.train.loss.SISDRLoss">
-<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">SISDRLoss</code><span class="sig-paren">(</span><em class="sig-param">scaling=True</em>, <em class="sig-param">reduction='mean'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#SISDRLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">SISDRLoss</code><span class="sig-paren">(</span><em class="sig-param">scaling=True</em>, <em class="sig-param">return_scaling=False</em>, <em class="sig-param">reduction='mean'</em>, <em class="sig-param">zero_mean=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#SISDRLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes the Scale-Invariant Source-to-Distortion Ratio between a batch
 of estimated and reference audio signals. Used in end-to-end networks.
 This is essentially a batch PyTorch version of the function
-<code class="docutils literal notranslate"><span class="pre">nussl.evaluation.bss_eval.scale_bss_eval</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">nussl.evaluation.bss_eval.scale_bss_eval</span></code> and can be used to compute
+SI-SDR or SNR.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>scaling</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use scale-invariant (True) or
-scale-dependent SDR. Defaults to True.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scaling</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use scale-invariant (True) or
+signal-to-noise ratio (False). Defaults to True.</p></li>
+<li><p><strong>return_scaling</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to only return the scaling
+factor that the estimate gets scaled by relative to the reference.
+This is just for monitoring this value during training, don’t actually
+train with it! Defaults to False.</p></li>
+<li><p><strong>reduction</strong> (<em>str</em><em>, </em><em>optional</em>) – How to reduce across the batch (either ‘mean’,
+‘sum’, or none). Defaults to ‘mean’.</p></li>
+<li><p><strong>zero_mean</strong> (<em>bool</em><em>, </em><em>optional</em>) – Zero mean the references and estimates before
+computing the loss. Defaults to True.</p></li>
+</ul>
 </dd>
 </dl>
 <p><strong>Attributes</strong></p>
@@ -934,12 +1386,68 @@ scale-dependent SDR. Defaults to True.</p>
 </table>
 <dl class="attribute">
 <dt id="nussl.ml.train.loss.SISDRLoss.DEFAULT_KEYS">
-<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'estimates': 'estimates', 'references': 'references'}</em><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'audio': 'estimates', 'source_audio': 'references'}</em><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="nussl.ml.train.loss.SISDRLoss.forward">
 <code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">estimates</em>, <em class="sig-param">references</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#SISDRLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.SISDRLoss.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.ml.train.loss.WhitenedKMeansLoss">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.loss.</code><code class="sig-name descname">WhitenedKMeansLoss</code><a class="reference internal" href="_modules/nussl/ml/train/loss.html#WhitenedKMeansLoss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.WhitenedKMeansLoss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the whitened K-Means loss with weights. Equation (6) in [1].</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Wang, Z. Q., Le Roux, J., &amp; Hershey, J. R. (2018, April).</dt><dd><p>Alternative Objective Functions for Deep Clustering.
+In Proc. IEEE International Conference on Acoustics,  Speech
+and Signal Processing (ICASSP).</p>
+</dd>
+</dl>
+<p><strong>Attributes</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.WhitenedKMeansLoss.DEFAULT_KEYS" title="nussl.ml.train.loss.WhitenedKMeansLoss.DEFAULT_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_KEYS</span></code></a></p></td>
+<td><p>dict() -&gt; new empty dictionary</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods</strong></p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.loss.WhitenedKMeansLoss.forward" title="nussl.ml.train.loss.WhitenedKMeansLoss.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(embedding, assignments, weights)</p></td>
+<td><p>Defines the computation performed at every call.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="nussl.ml.train.loss.WhitenedKMeansLoss.DEFAULT_KEYS">
+<code class="sig-name descname">DEFAULT_KEYS</code><em class="property"> = {'embedding': 'embedding', 'ideal_binary_mask': 'assignments', 'weights': 'weights'}</em><a class="headerlink" href="#nussl.ml.train.loss.WhitenedKMeansLoss.DEFAULT_KEYS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.train.loss.WhitenedKMeansLoss.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">embedding</em>, <em class="sig-param">assignments</em>, <em class="sig-param">weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/loss.html#WhitenedKMeansLoss.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.loss.WhitenedKMeansLoss.forward" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines the computation performed at every call.</p>
 <p>Should be overridden by all subclasses.</p>
 <div class="admonition note">
@@ -963,13 +1471,13 @@ registered hooks while the latter silently ignores them.</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure" title="nussl.ml.train.closures.Closure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Closure</span></code></a>(loss_dictionary)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure" title="nussl.ml.train.closures.Closure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Closure</span></code></a>(loss_dictionary[, combination_approach])</p></td>
 <td><p>Closures are used with ignite Engines to train a model given an optimizer and a set of loss functions.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.closures.TrainClosure" title="nussl.ml.train.closures.TrainClosure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrainClosure</span></code></a>(loss_dictionary, optimizer, model)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.closures.TrainClosure" title="nussl.ml.train.closures.TrainClosure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrainClosure</span></code></a>(loss_dictionary, optimizer, …)</p></td>
 <td><p>This closure takes an optimization step on a SeparationModel object given a loss.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.ValidationClosure" title="nussl.ml.train.closures.ValidationClosure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidationClosure</span></code></a>(loss_dictionary, model)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.ValidationClosure" title="nussl.ml.train.closures.ValidationClosure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidationClosure</span></code></a>(loss_dictionary, model, …)</p></td>
 <td><p>This closure validates the model on some data dictionary.</p></td>
 </tr>
 </tbody>
@@ -988,7 +1496,7 @@ registered hooks while the latter silently ignores them.</p>
 </table>
 <dl class="class">
 <dt id="nussl.ml.train.closures.Closure">
-<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">Closure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">Closure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em>, <em class="sig-param">combination_approach='combine_by_sum'</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Closures are used with ignite Engines to train a model given an optimizer
 and a set of loss functions. Closures perform forward passes of models given
 the input data. The loss is computed via <code class="docutils literal notranslate"><span class="pre">self.compute_loss</span></code>.
@@ -1012,7 +1520,16 @@ use to train your model as a loss dictionary that is structured as follows:</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure.compute_loss" title="nussl.ml.train.closures.Closure.compute_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_loss</span></code></a>(output, target)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure.combine_by_multiply" title="nussl.ml.train.closures.Closure.combine_by_multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_by_multiply</span></code></a>(loss_output)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure.combine_by_multitask" title="nussl.ml.train.closures.Closure.combine_by_multitask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_by_multitask</span></code></a>(loss_output)</p></td>
+<td><p>Implements a multitask learning objective [1] where each loss</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure.combine_by_sum" title="nussl.ml.train.closures.Closure.combine_by_sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_by_sum</span></code></a>(loss_output)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.ml.train.closures.Closure.compute_loss" title="nussl.ml.train.closures.Closure.compute_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_loss</span></code></a>(output, target)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -1031,18 +1548,69 @@ of a Chimera loss combining deep clustering with permutation invariant L1 loss:<
 <span class="p">}</span>
 </pre></div>
 </div>
+<p>Or if you’re using permutation invariant loss but need to specify arguments to the
+loss function being wrapped by PIT, you can do this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loss_dictionary</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;PITLoss&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;PermutationInvariantLoss&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;keys&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;audio&#39;</span><span class="p">:</span> <span class="s1">&#39;estimates&#39;</span><span class="p">,</span> <span class="s1">&#39;source_audio&#39;</span><span class="p">:</span> <span class="s1">&#39;targets&#39;</span><span class="p">},</span>
+        <span class="s1">&#39;args&#39;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s1">&#39;class&#39;</span><span class="p">:</span> <span class="s1">&#39;SISDRLoss&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;kwargs&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;scaling&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+        <span class="p">}]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <p>If you have your own loss function classes you wish to use, you can pass those
 into the loss dictionary and make them discoverable by the closure by using
 <cite>ml.register_loss.</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>loss_dictionary</strong> (<em>dict</em>) – Dictionary of losses described above.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loss_dictionary</strong> (<em>dict</em>) – Dictionary of losses described above.</p></li>
+<li><p><strong>combination_approach</strong> (<em>str</em>) – How to combine losses, if there are multiple
+losses. The default is that the losses will be combined via a weighted
+sum (‘combine_by_sum’). Can also do ‘combine_by_multiply’. Defaults to
+‘combine_by_sum’.</p></li>
+<li><p><strong>args</strong> – Positional arguments to <code class="docutils literal notranslate"><span class="pre">combination_approach</span></code>.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to <code class="docutils literal notranslate"><span class="pre">combination_approach</span></code>.</p></li>
+</ul>
 </dd>
 </dl>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <p>ml.register_loss to register your loss functions with this closure.</p>
 </div>
+<dl class="method">
+<dt id="nussl.ml.train.closures.Closure.combine_by_multiply">
+<code class="sig-name descname">combine_by_multiply</code><span class="sig-paren">(</span><em class="sig-param">loss_output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure.combine_by_multiply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure.combine_by_multiply" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.train.closures.Closure.combine_by_multitask">
+<code class="sig-name descname">combine_by_multitask</code><span class="sig-paren">(</span><em class="sig-param">loss_output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure.combine_by_multitask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure.combine_by_multitask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implements a multitask learning objective [1] where each loss
+is weighted by a learned parameter with the following
+function:</p>
+<p>combined_loss = sum_i exp(-weight_i) * loss_i + weight_i</p>
+<p>where i indexes each loss. The weights come from the loss
+dictionary and can point to nn.Parameter teensors that get
+learned jointly with the model.</p>
+<p>References:</p>
+<dl class="simple">
+<dt>[1] Kendall, Alex, Yarin Gal, and Roberto Cipolla.</dt><dd><p>“Multi-task learning using uncertainty to weigh losses
+for scene geometry and semantics.” Proceedings of the
+IEEE conference on computer vision and pattern recognition. 2018.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.ml.train.closures.Closure.combine_by_sum">
+<code class="sig-name descname">combine_by_sum</code><span class="sig-paren">(</span><em class="sig-param">loss_output</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure.combine_by_sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure.combine_by_sum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="nussl.ml.train.closures.Closure.compute_loss">
 <code class="sig-name descname">compute_loss</code><span class="sig-paren">(</span><em class="sig-param">output</em>, <em class="sig-param">target</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#Closure.compute_loss"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.Closure.compute_loss" title="Permalink to this definition">¶</a></dt>
@@ -1058,7 +1626,7 @@ into the loss dictionary and make them discoverable by the closure by using
 
 <dl class="class">
 <dt id="nussl.ml.train.closures.TrainClosure">
-<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">TrainClosure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em>, <em class="sig-param">optimizer</em>, <em class="sig-param">model</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#TrainClosure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.TrainClosure" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">TrainClosure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em>, <em class="sig-param">optimizer</em>, <em class="sig-param">model</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#TrainClosure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.TrainClosure" title="Permalink to this definition">¶</a></dt>
 <dd><p>This closure takes an optimization step on a SeparationModel object given a
 loss.</p>
 <dl class="field-list simple">
@@ -1074,7 +1642,7 @@ loss.</p>
 
 <dl class="class">
 <dt id="nussl.ml.train.closures.ValidationClosure">
-<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">ValidationClosure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em>, <em class="sig-param">model</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#ValidationClosure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.ValidationClosure" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">nussl.ml.train.closures.</code><code class="sig-name descname">ValidationClosure</code><span class="sig-paren">(</span><em class="sig-param">loss_dictionary</em>, <em class="sig-param">model</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/ml/train/closures.html#ValidationClosure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.ml.train.closures.ValidationClosure" title="Permalink to this definition">¶</a></dt>
 <dd><p>This closure validates the model on some data dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

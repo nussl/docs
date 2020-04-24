@@ -179,6 +179,7 @@ import random, string
 import importlib.resources as pkg_resources
 
 from . import templates
+from .utils import _close_temp_files
 
 multitrack_template = pkg_resources.read_text(templates, &#39;multitrack.html&#39;)
 
@@ -220,24 +221,27 @@ def _check_imports():
     audio_signal = deepcopy(audio_signal)
     ffmpy, IPython = _check_imports()
     sr = audio_signal.sample_rate
+    tmpfiles = []
 
-    tmp_wav = NamedTemporaryFile(mode=&#39;w+&#39;, suffix=&#39;.wav&#39;)
-    audio_signal.write_audio_to_file(tmp_wav.name)
-    if ext != &#39;.wav&#39; and ffmpy:
-        tmp_converted = NamedTemporaryFile(mode=&#39;w+&#39;, suffix=ext)
-        ff = ffmpy.FFmpeg(
-            inputs={tmp_wav.name: None},
-            outputs={tmp_converted.name: &#39;-write_xing 0 -codec:a libmp3lame -b:a 128k -y&#39;})
-        ff.run()
-    else:
-        tmp_converted = tmp_wav
+    with _close_temp_files(tmpfiles):
+        tmp_wav = NamedTemporaryFile(
+            mode=&#39;w+&#39;, suffix=&#39;.wav&#39;, delete=False)
+        tmpfiles.append(tmp_wav)
+        audio_signal.write_audio_to_file(tmp_wav.name)
+        if ext != &#39;.wav&#39; and ffmpy:
+            tmp_converted = NamedTemporaryFile(
+                mode=&#39;w+&#39;, suffix=ext, delete=False)
+            tmpfiles.append(tmp_wav)
+            ff = ffmpy.FFmpeg(
+                inputs={tmp_wav.name: None},
+                outputs={tmp_converted.name: &#39;-write_xing 0 -codec:a libmp3lame -b:a 128k -y&#39;})
+            ff.run()
+        else:
+            tmp_converted = tmp_wav
 
-    audio_element = IPython.display.Audio(data=tmp_converted.name, rate=sr)
-    if display:
-        IPython.display.display(audio_element)
-    if ext != &#39;.wav&#39;:
-        tmp_converted.close()
-    tmp_wav.close()
+        audio_element = IPython.display.Audio(data=tmp_converted.name, rate=sr)
+        if display:
+            IPython.display.display(audio_element)
     return audio_element</div>
 
 
@@ -307,7 +311,10 @@ def _check_imports():
     Args:
         audio_signal (AudioSignal): AudioSignal object to be played.
     &quot;&quot;&quot;
-    with NamedTemporaryFile(suffix=&#39;.wav&#39;, delete=True) as tmp_wav:
+    tmpfiles = []
+    with _close_temp_files(tmpfiles):
+        tmp_wav = NamedTemporaryFile(suffix=&#39;.wav&#39;, delete=False)
+        tmpfiles.append(tmp_wav)
         audio_signal.write_audio_to_file(tmp_wav.name)
         subprocess.call([&quot;ffplay&quot;, &quot;-nodisp&quot;, &quot;-autoexit&quot;, tmp_wav.name])</div>
 </pre></div>

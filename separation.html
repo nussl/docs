@@ -120,6 +120,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#deep-methods">Deep methods</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#deep-clustering">Deep clustering</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deep-mask-estimation">Deep mask estimation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deep-audio-estimation">Deep audio estimation</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#composite-methods">Composite methods</a><ul>
@@ -638,10 +639,13 @@ object (one of KMeans, GaussianMixture, or MiniBatchKMeans).</p></li>
 <tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.cluster_features" title="nussl.separation.ClusteringSeparationBase.cluster_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cluster_features</span></code></a>(features, clusterer)</p></td>
 <td><p>Clusters each time-frequency point according to features for each time-frequency point.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.extract_features" title="nussl.separation.ClusteringSeparationBase.extract_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_features</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.confidence" title="nussl.separation.ClusteringSeparationBase.confidence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">confidence</span></code></a>([approach])</p></td>
+<td><p>In clustering-based separation algorithms, we can compute a confidence measure based on the clusterability of the feature space.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.extract_features" title="nussl.separation.ClusteringSeparationBase.extract_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_features</span></code></a>()</p></td>
 <td><p>This function should be implemented by the subclass.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.run" title="nussl.separation.ClusteringSeparationBase.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>([features])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.separation.ClusteringSeparationBase.run" title="nussl.separation.ClusteringSeparationBase.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>([features])</p></td>
 <td><p>Clusters the features using the chosen clustering algorithm.</p></td>
 </tr>
 </tbody>
@@ -667,6 +671,25 @@ time-frequency point. Features should be on the last axis.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="nussl.separation.ClusteringSeparationBase.confidence">
+<code class="sig-name descname">confidence</code><span class="sig-paren">(</span><em class="sig-param">approach='silhouette_confidence'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/base/clustering_separation_base.html#ClusteringSeparationBase.confidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.ClusteringSeparationBase.confidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>In clustering-based separation algorithms, we can compute a confidence
+measure based on the clusterability of the feature space. This can be computed
+only after the features have been extracted by <code class="docutils literal notranslate"><span class="pre">extract_features</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>approach</strong> (<em>str</em><em>, </em><em>optional</em>) – What approach to use for getting the confidence
+measure. Options are ‘jensen_shannon_confidence’, ‘posterior_confidence’,
+‘silhouette_confidence’, ‘loudness_confidence’, ‘whitened_kmeans_confidence’,
+‘dpcl_classic_confidence’. Defaults to ‘silhouette_confidence’.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to the function being used to compute the confidence.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1031,6 +1054,31 @@ MiniBatchKmeans).</p></li>
 <dd><p>Separates an audio signal using the masks produced by a deep model for every
 time-frequency point. It expects that the model outputs a dictionary where one
 of the keys is ‘masks’. This uses the <cite>DeepMixin</cite> class to load the model
+and set the audio signal’s parameters to be appropriate for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_audio_signal</strong> – (AudioSignal`) An AudioSignal object containing the
+mixture to be separated.</p></li>
+<li><p><strong>model_path</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to the model that will be used. Can be None,
+so that you can initialize a class and load the model later.
+Defaults to None.</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to put the model on. Defaults to ‘cpu’.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em>) – Keyword arguments for MaskSeparationBase.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="deep-audio-estimation">
+<h3>Deep audio estimation<a class="headerlink" href="#deep-audio-estimation" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="nussl.separation.deep.DeepAudioEstimation">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.separation.deep.</code><code class="sig-name descname">DeepAudioEstimation</code><span class="sig-paren">(</span><em class="sig-param">input_audio_signal</em>, <em class="sig-param">model_path=None</em>, <em class="sig-param">device='cpu'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/separation/deep/deep_audio_estimation.html#DeepAudioEstimation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.separation.deep.DeepAudioEstimation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separates an audio signal using a model that produces separated sources directly
+in the waveform domain. It expects that the model outputs a dictionary where one
+of the keys is ‘audio’. This uses the <cite>DeepMixin</cite> class to load the model
 and set the audio signal’s parameters to be appropriate for the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

@@ -171,55 +171,114 @@ import museval
 
 from .evaluation_base import EvaluationBase
 
-
-<div class="viewcode-block" id="scale_bss_eval"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.scale_bss_eval">[docs]</a>def scale_bss_eval(references, estimates, idx, scaling=True):
+def _scale_bss_eval(references, estimate, idx, compute_sir_sar=True):
     &quot;&quot;&quot;
-    Computes SDR, SIR, SAR for references[idx] relative to the
-    chosen estimates. This only works for mono audio. Each
-    channel should be done independently when calling this
-    function. Lovingly borrowed from Gordon Wichern and 
-    Jonathan Le Roux at Mitsubishi Electric Research Labs.
-    
-    Args:
-        references (np.ndarray): object containing the
-        references data. Of shape (n_samples, n_sources).
-        
-        estimates (np.ndarray): object containing the
-        estimates data. Of shape (n_samples, 1).
-
-        idx (int): Which estimates to compute metrics for.
-
-        scaling (bool, optional): Whether to use scale-invariant (True) or
-        scale-dependent (False) metrics. Defaults to True.
-    
-    Returns:
-        tuple: SDR, SIR, SAR if inputs are numpy arrays.
+    Helper for scale_bss_eval to avoid infinite recursion loop.
     &quot;&quot;&quot;
-    references_projection = references.T @ references
     source = references[..., idx]
-    scale = (
-        (source @ estimates) /
-        references_projection[idx, idx]
-        if scaling else 1
+    source_energy = (source ** 2).sum()
+
+    alpha = (
+        source @ estimate / source_energy
     )
 
-    e_true = scale * source
-    e_res = estimates - e_true
+    e_true = source
+    e_res = estimate - e_true
 
     signal = (e_true ** 2).sum()
     noise = (e_res ** 2).sum()
 
-    sdr = 10 * np.log10(signal / noise)
+    snr = 10 * np.log10(signal / noise)
 
-    references_onto_residual = np.dot(references.transpose(), e_res)
-    b = np.linalg.solve(references_projection, references_onto_residual)
+    e_true = source * alpha
+    e_res = estimate - e_true
 
-    e_interf = np.dot(references, b)
-    e_artif = e_res - e_interf
+    signal = (e_true ** 2).sum()
+    noise = (e_res ** 2).sum()
 
-    sir = 10 * np.log10(signal / (e_interf ** 2).sum())
-    sar = 10 * np.log10(signal / (e_artif ** 2).sum())
-    return sdr, sir, sar</div>
+    si_sdr = 10 * np.log10(signal / noise)
+
+    srr = -10 * np.log10((1 - (1/alpha)) ** 2)
+    sd_sdr = snr + 10 * np.log10(alpha ** 2)
+
+    si_sir = np.nan
+    si_sar = np.nan
+
+    if compute_sir_sar:
+        references_projection = references.T @ references
+
+        references_onto_residual = np.dot(references.transpose(), e_res)
+        b = np.linalg.solve(references_projection, references_onto_residual)
+
+        e_interf = np.dot(references, b)
+        e_artif = e_res - e_interf
+
+        si_sir = 10 * np.log10(signal / (e_interf ** 2).sum())
+        si_sar = 10 * np.log10(signal / (e_artif ** 2).sum())
+
+    return si_sdr, si_sir, si_sar, sd_sdr, snr, srr
+
+<div class="viewcode-block" id="scale_bss_eval"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.scale_bss_eval">[docs]</a>def scale_bss_eval(references, estimate, mixture, idx, 
+                   compute_sir_sar=True):
+    &quot;&quot;&quot;
+    Computes metrics for references[idx] relative to the
+    chosen estimates. This only works for mono audio. Each
+    channel should be done independently when calling this
+    function. Lovingly borrowed from Gordon Wichern and 
+    Jonathan Le Roux at Mitsubishi Electric Research Labs.
+
+    This returns 9 numbers (in this order):
+
+    - SI-SDR: Scale-invariant source-to-distortion ratio. Higher is better.
+    - SI-SIR: Scale-invariant source-to-interference ratio. Higher is better.
+    - SI-SAR: Scale-invariant source-to-artifact ratio. Higher is better.
+    - SD-SDR: Scale-dependent source-to-distortion ratio. Higher is better.
+    - SNR: Signal-to-noise ratio. Higher is better.
+    - SRR: The source-to-rescaled-source ratio. This corresponds to 
+      a term that punishes the estimate if its scale is off relative
+      to the reference. This is an unnumbered equation in [1], but
+      is the term on page 2, second column, second to last line:
+      ||s - alpha*s||**2. s here is factored out. Higher is better.
+    - SI-SDRi: Improvement in SI-SDR over using the mixture as the estimate.
+    - SD-SDRi: Improvement in SD-SDR over using the mixture as the estimate.
+    - SNRi: Improvement in SNR over using the mixture as the estimate.
+
+    References:
+
+    [1] Le Roux, J., Wisdom, S., Erdogan, H., &amp; Hershey, J. R. 
+        (2019, May). SDR–half-baked or well done?. In ICASSP 2019-2019 IEEE 
+        International Conference on Acoustics, Speech and Signal 
+        Processing (ICASSP) (pp. 626-630). IEEE.
+    
+    Args:
+        references (np.ndarray): object containing the
+          references data. Of shape (n_samples, n_sources).
+         
+        estimate (np.ndarray): object containing the
+          estimate data. Of shape (n_samples, 1).
+
+        mixture (np.ndarray): objct containingthe
+          mixture data. Of shape (n_samples, 1).
+
+        idx (int): Which reference to compute metrics against.
+
+        compute_sir_sar (bool, optional): Whether or not to compute SIR/SAR
+          metrics, which can be computationally expensive and may not be
+          relevant for your evaluation. Defaults to True
+
+    Returns:
+        tuple: SI-SDR, SI-SIR, SI-SAR, SD-SDR, SNR, SRR, SI-SDRi, SD-SDRi, SNRi
+    &quot;&quot;&quot;    
+    si_sdr, si_sir, si_sar, sd_sdr, snr, srr = _scale_bss_eval(
+        references, estimate, idx, compute_sir_sar=compute_sir_sar)
+    mix_metrics = _scale_bss_eval(
+        references, mixture, idx, compute_sir_sar=False)
+
+    si_sdri = si_sdr - mix_metrics[0]
+    sd_sdri = sd_sdr - mix_metrics[3]
+    snri = snr - mix_metrics[4]
+
+    return si_sdr, si_sir, si_sar, sd_sdr, snr, srr, si_sdri, sd_sdri, snri</div>
 
 
 <div class="viewcode-block" id="BSSEvaluationBase"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvaluationBase">[docs]</a>class BSSEvaluationBase(EvaluationBase):
@@ -237,22 +296,22 @@ from .evaluation_base import EvaluationBase
     
     Args:
         true_sources_list (list): List of objects that contain one ground truth source per object.
-            In some instances (such as the :class:`BSSEval` objects) this list is filled with
-            :class:`AudioSignals` but in other cases it is populated with
-            :class:`MaskBase` -derived objects (i.e., either a :class:`BinaryMask` or
-            :class:`SoftMask` object).
+          In some instances (such as the :class:`BSSEval` objects) this list is filled with
+          :class:`AudioSignals` but in other cases it is populated with
+          :class:`MaskBase` -derived objects (i.e., either a :class:`BinaryMask` or
+          :class:`SoftMask` object).
         estimated_sources_list (list): List of objects that contain source estimations from a source
-            separation algorithm. List should be populated with the same type of objects and in the
-            same order as :param:`true_sources_list`.
+          separation algorithm. List should be populated with the same type of objects and in the
+          same order as :param:`true_sources_list`.
         source_labels (list): List of strings that are labels for each source to be used as keys for
-            the scores. Default value is `None` and in that case labels use the file_name attribute.
-            If that is also `None`, then the source labels are `Source 0`, `Source 1`, etc.
+          the scores. Default value is `None` and in that case labels use the file_name attribute.
+          If that is also `None`, then the source labels are `Source 0`, `Source 1`, etc.
         compute_permutation (bool): Whether or not to evaluate in a permutation-invariant 
-            fashion, where the estimates are permuted to match the true sources. Only the 
-            best permutation according to ``best_permutation_key`` is returned to the 
-            scores dict. Defaults to False.
+          fashion, where the estimates are permuted to match the true sources. Only the 
+          best permutation according to ``best_permutation_key`` is returned to the 
+          scores dict. Defaults to False.
         best_permutation_key (str): Which metric to use to decide which permutation of 
-            the sources was best.
+          the sources was best.
         **kwargs (dict): Any additional arguments are passed on to evaluate_helper.
     &quot;&quot;&quot;
 
@@ -272,14 +331,14 @@ from .evaluation_base import EvaluationBase
             tuple: Tuple containing reference and estimate arrays.
         &quot;&quot;&quot;
         references = np.stack(
-            [np.copy(x.audio_data.T) for x in self.true_sources_list],
+            [x.audio_data for x in self.true_sources_list],
             axis=-1
         )
         estimates = np.stack(
-            [np.copy(x.audio_data.T) for x in self.estimated_sources_list],
+            [x.audio_data for x in self.estimated_sources_list],
             axis=-1
         )
-        return references, estimates</div></div>
+        return references.transpose(1, 0, 2), estimates.transpose(1, 0, 2)</div></div>
 
 
 <div class="viewcode-block" id="BSSEvalV4"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalV4">[docs]</a>class BSSEvalV4(BSSEvaluationBase):
@@ -315,13 +374,44 @@ from .evaluation_base import EvaluationBase
         Scale invariant metrics expects zero-mean centered references and sources.
         &quot;&quot;&quot;
         references, estimates = super().preprocess()
+
+        mixture = references.sum(axis=-1)
+        mixture -= mixture.mean(axis=0)
+
+        self.mixture = mixture
         references -= references.mean(axis=0)
         estimates -= estimates.mean(axis=0)
+
         return references, estimates</div>
 
-<div class="viewcode-block" id="BSSEvalScale.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale.evaluate_helper">[docs]</a>    def evaluate_helper(self, references, estimates, scaling=True, **kwargs):
+<div class="viewcode-block" id="BSSEvalScale.evaluate_helper"><a class="viewcode-back" href="../../../evaluation.html#nussl.evaluation.BSSEvalScale.evaluate_helper">[docs]</a>    def evaluate_helper(self, references, estimates, compute_sir_sar=True):
         &quot;&quot;&quot;
-        Implements evaluation using scale-invariant BSSEval metrics [1].
+        Implements evaluation using new BSSEval metrics [1]. This computes every
+        metric described in [1], including:
+
+        - SI-SDR: Scale-invariant source-to-distortion ratio. Higher is better.
+        - SI-SIR: Scale-invariant source-to-interference ratio. Higher is better.
+        - SI-SAR: Scale-invariant source-to-artifact ratio. Higher is better.
+        - SD-SDR: Scale-dependent source-to-distortion ratio. Higher is better.
+        - SNR: Signal-to-noise ratio. Higher is better.
+        - SRR: The source-to-rescaled-source ratio. This corresponds to 
+          a term that punishes the estimate if its scale is off relative
+          to the reference. This is an unnumbered equation in [1], but
+          is the term on page 2, second column, second to last line:
+          ||s - alpha*s||**2. s is factored out. Higher is better.
+        - SI-SDRi: Improvement in SI-SDR over using the mixture as the estimate. Higher 
+          is better.
+        - SD-SDRi: Improvement in SD-SDR over using the mixture as the estimate. Higher
+          is better.
+        - SNRi: Improvement in SNR over using the mixture as the estimate. Higher is
+          better.
+
+        Note:
+
+        If `compute_sir_sar = False`, then you&#39;ll get `np.nan` for SI-SIR and 
+        SI-SAR!
+
+        References:
 
         [1] Le Roux, J., Wisdom, S., Erdogan, H., &amp; Hershey, J. R. 
         (2019, May). SDR–half-baked or well done?. In ICASSP 2019-2019 IEEE 
@@ -329,25 +419,47 @@ from .evaluation_base import EvaluationBase
         Processing (ICASSP) (pp. 626-630). IEEE.
         &quot;&quot;&quot;
 
-        sdr, sir, sar = [], [], []
+        sisdr, sisir, sisar, sdsdr, snr, srr, sisdri, sdsdri, snri = \
+            [], [], [], [], [], [], [], [], []
         for j in range(references.shape[-1]):
-            cSDR, cSIR, cSAR = [], [], []
+            cSISDR, cSISIR, cSISAR, cSDSDR, cSNR, cSRR, cSISDRi, cSDSDRi, cSNRi = \
+                [], [], [], [], [], [], [], [], []
             for ch in range(references.shape[-2]):
-                _SDR, _SIR, _SAR = scale_bss_eval(
-                    references[..., ch, :], estimates[..., ch, j],
-                    j, scaling=scaling
+                _SISDR, _SISIR, _SISAR, _SDSDR, _SNR, _SRR, _SISDRi, _SDSDRi, _SNRi = (
+                    scale_bss_eval(
+                        references[..., ch, :], estimates[..., ch, j], 
+                        self.mixture[..., ch], j, compute_sir_sar=compute_sir_sar
+                    )
                 )
-                cSDR.append(_SDR)
-                cSIR.append(_SIR)
-                cSAR.append(_SAR)
-            sdr.append(cSDR)
-            sir.append(cSIR)
-            sar.append(cSAR)
+            
+                cSISDR.append(_SISDR)
+                cSISIR.append(_SISIR)
+                cSISAR.append(_SISAR)
+                cSDSDR.append(_SDSDR)
+                cSNR.append(_SNR)
+                cSRR.append(_SRR)
+                cSISDRi.append(_SISDRi)
+                cSDSDRi.append(_SDSDRi)
+                cSNRi.append(_SNRi)
+
+            sisdr.append(cSISDR)
+            sisir.append(cSISIR)
+            sisar.append(cSISAR)
+
+            sdsdr.append(cSDSDR)
+            snr.append(cSNR)
+            srr.append(cSRR)
+
+            sisdri.append(cSISDRi)
+            sdsdri.append(cSDSDRi)
+            snri.append(cSNRi)
 
         scores = []
         for j in range(references.shape[-1]):
             score = {
-                &#39;SDR&#39;: sdr[j], &#39;SIR&#39;: sir[j], &#39;SAR&#39;: sar[j],
+                &#39;SI-SDR&#39;: sisdr[j], &#39;SI-SIR&#39;: sisir[j], &#39;SI-SAR&#39;: sisar[j],
+                &#39;SD-SDR&#39;: sdsdr[j], &#39;SNR&#39;: snr[j], &#39;SRR&#39;: srr[j], 
+                &#39;SI-SDRi&#39;: sisdri[j], &#39;SD-SDRi&#39;: sdsdri[j], &#39;SNRi&#39;: snri[j]
             }
             scores.append(score)
         return scores</div></div>

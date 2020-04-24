@@ -174,7 +174,7 @@ from torch import nn
 import numpy as np
 
 from . import modules
-
+from ... import __version__
 
 <div class="viewcode-block" id="SeparationModel"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.SeparationModel">[docs]</a>class SeparationModel(nn.Module):
     &quot;&quot;&quot;
@@ -209,7 +209,7 @@ from . import modules
         &gt;&gt;&gt;
         &gt;&gt;&gt; model = SeparationModel(config)
     &quot;&quot;&quot;
-    def __init__(self, config):
+    def __init__(self, config, verbose=False):
         super(SeparationModel, self).__init__()
         if type(config) is str:
             if os.path.exists(config):
@@ -225,7 +225,10 @@ from . import modules
         for module_key in config[&#39;modules&#39;]:
             module = config[&#39;modules&#39;][module_key]
             if &#39;class&#39; in module:
-                class_func = getattr(modules, module[&#39;class&#39;])
+                if module[&#39;class&#39;] in dir(modules): 
+                    class_func = getattr(modules, module[&#39;class&#39;])
+                else:
+                    class_func = getattr(nn, module[&#39;class&#39;])
                 if &#39;args&#39; not in module:
                     module[&#39;args&#39;] = {}
                 module_dict[module_key] = class_func(**module[&#39;args&#39;])
@@ -236,6 +239,7 @@ from . import modules
         self.connections = config[&#39;connections&#39;]
         self.output_keys = config[&#39;output&#39;]
         self.config = config
+        self.verbose = verbose
 
     @staticmethod
     def _validate_config(config):
@@ -278,15 +282,44 @@ from . import modules
                 for c in connection[1]:
                     if isinstance(c, dict):
                         for key, val in c.items():
-                            kwargs[key] = output[val] if val in output else data[val]
+                            if val in output:
+                                kwargs[key] = output[val]
+                            elif val in data:
+                                kwargs[key] = data[val]
+                            else:
+                                kwargs[key] = val
                     else:
                         input_data.append(output[c] if c in output else data[c])
             _output = layer(*input_data, **kwargs)
+            added_keys = []
             if isinstance(_output, dict):
                 for k in _output:
-                    output[f&#39;{connection[0]}:{k}&#39;] = _output[k]
+                    _key = f&#39;{connection[0]}:{k}&#39;
+                    output[_key] = _output[k]
+                    added_keys.append(_key)
+            elif isinstance(_output, tuple):
+                for i, val in enumerate(_output):
+                    _key = f&#39;{connection[0]}:{i}&#39;
+                    output[_key] = val
+                    added_keys.append(_key)
             else:
-                output[connection[0]] = _output
+                _key = connection[0]
+                output[_key] = _output
+                added_keys.append(_key)
+            
+            if self.verbose:
+                input_shapes = []
+                for d in input_data:
+                    if torch.is_tensor(d):
+                        input_shapes.append(d.shape)
+                input_desc = &quot;, &quot;.join(map(str, input_shapes))
+                output_desc = &quot;, &quot;.join(
+                    [f&#39;{k}: {output[k].shape}&#39; for k in added_keys])
+                print(
+                    f&quot;{connection[1]} -&gt; {connection[0]} \n&quot;
+                    f&quot;\tTook inputs: {input_desc} \n&quot;
+                    f&quot;\tProduced {output_desc} &quot;
+                )
                 
         return {o: output[o] for o in self.output_keys}</div>
 
@@ -305,7 +338,10 @@ from . import modules
             &#39;state_dict&#39;: self.state_dict(),
             &#39;config&#39;: json.dumps(self.config)
         }
-        save_dict = {**save_dict, **(metadata if metadata else {})}
+
+        metadata = metadata if metadata else {}
+        metadata[&#39;nussl_version&#39;] = __version__
+        save_dict = {**save_dict, **metadata}
         torch.save(save_dict, location)
         return location</div>
     

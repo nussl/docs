@@ -547,8 +547,8 @@ following dictionary:</p>
 <span class="gp">&gt;&gt;&gt; </span>            <span class="n">pitch_shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="gp">&gt;&gt;&gt; </span>            <span class="n">time_stretch</span><span class="o">=</span><span class="kc">None</span>
 <span class="gp">&gt;&gt;&gt; </span>        <span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="n">audio_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.wav&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span>    <span class="n">jams_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.jams&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">audio_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{i}</span><span class="s1">.wav&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">jams_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{i}</span><span class="s1">.jams&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">sc</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">audio_path</span><span class="p">,</span> <span class="n">jams_path</span><span class="p">,</span> <span class="n">save_isolated_events</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span> <span class="o">=</span> <span class="n">nussl</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">Scaper</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># contains mix, sources, and metadata corresponding to 0.jams.</span>
@@ -742,28 +742,31 @@ on implementation of <code class="docutils literal notranslate"><span class="pre
 <tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.Compose" title="nussl.datasets.transforms.Compose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compose</span></code></a>(transforms)</p></td>
 <td><p>Composes several transforms together.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.GetExcerpt" title="nussl.datasets.transforms.GetExcerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GetExcerpt</span></code></a>(excerpt_length[, time_dim, tf_keys])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.GetAudio" title="nussl.datasets.transforms.GetAudio"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GetAudio</span></code></a>([mix_key, source_key])</p></td>
+<td><p>Extracts the audio from each signal in <cite>mix_key</cite> and <cite>source_key</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.GetExcerpt" title="nussl.datasets.transforms.GetExcerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GetExcerpt</span></code></a>(excerpt_length[, time_dim, tf_keys])</p></td>
 <td><p>Takes in a dictionary containing Torch tensors or numpy arrays and extracts an excerpt from each tensor corresponding to a spectral representation of a specified length in frames.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.IndexSources" title="nussl.datasets.transforms.IndexSources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IndexSources</span></code></a>(target_key, index)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.IndexSources" title="nussl.datasets.transforms.IndexSources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IndexSources</span></code></a>(target_key, index)</p></td>
 <td><p>Takes in a dictionary containing Torch tensors or numpy arrays and extracts the indexed sources from the set key (usually either <cite>source_magnitudes</cite> or <cite>ideal_binary_mask</cite>).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.LabelsToOneHot" title="nussl.datasets.transforms.LabelsToOneHot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LabelsToOneHot</span></code></a>([source_key])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.LabelsToOneHot" title="nussl.datasets.transforms.LabelsToOneHot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LabelsToOneHot</span></code></a>([source_key])</p></td>
 <td><p>Takes a data dictionary with sources and their keys and converts the keys to a one-hot numpy array using the list in data[‘metadata’][‘labels’] to figure out which index goes where.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.MagnitudeSpectrumApproximation" title="nussl.datasets.transforms.MagnitudeSpectrumApproximation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MagnitudeSpectrumApproximation</span></code></a>([mix_key, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.MagnitudeSpectrumApproximation" title="nussl.datasets.transforms.MagnitudeSpectrumApproximation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MagnitudeSpectrumApproximation</span></code></a>([mix_key, …])</p></td>
 <td><p>Takes a dictionary and looks for two special keys, defined by the arguments <code class="docutils literal notranslate"><span class="pre">mix_key</span></code> and <code class="docutils literal notranslate"><span class="pre">source_key</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.MagnitudeWeights" title="nussl.datasets.transforms.MagnitudeWeights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MagnitudeWeights</span></code></a>([mix_key, mix_magnitude_key])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.MagnitudeWeights" title="nussl.datasets.transforms.MagnitudeWeights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MagnitudeWeights</span></code></a>([mix_key, mix_magnitude_key])</p></td>
 <td><p>Applying time-frequency weights to the deep clustering objective results in a huge performance boost.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation" title="nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhaseSensitiveSpectrumApproximation</span></code></a>([…])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation" title="nussl.datasets.transforms.PhaseSensitiveSpectrumApproximation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhaseSensitiveSpectrumApproximation</span></code></a>([…])</p></td>
 <td><p>Takes a dictionary and looks for two special keys, defined by the arguments <code class="docutils literal notranslate"><span class="pre">mix_key</span></code> and <code class="docutils literal notranslate"><span class="pre">source_key</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.SumSources" title="nussl.datasets.transforms.SumSources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SumSources</span></code></a>(groupings[, group_names, source_key])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.SumSources" title="nussl.datasets.transforms.SumSources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SumSources</span></code></a>(groupings[, group_names, source_key])</p></td>
 <td><p>Sums sources together.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#nussl.datasets.transforms.ToSeparationModel" title="nussl.datasets.transforms.ToSeparationModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToSeparationModel</span></code></a>([swap_tf_dims])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.datasets.transforms.ToSeparationModel" title="nussl.datasets.transforms.ToSeparationModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ToSeparationModel</span></code></a>([swap_tf_dims])</p></td>
 <td><p>Takes in a dictionary containing objects and removes any objects that cannot be passed to SeparationModel (e.g.</p></td>
 </tr>
 </tbody>
@@ -841,6 +844,24 @@ cache. A typical pipeline might look like this:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">])</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="class">
+<dt id="nussl.datasets.transforms.GetAudio">
+<em class="property">class </em><code class="sig-prename descclassname">nussl.datasets.transforms.</code><code class="sig-name descname">GetAudio</code><span class="sig-paren">(</span><em class="sig-param">mix_key='mix'</em>, <em class="sig-param">source_key='sources'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/datasets/transforms.html#GetAudio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.datasets.transforms.GetAudio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts the audio from each signal in <cite>mix_key</cite> and <cite>source_key</cite>.
+These will be at new keys, called <cite>mix_audio</cite> and <cite>source_audio</cite>.
+Can be used for training end-to-end models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in data for the mixture AudioSignal.
+Defaults to ‘mix’.</p></li>
+<li><p><strong>source_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the data containing the dict of
+source AudioSignals. Defaults to ‘sources’.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="class">
@@ -944,7 +965,7 @@ on Acoustics, Speech and Signal Processing (ICASSP), pp. 708-712. IEEE,
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>mix_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in data for the mixture AudioSignal.
 Defaults to ‘mix’.</p></li>
-<li><p><strong>source_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the data containing the list of
+<li><p><strong>source_key</strong> (<em>str</em><em>, </em><em>optional</em>) – The key to look for in the data containing the dict of
 source AudioSignals. Defaults to ‘sources’.</p></li>
 </ul>
 </dd>

@@ -266,6 +266,28 @@ ALLOWED_CLUSTERING_TYPES = [&#39;KMeans&#39;, &#39;GaussianMixture&#39;, &#39;Mi
         self.cutoff = np.percentile(np.abs(self.stft), self.percentile)
         self.tf_point_over_cutoff = np.abs(self.stft) &gt;= self.cutoff
 
+<div class="viewcode-block" id="ClusteringSeparationBase.confidence"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.confidence">[docs]</a>    def confidence(self, approach=&#39;silhouette_confidence&#39;, **kwargs):
+        &quot;&quot;&quot;
+        In clustering-based separation algorithms, we can compute a confidence
+        measure based on the clusterability of the feature space. This can be computed
+        only after the features have been extracted by ``extract_features``. 
+        
+        Args:
+            approach (str, optional): What approach to use for getting the confidence 
+              measure. Options are &#39;jensen_shannon_confidence&#39;, &#39;posterior_confidence&#39;, 
+              &#39;silhouette_confidence&#39;, &#39;loudness_confidence&#39;, &#39;whitened_kmeans_confidence&#39;,
+              &#39;dpcl_classic_confidence&#39;. Defaults to &#39;silhouette_confidence&#39;.
+            kwargs: Keyword arguments to the function being used to compute the confidence.
+        &quot;&quot;&quot;
+        if self.features is None:
+            raise SeparationException(
+                &quot;self.features is None! Did you run extract features?&quot;)
+        confidence_function = getattr(ml.confidence, approach)
+        confidence = confidence_function(
+            self.audio_signal, self.features, self.num_sources, **kwargs)
+        return confidence</div>
+
+
 <div class="viewcode-block" id="ClusteringSeparationBase.extract_features"><a class="viewcode-back" href="../../../../separation.html#nussl.separation.ClusteringSeparationBase.extract_features">[docs]</a>    def extract_features(self):
         &quot;&quot;&quot;
         This function should be implemented by the subclass. It should extract

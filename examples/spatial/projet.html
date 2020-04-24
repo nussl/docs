@@ -524,7 +524,7 @@ div.rendered_html tbody tr:hover {
 <span class="n">estimates</span> <span class="o">=</span> <span class="n">separator</span><span class="p">()</span>
 
 <span class="n">estimates</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="sa">f</span><span class="s1">&#39;Source </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">e</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
+    <span class="sa">f</span><span class="s1">&#39;Source </span><span class="si">{i}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">e</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
 <span class="p">}</span>
 
 <span class="n">visualize_and_embed</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
@@ -557,7 +557,7 @@ MYNBIQPMZJPLSGQEJEYD_player[containerID].playButton.click();});};MYNBIQPMZJPLSGQ
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 <span class="n">time_taken</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Time taken: </span><span class="si">{</span><span class="n">time_taken</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> seconds&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Time taken: </span><span class="si">{time_taken:.4f}</span><span class="s1"> seconds&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -566,7 +566,7 @@ MYNBIQPMZJPLSGQEJEYD_player[containerID].playButton.click();});};MYNBIQPMZJPLSGQ
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-Time taken: 45.9384 seconds
+Time taken: 43.8166 seconds
 </pre></div></div>
 </div>
 </div>

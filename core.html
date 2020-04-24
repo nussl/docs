@@ -220,7 +220,7 @@
 <em class="property">class </em><code class="sig-prename descclassname">nussl.core.</code><code class="sig-name descname">AudioSignal</code><span class="sig-paren">(</span><em class="sig-param">path_to_input_file=None</em>, <em class="sig-param">audio_data_array=None</em>, <em class="sig-param">stft=None</em>, <em class="sig-param">label=None</em>, <em class="sig-param">sample_rate=None</em>, <em class="sig-param">stft_params=None</em>, <em class="sig-param">offset=0</em>, <em class="sig-param">duration=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/core/audio_signal.html#AudioSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.core.AudioSignal" title="Permalink to this definition">¶</a></dt>
 <dd><p><strong>Overview</strong></p>
 <p><a class="reference internal" href="#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignal</span></code></a> is the main entry and exit point for all source separation algorithms
-in <code class="docutils literal notranslate"><span class="pre">nussl</span></code>. The <a class="reference internal" href="#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignal</span></code></a> class is a general container for all things related to
+in <em>nussl</em>. The <a class="reference internal" href="#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignal</span></code></a> class is a general container for all things related to
 audio data. It contains utilities for:</p>
 <ul class="simple">
 <li><p>Input and output from an array or from a file,</p></li>
@@ -368,7 +368,7 @@ audio data. It contains utilities for:</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#nussl.core.AudioSignal.play" title="nussl.core.AudioSignal.play"><code class="xref py py-obj docutils literal notranslate"><span class="pre">play</span></code></a>()</p></td>
 <td><p>Plays this audio signal, using <cite>nussl.play_utils.play</cite>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.core.AudioSignal.resample" title="nussl.core.AudioSignal.resample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resample</span></code></a>(new_sample_rate)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#nussl.core.AudioSignal.resample" title="nussl.core.AudioSignal.resample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resample</span></code></a>(new_sample_rate, **kwargs)</p></td>
 <td><p>Resample the data in <code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_data</span></code> to the new sample rate provided by <a href="#id35"><span class="problematic" id="id36">:param:`new_sample_rate`</span></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#nussl.core.AudioSignal.rms" title="nussl.core.AudioSignal.rms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rms</span></code></a>([win_len, hop_len])</p></td>
@@ -403,7 +403,7 @@ audio data. It contains utilities for:</p>
 </tr>
 </tbody>
 </table>
-<p>and more. The <a class="reference internal" href="#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignal</span></code></a> class is used in all source separation objects in <code class="docutils literal notranslate"><span class="pre">nussl</span></code>.</p>
+<p>and more. The <a class="reference internal" href="#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignal</span></code></a> class is used in all source separation objects in <em>nussl</em>.</p>
 <p><a class="reference internal" href="#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignal</span></code></a> object stores time-series audio data as a 2D <code class="docutils literal notranslate"><span class="pre">numpy</span></code> array in
 <a class="reference internal" href="#nussl.core.AudioSignal.audio_data" title="nussl.core.AudioSignal.audio_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_data</span></code></a> (see <a class="reference internal" href="#nussl.core.AudioSignal.audio_data" title="nussl.core.AudioSignal.audio_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_data</span></code></a> for details) and stores Short-Time Fourier Transform
 data as 3D <code class="docutils literal notranslate"><span class="pre">numpy</span></code> array in <span class="xref std std-ref">stft_data</span> (see <a class="reference internal" href="#nussl.core.AudioSignal.stft_data" title="nussl.core.AudioSignal.stft_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">stft_data</span></code></a> for details).</p>
@@ -488,7 +488,7 @@ previous at once.</p>
 </div></blockquote>
 <p>When initializing from a path, <a class="reference internal" href="#nussl.core.AudioSignal" title="nussl.core.AudioSignal"><code class="xref py py-class docutils literal notranslate"><span class="pre">AudioSignal</span></code></a> can read many types of audio files,
 provided that your computer has the backends installed to understand the corresponding codecs.
-<code class="docutils literal notranslate"><span class="pre">nussl</span></code> uses <code class="docutils literal notranslate"><span class="pre">librosa</span></code>’s <cite>load</cite> function to read in audio data. See librosa’s documentation
+<em>nussl</em> uses <code class="docutils literal notranslate"><span class="pre">librosa</span></code>’s <cite>load</cite> function to read in audio data. See librosa’s documentation
 for details: <a class="reference external" href="https://github.com/librosa/librosa#audioread">https://github.com/librosa/librosa#audioread</a></p>
 <p>Once initialized with a single type of data (time-series or time-frequency), there are methods
 to compute an STFT from time-series data (<a class="reference internal" href="#nussl.core.AudioSignal.stft" title="nussl.core.AudioSignal.stft"><code class="xref py py-func docutils literal notranslate"><span class="pre">stft()</span></code></a>) and vice versa (<a class="reference internal" href="#nussl.core.AudioSignal.istft" title="nussl.core.AudioSignal.istft"><code class="xref py py-func docutils literal notranslate"><span class="pre">istft()</span></code></a>).</p>
@@ -1296,13 +1296,16 @@ element-wise squaring of entries of the STFT. Same shape as <a class="reference 
 
 <dl class="method">
 <dt id="nussl.core.AudioSignal.resample">
-<code class="sig-name descname">resample</code><span class="sig-paren">(</span><em class="sig-param">new_sample_rate</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/core/audio_signal.html#AudioSignal.resample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.core.AudioSignal.resample" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">resample</code><span class="sig-paren">(</span><em class="sig-param">new_sample_rate</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nussl/core/audio_signal.html#AudioSignal.resample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#nussl.core.AudioSignal.resample" title="Permalink to this definition">¶</a></dt>
 <dd><p>Resample the data in <a class="reference internal" href="#nussl.core.AudioSignal.audio_data" title="nussl.core.AudioSignal.audio_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_data</span></code></a> to the new sample rate provided by
 <a href="#id21"><span class="problematic" id="id22">:param:`new_sample_rate`</span></a>. If the <a href="#id23"><span class="problematic" id="id24">:param:`new_sample_rate`</span></a> is the same as <a class="reference internal" href="#nussl.core.AudioSignal.sample_rate" title="nussl.core.AudioSignal.sample_rate"><code class="xref py py-attr docutils literal notranslate"><span class="pre">sample_rate</span></code></a>
 then nothing happens.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>new_sample_rate</strong> (<em>int</em>) – The new sample rate of <a class="reference internal" href="#nussl.core.AudioSignal.audio_data" title="nussl.core.AudioSignal.audio_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_data</span></code></a>.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>new_sample_rate</strong> (<em>int</em>) – The new sample rate of <a class="reference internal" href="#nussl.core.AudioSignal.audio_data" title="nussl.core.AudioSignal.audio_data"><code class="xref py py-attr docutils literal notranslate"><span class="pre">audio_data</span></code></a>.</p></li>
+<li><p><strong>kwargs</strong> – Keyword arguments to librosa.resample.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -2715,7 +2718,7 @@ implementation of BSS-Eval and <code class="docutils literal notranslate"><span 
 </dd>
 </dl>
 </li>
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">BSSEvalV4</span></code> for <code class="docutils literal notranslate"><span class="pre">nussl</span></code>’s interface to BSS-Eval v4.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">BSSEvalV4</span></code> for <em>nussl</em>’s interface to BSS-Eval v4.</p></li>
 </ul>
 </div>
 <p class="rubric">Examples</p>

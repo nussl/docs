@@ -211,30 +211,64 @@ from .trainer import BackwardsEvents
             }
         }
 
+    Or if you&#39;re using permutation invariant loss but need to specify arguments to the
+    loss function being wrapped by PIT, you can do this:
+
+    .. code-block:: python
+
+        loss_dictionary = {
+            &#39;PITLoss&#39;: {
+                &#39;class&#39;: &#39;PermutationInvariantLoss&#39;,
+                &#39;keys&#39;: {&#39;audio&#39;: &#39;estimates&#39;, &#39;source_audio&#39;: &#39;targets&#39;},
+                &#39;args&#39;: [{
+                    &#39;class&#39;: &#39;SISDRLoss&#39;,
+                    &#39;kwargs&#39;: {&#39;scaling&#39;: False}
+                }]
+            }
+        }
+
+
     If you have your own loss function classes you wish to use, you can pass those
     into the loss dictionary and make them discoverable by the closure by using
     `ml.register_loss.`
 
     Args:
         loss_dictionary (dict): Dictionary of losses described above.
+        combination_approach (str): How to combine losses, if there are multiple
+         losses. The default is that the losses will be combined via a weighted
+         sum (&#39;combine_by_sum&#39;). Can also do &#39;combine_by_multiply&#39;. Defaults to
+         &#39;combine_by_sum&#39;.
+        args: Positional arguments to ``combination_approach``.
+        kwargs: Keyword arguments to ``combination_approach``.
 
     See also:
         ml.register_loss to register your loss functions with this closure.
-
     &quot;&quot;&quot;
 
-    def __init__(self, loss_dictionary):
+    def __init__(self, loss_dictionary, combination_approach=&#39;combine_by_sum&#39;, 
+                 *args, **kwargs):
         loss_dictionary = self._validate_loss_dictionary(loss_dictionary)
+
+        self.combination_func = getattr(self, combination_approach)
+        self.args = args
+        self.kwargs = kwargs
 
         self.losses = []
         for key, val in loss_dictionary.items():
-            loss_class = getattr(loss, key)
+            _loss_name = val[&#39;class&#39;] if &#39;class&#39; in val else key
+            loss_class = getattr(loss, _loss_name)
             weight = 1 if &#39;weight&#39; not in val else val[&#39;weight&#39;]
             keys = loss_class.DEFAULT_KEYS if &#39;keys&#39; not in val else val[&#39;keys&#39;]
-            args = [] if &#39;args&#39; not in val else val[&#39;args&#39;]
-            kwargs = {} if &#39;kwargs&#39; not in val else val[&#39;kwargs&#39;]
-            if key in [&#39;CombinationInvariantLoss&#39;, &#39;PermutationInvariantLoss&#39;]:
-                args[0] = getattr(loss, args[0])()
+            args = [] if &#39;args&#39; not in val else copy.deepcopy(val[&#39;args&#39;])
+            kwargs = {} if &#39;kwargs&#39; not in val else copy.deepcopy(val[&#39;kwargs&#39;])
+            if _loss_name in [&#39;CombinationInvariantLoss&#39;, &#39;PermutationInvariantLoss&#39;]:
+                if isinstance(args[0], str):
+                    args[0] = getattr(loss, args[0])()
+                elif isinstance(args[0], dict):
+                    arg_class = getattr(loss, args[0][&#39;class&#39;])
+                    args_to_loss = [] if &#39;args&#39; not in args[0] else args[0][&#39;args&#39;]
+                    kwargs_to_loss = {} if &#39;kwargs&#39; not in args[0] else args[0][&#39;kwargs&#39;]
+                    args[0] = arg_class(*args_to_loss, **kwargs_to_loss)
 
             _loss = (loss_class(*args, **kwargs), weight, keys, key)
             self.losses.append(_loss)
@@ -247,21 +281,22 @@ from .trainer import BackwardsEvents
                 &quot;class and arguments for each loss function! &quot;)
 
         for key, val in loss_dictionary.items():
-            if key not in dir(loss):
+            _loss = val[&#39;class&#39;] if &#39;class&#39; in val else key
+            if _loss not in dir(loss):
                 raise ClosureException(
-                    f&quot;Loss function {key} not found in loss which has {dir(loss)}&quot;)
+                    f&quot;Loss function {_loss} not found in loss which has {dir(loss)}&quot;)
 
             if not isinstance(val, dict):
                 raise ClosureException(
                     &quot;Each key in loss dictionary must point to a dict!&quot;)
 
             for val_key in val:
-                if val_key not in [&#39;weight&#39;, &#39;keys&#39;, &#39;args&#39;, &#39;kwargs&#39;]:
+                if val_key not in [&#39;weight&#39;, &#39;keys&#39;, &#39;args&#39;, &#39;kwargs&#39;, &#39;class&#39;]:
                     raise ClosureException(
                         f&quot;{key} in loss_dictionary not in [&#39;weight&#39;, &#39;args&#39;, &#39;kwargs&#39;&quot;)
 
                 elif val_key == &#39;weight&#39;:
-                    if not isinstance(val[val_key], float) and not isinstance(val[val_key], int):
+                    if not isinstance(val[val_key], (float, int)) and not torch.is_tensor(val[val_key]):
                         raise ClosureException(f&quot;weight can only be an int or a float&quot;)
 
                 elif val_key == &#39;args&#39;:
@@ -271,23 +306,60 @@ from .trainer import BackwardsEvents
                 elif val_key == &#39;kwargs&#39;:
                     if not isinstance(val[val_key], dict):
                         raise ClosureException(&quot;kwargs must be a dict&quot;)
-
-        return copy.deepcopy(loss_dictionary)
+        
+        return loss_dictionary
 
     def __call__(self, engine, data):
         raise NotImplementedError()
 
+<div class="viewcode-block" id="Closure.combine_by_multitask"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure.combine_by_multitask">[docs]</a>    def combine_by_multitask(self, loss_output):
+        &quot;&quot;&quot;
+        Implements a multitask learning objective [1] where each loss
+        is weighted by a learned parameter with the following
+        function:
+
+        combined_loss = \sum_i exp(-weight_i) * loss_i + weight_i
+
+        where i indexes each loss. The weights come from the loss 
+        dictionary and can point to nn.Parameter teensors that get 
+        learned jointly with the model.
+
+        References:
+
+        [1] Kendall, Alex, Yarin Gal, and Roberto Cipolla. 
+            &quot;Multi-task learning using uncertainty to weigh losses 
+            for scene geometry and semantics.&quot; Proceedings of the 
+            IEEE conference on computer vision and pattern recognition. 2018.
+        &quot;&quot;&quot;
+        combined_loss = 0
+        for _, weight, _, name in self.losses:
+            sigma = torch.exp(-weight)
+            combined_loss += sigma * loss_output[name] + weight
+        return combined_loss</div>
+
+<div class="viewcode-block" id="Closure.combine_by_multiply"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure.combine_by_multiply">[docs]</a>    def combine_by_multiply(self, loss_output):
+        combined_loss = 1
+        for _, weight, _, name in self.losses:
+            combined_loss *= weight * loss_output[name]
+        return combined_loss</div>
+
+<div class="viewcode-block" id="Closure.combine_by_sum"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure.combine_by_sum">[docs]</a>    def combine_by_sum(self, loss_output):
+        combined_loss = 0
+        for _, weight, _, name in self.losses:
+            combined_loss += weight * loss_output[name]
+        return combined_loss</div>
+
 <div class="viewcode-block" id="Closure.compute_loss"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.Closure.compute_loss">[docs]</a>    def compute_loss(self, output, target):
         loss_output = {}
         output.update(target)
-        loss_output[&#39;loss&#39;] = 0
 
         for loss_obj, weight, keys, name in self.losses:
             kwargs = {keys[k]: output[k] for k in keys}
             loss_output[name] = loss_obj(**kwargs)
-            loss_output[&#39;loss&#39;] += weight * loss_output[name]
+        
+        loss_output[&#39;loss&#39;] = self.combination_func(
+            loss_output, *self.args, **self.kwargs)
         return loss_output</div></div>
-
 
 <div class="viewcode-block" id="TrainClosure"><a class="viewcode-back" href="../../../../ml.html#nussl.ml.train.closures.TrainClosure">[docs]</a>class TrainClosure(Closure):
     &quot;&quot;&quot;
@@ -300,10 +372,14 @@ from .trainer import BackwardsEvents
         model (SeparationModel): The model to be trained.
     &quot;&quot;&quot;
 
-    def __init__(self, loss_dictionary, optimizer, model):
-        super().__init__(loss_dictionary)
+    def __init__(self, loss_dictionary, optimizer, model, *args, **kwargs):
+        super().__init__(loss_dictionary, *args, **kwargs)
         self.optimizer = optimizer
         self.model = model
+
+    def _fire_event(self, engine, event):
+        if engine is not None:
+            engine.fire_event(event)
 
     def __call__(self, engine, data):
         self.model.train()
@@ -313,8 +389,7 @@ from .trainer import BackwardsEvents
 
         loss_ = self.compute_loss(output, data)
         loss_[&#39;loss&#39;].backward()
-        if engine is not None:
-            engine.fire_event(BackwardsEvents.BACKWARDS_COMPLETED)
+        self._fire_event(engine, BackwardsEvents.BACKWARDS_COMPLETED)
         self.optimizer.step()
         loss_ = {key: loss_[key].item() for key in loss_}
 
@@ -330,8 +405,8 @@ from .trainer import BackwardsEvents
         model (SeparationModel): The model to be validated.
     &quot;&quot;&quot;
 
-    def __init__(self, loss_dictionary, model):
-        super().__init__(loss_dictionary)
+    def __init__(self, loss_dictionary, model, *args, **kwargs):
+        super().__init__(loss_dictionary, *args, **kwargs)
         self.model = model
 
     def __call__(self, engine, data):

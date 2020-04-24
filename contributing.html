@@ -223,12 +223,23 @@ is API documentation which is maintained alongside the code. The second part is
 tutorials and examples, which are maintained as Jupyter <em>notebooks</em> and compiled into
 the docs via [nbsphinx](<a class="reference external" href="https://nbsphinx.readthedocs.io/en/0.5.1/">https://nbsphinx.readthedocs.io/en/0.5.1/</a>).</p>
 <p>The installation requirements for maintaining docs are kept in <code class="docutils literal notranslate"><span class="pre">extra_requirements</span></code>:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pip install -r extra_requirements.txt
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ pip install -r extra_requirements.txt
 </pre></div>
 </div>
-<p>You’ll also need Jupyter installed to edit or create new tutorials, or make new
-examples.</p>
-<p>However, notebooks are NOT kept in the docs repository as is, as notebooks are very
+<p>Also make sure that nussl itself is installed in your env by navigating to the top-level
+<em>nussl</em> directory and running:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ pip install -e .
+</pre></div>
+</div>
+<p>You will also need both of the following installed to edit or create new tutorials or examples:</p>
+<ul class="simple">
+<li><p>[Jupyter](<a class="reference external" href="https://jupyter.org/install">https://jupyter.org/install</a>)</p></li>
+<li><p>[Pandoc](<a class="reference external" href="https://pandoc.org/installing.html">https://pandoc.org/installing.html</a>)</p></li>
+</ul>
+<p>Follow the links for installation instructions for each of these projects.
+(You may need to pip install extra_requirements.txt outside a conda env so that the
+jupyter extensions can register correctly.)</p>
+<p>Notebooks are NOT kept in the docs repository as is, as notebooks are very
 hard to keep track of in git diffs and can get very large. Instead, they are kept as only
 [jupytext](<a class="reference external" href="https://jupytext.readthedocs.io/en/latest/index.html">https://jupytext.readthedocs.io/en/latest/index.html</a>) representations.
 So to build new docs, one will have to keep a local copy of every notebook executed. The
@@ -238,25 +249,28 @@ executed format to the repository from a specific machine.</p>
 <p>So, to contribute a notebook demonstrating or explaining some facet of <em>nussl</em>, do the
 following:</p>
 <ol class="arabic">
-<li><p>Execute all of the notebooks present in the docs (this only has to happen once on
-your machine):</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python create_and_execute_notebook.py all            # make all notebooks
-# OR
-make notebooks # this just runs what is above
-
-python create_and_execute_notebook path/to/script.py # make just one notebook
+<li><p>Before you begin, navigate to the <code class="docutils literal notranslate"><span class="pre">docs/</span></code> directory and execute all of the notebooks present
+in the docs (this only has to happen once on your machine):</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ make notebooks
 </pre></div>
 </div>
-<p>This will find every <a href="#id1"><span class="problematic" id="id2">*</span></a>.py script in docs/examples and docs/tutorials, create the
+<p>This will find every <code class="docutils literal notranslate"><span class="pre">*.py</span></code> script in docs/examples and docs/tutorials, create the
 associated notebook, execute the cells, and convert your notebook to HTML so you
 can quickly see what it looks like without having to launch it in Jupyter notebook.
 When you run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code>, the executed notebooks are used in the documentation.</p>
+<p>To just make one notebook, run the following command:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ python create_and_execute_notebook path/to/script.py # make just one notebook
+</pre></div>
+</div>
 </li>
-<li><p>Option 1: create a new notebook in either <code class="docutils literal notranslate"><span class="pre">tutorials</span></code> or <code class="docutils literal notranslate"><span class="pre">examples</span></code>. Work in the notebook
-until you are satisifed with your explanation/demo. Note: your notebook is NOT yet
+<li><p>To actually</p></li>
+</ol>
+<blockquote>
+<div><dl>
+<dt>Option 1: create a new notebook in either <code class="docutils literal notranslate"><span class="pre">tutorials</span></code> or <code class="docutils literal notranslate"><span class="pre">examples</span></code>. Work in the notebook</dt><dd><p>until you are satisfied with your explanation/demo. Note: your notebook is NOT yet
 in version control!</p>
 <p>Now run the following command on your notebook:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>jupytext --set-formats ipynb,py docs/path/to/notebook.ipynb
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ jupytext --set-formats ipynb,py docs/path/to/notebook.ipynb
 </pre></div>
 </div>
 <p>The light text representation of your notebook is now tracked by Git and it is
@@ -265,13 +279,16 @@ executed (manually), when you make the docs you’ll see it in there as long as 
 do the next step:</p>
 <p>Option 2: create a script that you will later link to a notebook. Work in this script
 until you’re satisfied like above. Then when done with it, run:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python create_and_execute_notebook path/to/script.py
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ python create_and_execute_notebook path/to/script.py
 </pre></div>
 </div>
 <p>to link the script with a notebook and an HTML file. If you so wish, you can work
 entirely in a script and just check the HTML file in your browser to make sure
 everything renders okay.</p>
-</li>
+</dd>
+</dl>
+</div></blockquote>
+<ol class="arabic" start="3">
 <li><p>Add your notebook to the toctree of the associated folder. For example,
 <code class="docutils literal notranslate"><span class="pre">examples/primitives/primitives.rst</span></code> has the following contents:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>Primitives
@@ -310,7 +327,7 @@ this like so:</p>
 what got generated.</p></li>
 <li><p>Finally, it’s best to run the light script from scratch to make sure it’s doing what
 you expect:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python create_and_execute_notebook path/to/your_script.py
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$ python create_and_execute_notebook path/to/your_script.py
 </pre></div>
 </div>
 <p>Inspect the resultant HTML file to make sure it’s doing what you want. Then run

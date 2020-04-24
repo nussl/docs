@@ -198,9 +198,7 @@ OMITTED_TRANSFORMS = (
         model_dict = torch.load(model_path, map_location=&#39;cpu&#39;)
         model = SeparationModel(model_dict[&#39;config&#39;])
         model.load_state_dict(model_dict[&#39;state_dict&#39;])
-
-        if not torch.cuda.is_available():
-            device = &#39;cpu&#39;
+        device = device if torch.cuda.is_available() else &#39;cpu&#39;
 
         self.device = device
 
@@ -251,7 +249,7 @@ OMITTED_TRANSFORMS = (
                 self.audio_signal.resample(self.metadata[&#39;sample_rate&#39;])
 
         self.audio_signal.stft_params = self.metadata[&#39;stft_params&#39;]
-        self._preprocess_audio_signal()
+        self.audio_signal.stft()
 
         data = {&#39;mix&#39;: self.audio_signal}
         data = self.transform(data)
@@ -261,7 +259,7 @@ OMITTED_TRANSFORMS = (
                 data[key] = data[key].unsqueeze(0).to(self.device).float()
                 if self.metadata[&#39;num_channels&#39;] == 1:
                     # then each channel is processed indep
-                    data[key] = data[key].transpose(0, -1)
+                    data[key] = data[key].transpose(0, self.channel_dim)
         self.input_data = data
         return self.input_data</div>
 </pre></div>
